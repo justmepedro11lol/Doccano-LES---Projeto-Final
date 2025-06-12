@@ -1,27 +1,22 @@
 <template>
-  <action-menu :items="items" :text="'Create Perspective'" @create="$emit('create')" />
+  <v-btn 
+    color="primary" 
+    class="text-capitalize" 
+    :disabled="disabled"
+    @click="$emit('create')"
+  >
+    Create Perspective
+  </v-btn>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
-import { mdiPencil } from '@mdi/js'
-import ActionMenu from '~/components/utils/ActionMenu.vue'
 
 export default Vue.extend({
-  components: {
-    ActionMenu
-  },
-
-  computed: {
-    items() {
-      const items = [
-        {
-          title: this.$t('Create Perspective'),
-          icon: mdiPencil,
-          event: 'create'
-        }
-      ]
-      return items
+  props: {
+    disabled: {
+      type: Boolean,
+      default: false
     }
   }
 })

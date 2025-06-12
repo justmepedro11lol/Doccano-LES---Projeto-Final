@@ -12,7 +12,7 @@
     <template v-else>
       <template v-if="isAdmin">
         <v-card-title>
-          <action-menu @create="$router.push('perspectives/add')" />
+          <action-menu :disabled="hasPerspectives" @create="$router.push('perspectives/add')" />
           <v-btn class="text-capitalize ms-2" outlined @click.stop="dialogDelete = true">
             {{ $t('generic.delete') }}
           </v-btn>
@@ -91,6 +91,9 @@ export default Vue.extend({
     },
     isAnswered(): boolean {
       return this.AlreadyAnswered
+    },
+    hasPerspectives(): boolean {
+      return this.items.length > 0
     }
   },
 
