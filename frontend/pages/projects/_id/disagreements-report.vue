@@ -80,103 +80,7 @@
       </v-col>
     </v-row>
 
-    <!-- Resumo Estatístico -->
-    <v-row>
-      <v-col cols="12">
-        <v-row>
-          <v-col cols="12" md="4">
-            <v-card class="h-100">
-              <v-card-title class="subtitle-1">
-                <v-icon left color="primary">mdi-tag</v-icon>
-                Desacordos por Categoria
-              </v-card-title>
-              <v-card-text>
-                <v-list dense>
-                  <v-list-item v-for="(count, category) in categoryStats" :key="category">
-                    <v-list-item-content>
-                      <v-list-item-title>{{ isNumeric(category) ? getCategoryNameById(category) : category }}</v-list-item-title>
-                      <v-list-item-subtitle class="text-right">
-                        <v-chip small :color="getCountColor(count)" dark>
-                          {{ count }} desacordos
-                        </v-chip>
-                      </v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-                </v-list>
-              </v-card-text>
-            </v-card>
-          </v-col>
 
-          <v-col cols="12" md="4">
-            <v-card class="h-100">
-              <v-card-title class="subtitle-1">
-                <v-icon left color="primary">mdi-account-group</v-icon>
-                Desacordos por Anotador
-              </v-card-title>
-              <v-card-text>
-                <v-list dense>
-                  <v-list-item v-for="(count, annotator) in annotatorStats" :key="annotator">
-                    <v-list-item-content>
-                      <v-list-item-title>{{ annotator }}</v-list-item-title>
-                      <v-list-item-subtitle class="text-right">
-                        <v-chip small :color="getCountColor(count)" dark>
-                          {{ count }} desacordos
-                        </v-chip>
-                      </v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-                </v-list>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" md="4">
-            <v-card class="h-100">
-              <v-card-title class="subtitle-1">
-                <v-icon left color="primary">mdi-text-box</v-icon>
-                Desacordos por Tipo de Texto
-              </v-card-title>
-              <v-card-text>
-                <v-list dense>
-                  <v-list-item v-for="(count, type) in textTypeStats" :key="type">
-                    <v-list-item-content>
-                      <v-list-item-title>{{ type }}</v-list-item-title>
-                      <v-list-item-subtitle class="text-right">
-                        <v-chip small :color="getCountColor(count)" dark>
-                          {{ count }} desacordos
-                        </v-chip>
-                      </v-list-item-subtitle>
-                    </v-list-item-content>
-                  </v-list-item>
-                </v-list>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-
-    <!-- Análise de Perspectivas -->
-    <v-row v-if="hasDiscrepancies">
-      <v-col cols="12">
-        <v-card>
-          <v-card-title class="headline primary white--text">
-            Análise de Perspectivas
-            <v-spacer></v-spacer>
-            <v-chip color="white" text-color="primary" class="ml-2">
-              {{ totalPerspectives }} perspectivas analisadas
-            </v-chip>
-          </v-card-title>
-          <v-card-text class="pt-4">
-            <v-tabs v-model="perspectiveTab" grow>
-              <v-tab>Distribuição</v-tab>
-              <v-tab>Influência</v-tab>
-              <v-tab>Evolução</v-tab>
-            </v-tabs>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
 
     <!-- Tabela de Desacordos -->
     <v-row v-if="hasDiscrepancies">
@@ -404,7 +308,6 @@ export default {
       reportGenerated: false,
       items: {},
       search: '',
-      perspectiveTab: 0,
       shareDialog: false,
       shareEmail: '',
       shareMessage: '',
@@ -445,16 +348,7 @@ export default {
           sortable: false
         }
       ],
-      perspectiveHeaders: [
-        { text: 'Perspetiva', value: 'name' },
-        { text: 'Número de Ocorrências', value: 'count', align: 'center' },
-        { text: 'Percentagem', value: 'percentage', align: 'center' }
-      ],
-      influenceHeaders: [
-        { text: 'Perspetiva', value: 'name' },
-        { text: 'Influência nas Anotações', value: 'influence', align: 'center' },
-        { text: 'Exemplos', value: 'examples', align: 'center' }
-      ],
+
       categoryMap: {}
     }
   },
@@ -482,41 +376,7 @@ export default {
       })
       return count
     },
-    totalPerspectives() {
-      if (this.perspectiveDistribution && this.perspectiveDistribution.length) {
-        return this.perspectiveDistribution.length
-      }
-      return this.perspectives ? this.perspectives.length : 0
-    },
-    categoryStats() {
-      const stats = {}
-      this.discrepancyItems.forEach(item => {
-        if (item.percentage < this.safeProject.minPercentage) {
-          const categoryName = this.getCategoryName(item.category)
-          stats[categoryName] = (stats[categoryName] || 0) + 1
-        }
-      })
-      return stats
-    },
-    annotatorStats() {
-      const stats = {}
-      this.discrepancyItems.forEach(item => {
-        if (item.percentage < this.safeProject.minPercentage) {
-          stats[item.annotator] = (stats[item.annotator] || 0) + 1
-        }
-      })
-      return stats
-    },
-    textTypeStats() {
-      const stats = {}
-      this.discrepancyItems.forEach(item => {
-        if (item.percentage < this.safeProject.minPercentage) {
-          const textType = item.textType || 'Não definido';
-          stats[textType] = (stats[textType] || 0) + 1
-        }
-      })
-      return stats
-    },
+
     discrepancyItems() {
       if (!this.items || Object.keys(this.items).length === 0) {
         return []
@@ -621,16 +481,7 @@ export default {
       if (percentage < 80) return 'warning'
       return 'success'
     },
-    getCountColor(count) {
-      if (count > 10) return 'error'
-      if (count > 5) return 'warning'
-      return 'success'
-    },
-    getInfluenceColor(influence) {
-      if (influence > 70) return 'error'
-      if (influence > 40) return 'warning'
-      return 'success'
-    },
+
     applyFilters() {
       // Os filtros são aplicados automaticamente através do computed property filteredDiscrepancyItems
     },
@@ -690,35 +541,7 @@ export default {
     exportReport() {
       this.exportDialog = true;
     },
-    getCategoryName(categoryId) {
-      if (typeof categoryId === 'string' && isNaN(Number(categoryId))) {
-        return categoryId;
-      }
-      
-      if (this.categories && this.categories.length > 0) {
-        const index = Number(categoryId) - 1;
-        if (index >= 0 && index < this.categories.length) {
-          return this.categories[index];
-        }
-      }
-      
-      return categoryId;
-    },
-    isNumeric(value) {
-      return !isNaN(Number(value))
-    },
-    getCategoryNameById(id) {
-      if (this.categoryMap && this.categoryMap[id]) {
-        return this.categoryMap[id];
-      }
-      
-      const index = parseInt(id) - 1;
-      if (this.categories && index >= 0 && index < this.categories.length) {
-        return this.categories[index];
-      }
-      
-      return `Categoria ${id}`;
-    },
+
     toggleDatabaseError() {
       this.showDatabaseError = !this.showDatabaseError
     },
@@ -835,57 +658,9 @@ export default {
          doc.text(`Total de desacordos: ${this.totalDiscrepancies}`, 14, 46);
          doc.text(`Data do relatório: ${new Date().toLocaleDateString()}`, 14, 54);
          
-         // Estatísticas de desacordos por categoria
+         // Detalhes dos desacordos
          doc.setFontSize(16);
-         doc.text('Desacordos por Categoria', 14, 70);
-         
-         const categoryData = Object.entries(this.categoryStats).map(([category, count]) => [
-           category, 
-           `${count} desacordos`
-         ]);
-         
-         autoTable(doc, {
-           startY: 75,
-           head: [['Categoria', 'Quantidade']],
-           body: categoryData
-         });
-         
-         // Estatísticas de desacordos por anotador
-         const annotatorTableY = doc.lastAutoTable.finalY + 15;
-         doc.setFontSize(16);
-         doc.text('Desacordos por Anotador', 14, annotatorTableY);
-         
-         const annotatorData = Object.entries(this.annotatorStats).map(([annotator, count]) => [
-           annotator, 
-           `${count} desacordos`
-         ]);
-         
-         autoTable(doc, {
-           startY: annotatorTableY + 5,
-           head: [['Anotador', 'Quantidade']],
-           body: annotatorData
-         });
-         
-         // Estatísticas de desacordos por tipo de texto
-         const textTypeTableY = doc.lastAutoTable.finalY + 15;
-         doc.setFontSize(16);
-         doc.text('Desacordos por Tipo de Texto', 14, textTypeTableY);
-         
-         const textTypeData = Object.entries(this.textTypeStats).map(([type, count]) => [
-           type, 
-           `${count} desacordos`
-         ]);
-         
-         autoTable(doc, {
-           startY: textTypeTableY + 5,
-           head: [['Tipo de Texto', 'Quantidade']],
-           body: textTypeData
-         });
-         
-         // Nova página para detalhes dos desacordos
-         doc.addPage();
-         doc.setFontSize(16);
-         doc.text('Detalhes dos Desacordos', 14, 20);
+         doc.text('Detalhes dos Desacordos', 14, 70);
          
          const detailsData = this.filteredDiscrepancyItems
            .filter(item => item.percentage < this.safeProject.minPercentage)
@@ -896,11 +671,11 @@ export default {
              item.category
            ]);
          
-         autoTable(doc, {
-           startY: 25,
-           head: [['Elemento', 'Taxa de Concordância', 'Status', 'Categoria']],
-           body: detailsData
-         });
+                   autoTable(doc, {
+            startY: 75,
+            head: [['Elemento', 'Taxa de Concordância', 'Status', 'Categoria']],
+            body: detailsData
+          });
          
          // Salvar o PDF usando output com método compatível com navegadores
          const pdfOutput = doc.output('blob');

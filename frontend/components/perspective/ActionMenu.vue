@@ -1,5 +1,5 @@
 <template>
-  <action-menu :items="items" :text="$t('dataset.actions')" @create="$emit('create')" />
+  <action-menu :items="items" :text="'Create Perspective'" @create="$emit('create')" />
 </template>
 
 <script lang="ts">
