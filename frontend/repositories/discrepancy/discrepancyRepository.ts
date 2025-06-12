@@ -6,10 +6,10 @@ import type { DiscrepancyMessage } from '~/domain/models/example/discrepancy'
 export class APIDiscrepancyRepository {
   constructor(private request = ApiService) {}
 
-  async fetchMessages(projectId: string, exampleId: string): Promise<DiscrepancyMessage[]> {
-    console.log('Buscando mensagens para projectId:', projectId, 'exampleId:', exampleId)
+  async fetchMessages(projectId: string): Promise<DiscrepancyMessage[]> {
+    console.log('Buscando mensagens do chat para projectId:', projectId)
     try {
-      const response = await this.request.get(`/projects/${projectId}/examples/${exampleId}/discrepancies/messages`)
+      const response = await this.request.get(`/projects/${projectId}/discrepancies/messages`)
       console.log('Resposta da API (tipo):', typeof response.data)
       console.log('Resposta da API (valor):', response.data)
       
@@ -34,10 +34,10 @@ export class APIDiscrepancyRepository {
     }
   }
 
-  postMessage(projectId: string, exampleId: string, text: string) {
-    console.log('Enviando mensagem para projectId:', projectId, 'exampleId:', exampleId, 'text:', text)
+  postMessage(projectId: string, text: string) {
+    console.log('Enviando mensagem para o chat do projectId:', projectId, 'text:', text)
     return this.request
-      .post(`/projects/${projectId}/examples/${exampleId}/discrepancies/messages`, { text })
+      .post(`/projects/${projectId}/discrepancies/messages`, { text })
       .then(res => {
         console.log('Resposta da API (postMessage):', res.data)
         return res.data

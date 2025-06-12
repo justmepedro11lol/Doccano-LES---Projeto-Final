@@ -89,3 +89,39 @@ class SpanTypePercentage(LabelPercentage):
 class RelationTypePercentage(LabelPercentage):
     model = Relation
     label_type = RelationType
+
+
+class DisagreementStatsAPI(APIView):
+    permission_classes = [IsAuthenticated & (IsProjectAdmin | IsProjectStaffAndReadOnly)]
+
+    def get(self, request, *args, **kwargs):
+        project = get_object_or_404(Project, pk=self.kwargs["project_id"])
+        
+        # Obter categorias únicas
+        categories = list(CategoryType.objects
+            .filter(project=project)
+            .values_list('text', flat=True)
+            .distinct())
+        
+        # Obter anotadores únicos
+        annotators = list(Member.objects
+            .filter(project=project)
+            .values_list('user__username', flat=True)
+            .distinct())
+        
+        # Obter tipos de texto únicos
+        text_types = list(Example.objects
+            .filter(project=project)
+            .values_list('meta__text_type', flat=True)
+            .distinct())
+        
+        # Remover valores nulos
+        text_types = [t for t in text_types if t is not None]
+        
+        data = {
+            "categories": categories,
+            "annotators": annotators,
+            "textTypes": text_types
+        }
+        
+        return Response(data=data, status=status.HTTP_200_OK)

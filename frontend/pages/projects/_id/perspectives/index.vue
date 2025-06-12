@@ -41,11 +41,13 @@ import { mapGetters } from 'vuex'
 import ActionMenu from '@/components/perspective/ActionMenu.vue'
 import PerspectiveList from '@/components/perspective/PerspectiveList.vue'
 import FormAnswer from '~/components/perspective/FormAnswer.vue'
-import { MemberItem } from '~/domain/models/member/member'
-import { PerspectiveDTO } from '~/services/application/perspective/perspectiveData'
-import { OptionsQuestionItem, QuestionItem } from '~/domain/models/perspective/question/question'
-import { AnswerItem } from '~/domain/models/perspective/answer/answer'
-import { CreateAnswerCommand } from '~/services/application/perspective/answer/answerCommand'
+import {
+  AnswerItem,
+  CreateAnswerCommand,
+  MemberItem,
+  PerspectiveDTO,
+  QuestionItem
+} from '~/domain/models/perspective/perspectiveItem'
 
 export default Vue.extend({
   components: {
@@ -68,10 +70,7 @@ export default Vue.extend({
       drawerLeft: null,
       myRole: null as MemberItem | null,
       questionsList: [] as QuestionItem[],
-      optionsList: [] as OptionsQuestionItem[], // Lista de perguntas para o FormAnswer
       answersList: [] as AnswerItem[],
-      // Mapa de escolha múltipla onde a chave é o question id
-      multipleChoiceMap: {} as { [questionId: number]: boolean },
       AlreadyAnswered: false,
       submitted: false,
       successMessage: '',
@@ -152,24 +151,7 @@ export default Vue.extend({
         this.questionsList = questions.filter((question) => question.perspective_id === perspectiveId)
         this.questionsList = questions
         
-        // Cria um mapa onde a chave é o question id
-        // e o valor é true se options_group estiver preenchido
-        this.multipleChoiceMap = {}
-        let index = 0
-        for (const q of questions) {
-          this.multipleChoiceMap[index] = q.options_group !== null && q.options_group !== undefined
-          if(this.multipleChoiceMap[index]) {
-            if (q.options_group !== undefined && q.options_group !== null) {
-              console.log('Id das opções:', q.options_group)
-              const options = await this.$services.optionsQuestion.list(this.projectId)
-              this.optionsList = options
-              console.log('Opções:', options)
-            }
-          }
-          index++
-        }
         console.log('Perguntas:', this.questionsList)
-        console.log('Multiple Choice Map:', this.multipleChoiceMap)
       } catch (error) {
         console.error('Erro ao buscar perguntas:', error)
       } finally {
@@ -198,23 +180,12 @@ export default Vue.extend({
     async submitAnswers(formattedAnswers: { questionId: number; answer: string; questionType: number }[], projectId: string) {
       console.log('Respostas submetidas:', formattedAnswers)
       try {
-        // Mapeia as respostas com base no multipleChoiceMap, usando o question id como chave
-        let index = 0
+        // Todas as respostas agora são do tipo texto (Text, Numeric, True/False)
         const answersToSubmit: CreateAnswerCommand[] = formattedAnswers.map((formattedAnswer) => {
-          const isMultipleChoice = this.multipleChoiceMap[index] || false
-          index++
-          if (isMultipleChoice) {
-            return {
-              member: this.myRole?.id || 0,
-              question: formattedAnswer.questionId,
-              answer_option: formattedAnswer.answer // Para escolha múltipla
-            }
-          } else {
-            return {
-              member: this.myRole?.id || 0,
-              question: formattedAnswer.questionId,
-              answer_text: formattedAnswer.answer // Para perguntas normais
-            }
+          return {
+            member: this.myRole?.id || 0,
+            question: formattedAnswer.questionId,
+            answer_text: formattedAnswer.answer
           }
         })
 

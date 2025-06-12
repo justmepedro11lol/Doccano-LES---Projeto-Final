@@ -30,7 +30,15 @@
             >
               <v-list-item-content>
                 <v-list-item-title>
-                  <strong>{{ msg.user || 'Unknown user' }}:</strong> {{ msg.text || '' }}
+                  <span class="user-indicator" :style="{ backgroundColor: getUserColor(msg.user || 'Unknown user') }"></span>
+                  <span 
+                    class="username-text" 
+                    :class="`color-${getUserColorClass(msg.user || 'Unknown user')}`"
+                  >
+                    {{ msg.user || 'Unknown user' }}:
+                  </span>
+                  <small style="color: #999;">[{{ getUserColorClass(msg.user || 'Unknown user') }}]</small> 
+                  {{ msg.text || '' }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text--secondary">
                   {{ formatDate(msg.created_at) }}
@@ -149,7 +157,25 @@ export default Vue.extend({
       },
       isProjectAdmin: false,
       mdiCheckCircleOutline,
-      mdiRefresh
+      mdiRefresh,
+      // Paleta de cores para os usuários
+      userColors: [
+        '#1976D2', // Azul
+        '#388E3C', // Verde
+        '#F57C00', // Laranja
+        '#7B1FA2', // Roxo
+        '#D32F2F', // Vermelho
+        '#0097A7', // Ciano
+        '#455A64', // Azul cinza
+        '#E64A19', // Laranja escuro
+        '#5D4037', // Marrom
+        '#689F38', // Verde claro
+        '#303F9F', // Índigo
+        '#C2185B', // Rosa
+        '#00796B', // Teal
+        '#FBC02D', // Amarelo
+        '#795548'  // Marrom claro
+      ]
     }
   },
 
@@ -161,9 +187,6 @@ export default Vue.extend({
     },
     projectId(): string {
       return this.$route.params.id
-    },
-    exampleId(): string {
-      return this.$route.params.exampleId
     },
     validMessages() {
       console.log('Processando mensagens válidas:', this.messages)
@@ -200,6 +223,43 @@ export default Vue.extend({
       } catch (error) {
         return 'Invalid date'
       }
+    },
+
+    // Gera uma cor consistente baseada no nome do usuário
+    getUserColor(username: string): string {
+      if (!username) return this.userColors[0]
+      
+      // Função hash simples para gerar um índice baseado no nome
+      let hash = 0
+      for (let i = 0; i < username.length; i++) {
+        const char = username.charCodeAt(i)
+        hash = ((hash << 5) - hash) + char
+        hash = hash & hash // Converte para 32bit integer
+      }
+      
+      // Garante que o hash seja positivo e dentro do range das cores
+      const colorIndex = Math.abs(hash) % this.userColors.length
+      const selectedColor = this.userColors[colorIndex]
+      
+      console.log(`Cor para usuário ${username}: ${selectedColor} (índice: ${colorIndex})`)
+      return selectedColor
+    },
+
+    // Gera um número de classe CSS baseado no nome do usuário
+    getUserColorClass(username: string): number {
+      console.log('getUserColorClass chamado para:', username)
+      if (!username) return 0
+      
+      let hash = 0
+      for (let i = 0; i < username.length; i++) {
+        const char = username.charCodeAt(i)
+        hash = ((hash << 5) - hash) + char
+        hash = hash & hash
+      }
+      
+      const colorIndex = Math.abs(hash) % this.userColors.length
+      console.log(`Usuário ${username} → classe color-${colorIndex}`)
+      return colorIndex
     },
 
     async loadMessages() {
@@ -328,7 +388,7 @@ export default Vue.extend({
       this.$store.dispatch('discussion/reopenDiscussion')
       this.snackbar = {
         show: true,
-        text: 'A discussão foi reaberta com sucesso.',
+        text: 'A discussão foi reaberta com sucesso. Agora é possível continuar a discussão.',
         color: 'success',
         timeout: 5000
       }
@@ -342,5 +402,60 @@ export default Vue.extend({
 .chat-body { max-height: 400px; overflow-y: auto; }
 .my-message { background-color: #e0f7fa; }
 .error-message { color: red; padding: 20px; }
+
+/* Indicador visual colorido para cada usuário */
+.user-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Estilos base do nome do usuário */
+.username-text {
+  font-weight: bold !important;
+}
+
+/* Classes de cores específicas */
+.username-text.color-0 { color: #1976D2 !important; } /* Azul */
+.username-text.color-1 { color: #388E3C !important; } /* Verde */
+.username-text.color-2 { color: #F57C00 !important; } /* Laranja */
+.username-text.color-3 { color: #7B1FA2 !important; } /* Roxo */
+.username-text.color-4 { color: #D32F2F !important; } /* Vermelho */
+.username-text.color-5 { color: #0097A7 !important; } /* Ciano */
+.username-text.color-6 { color: #455A64 !important; } /* Azul cinza */
+.username-text.color-7 { color: #E64A19 !important; } /* Laranja escuro */
+.username-text.color-8 { color: #5D4037 !important; } /* Marrom */
+.username-text.color-9 { color: #689F38 !important; } /* Verde claro */
+.username-text.color-10 { color: #303F9F !important; } /* Índigo */
+.username-text.color-11 { color: #C2185B !important; } /* Rosa */
+.username-text.color-12 { color: #00796B !important; } /* Teal */
+.username-text.color-13 { color: #FBC02D !important; } /* Amarelo */
+.username-text.color-14 { color: #795548 !important; } /* Marrom claro */
+</style>
+
+<style>
+/* CSS global para sobrescrever estilos do Vuetify com maior especificidade */
+.v-list-item__title .username-text {
+  font-weight: bold !important;
+}
+
+.v-list-item__title .username-text.color-0 { color: #1976D2 !important; }
+.v-list-item__title .username-text.color-1 { color: #388E3C !important; }
+.v-list-item__title .username-text.color-2 { color: #F57C00 !important; }
+.v-list-item__title .username-text.color-3 { color: #7B1FA2 !important; }
+.v-list-item__title .username-text.color-4 { color: #D32F2F !important; }
+.v-list-item__title .username-text.color-5 { color: #0097A7 !important; }
+.v-list-item__title .username-text.color-6 { color: #455A64 !important; }
+.v-list-item__title .username-text.color-7 { color: #E64A19 !important; }
+.v-list-item__title .username-text.color-8 { color: #5D4037 !important; }
+.v-list-item__title .username-text.color-9 { color: #689F38 !important; }
+.v-list-item__title .username-text.color-10 { color: #303F9F !important; }
+.v-list-item__title .username-text.color-11 { color: #C2185B !important; }
+.v-list-item__title .username-text.color-12 { color: #00796B !important; }
+.v-list-item__title .username-text.color-13 { color: #FBC02D !important; }
+.v-list-item__title .username-text.color-14 { color: #795548 !important; }
 </style>
   

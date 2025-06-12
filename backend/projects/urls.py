@@ -91,9 +91,9 @@ urlpatterns = [
         name="question_type_detail",
     ),
 
-    # Rota para a página em branco de discrepância
+    # Rota para a página de chat de discrepâncias do projeto
     path(
-        route="projects/<int:project_id>/examples/<int:example_id>/discrepancies/detail",
+        route="projects/<int:project_id>/discrepancies/detail",
         view=TemplateView.as_view(template_name="index.html"),
         name="discrepancy_detail_page",
     ),

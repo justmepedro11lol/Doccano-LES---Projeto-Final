@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from examples.models import Example
+from projects.models import Project
 
 from .managers import (
     BoundingBoxManager,
@@ -43,7 +44,7 @@ class Category(Label):
 
 
 class DiscrepancyMessage(models.Model):
-    example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name="discrepancy_messages")
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="discrepancy_messages")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
