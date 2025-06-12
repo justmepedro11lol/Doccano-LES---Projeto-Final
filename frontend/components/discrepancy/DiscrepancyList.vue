@@ -106,6 +106,7 @@ interface ComponentProps {
 
 interface ComponentMethods {
   resolveExampleName(id: string): Promise<string>
+  getPercentageColor(percentage: number): string
 }
 
 interface ComponentComputed {

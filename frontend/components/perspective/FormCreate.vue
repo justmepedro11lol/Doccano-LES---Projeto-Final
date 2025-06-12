@@ -20,34 +20,10 @@
           <v-row>
             <v-col cols="12">
               <v-radio-group v-model="questionType.id" row>
-                <v-radio label="Open Question" :value="1"></v-radio>
-                <v-radio label="Multiple Choice Question" :value="2"></v-radio>
+                <v-radio label="Text" :value="1"></v-radio>
+                <v-radio label="Numeric" :value="2"></v-radio>
+                <v-radio label="True/False" :value="3"></v-radio>
               </v-radio-group>
-            </v-col>
-          </v-row>
-
-          <v-row v-if="questionType.id === 2">
-            <v-col cols="12">
-              <v-combobox v-model="optionGroupName" :items="optionGroupNames" label="Option Group Name" outlined
-                @input="loadOptionsFromGroup"></v-combobox>
-            </v-col>
-            <v-col cols="12">
-              <v-text-field v-model="newOption" label="Add an Option" outlined @keyup.enter="addOption" />
-              <v-btn color="primary" @click="addOption">Add Option</v-btn>
-            </v-col>
-            <v-col cols="12">
-              <v-list dense>
-                <v-list-item v-for="(option, index) in optionsQuestionList" :key="index">
-                  <v-list-item-content>
-                    <v-list-item-title>{{ option.option }}</v-list-item-title>
-                  </v-list-item-content>
-                  <v-list-item-action>
-                    <v-btn icon color="red" @click="removeOption(index)">
-                      <v-icon>{{ mdiDelete }}</v-icon>
-                    </v-btn>
-                  </v-list-item-action>
-                </v-list-item>
-              </v-list>
             </v-col>
           </v-row>
 
@@ -93,9 +69,7 @@
 import Vue from 'vue'
 import { mdiDelete } from '@mdi/js'
 import {
-  CreateQuestionCommand,
-  CreateOptionsGroupCommand,
-  CreateOptionsQuestionCommand
+  CreateQuestionCommand
 } from '~/services/application/perspective/question/questionCommand'
 
 interface QuestionType {
@@ -108,16 +82,11 @@ export default Vue.extend({
     return {
       name:'',
       newQuestion: '',
-      questionType: { id: 1, question_type: 'Open Question' } as QuestionType,
-      optionGroupName: '',
-      optionGroupNames: [] as string[],
-      newOption: '',
+      questionType: { id: 1, question_type: 'Text' } as QuestionType,
       rules: {
         required: (v: string) => !!v || 'Required',
       },
       questionsList: [] as CreateQuestionCommand[],
-      optionsGroupList: [] as CreateOptionsGroupCommand[],
-      optionsQuestionList: [] as CreateOptionsQuestionCommand[],
       errorMessage: '',
       mdiDelete
     }
@@ -131,45 +100,17 @@ export default Vue.extend({
       return this.questionsList.length > 0
     },
   },
-  mounted() {
-    this.fetchOptionGroupName()
-  },
   methods: {
-
-    async fetchOptionGroupName() {
-      const optionsGroup = await this.$services.optionsGroup.list(this.projectId)
-      this.optionGroupNames = optionsGroup.map(optionsGroup => optionsGroup.name)
-    },
-
-    async loadOptionsFromGroup() {
-      if (this.optionGroupName && this.optionGroupName.trim()) {
-        const groupOptions = await this.$services.optionsGroup.findByName(this.projectId, this.optionGroupName)
-        if (!groupOptions) return 
-        const optionsQuestions = await this.$services.optionsQuestion.list(this.projectId)
-        this.optionsQuestionList = optionsQuestions.filter(optionQuestion => optionQuestion.options_group === groupOptions.id)
-      }
-    },
 
     getQuestionType(type: number): string {
       const types: { [key: number]: string } = {
-        1: 'Open Question',
-        2: 'Multiple Choice Question'
+        1: 'Text',
+        2: 'Numeric',
+        3: 'True/False'
       }
       return types[type] || 'Unknown'
     },
 
-    addOption() {
-      if (this.newOption.trim()) {
-        const newOptionObject: CreateOptionsQuestionCommand = {
-          option: this.newOption.trim()
-        }
-        this.optionsQuestionList.push(newOptionObject)
-        this.newOption = ''
-      }
-    },
-    removeOption(index: number) {
-      this.optionsQuestionList.splice(index, 1)
-    },
     addQuestion() {
       this.errorMessage = ''
       if (!this.newQuestion.trim()) {
@@ -181,24 +122,6 @@ export default Vue.extend({
         type: this.questionType.id,
         options_group: undefined,
         answers: []
-      }
-      let optionsGroupData: CreateOptionsGroupCommand = { name: '', options_questions: [] }
-
-      if (this.questionType.id === 2) {
-        if (!this.optionGroupName || !this.optionGroupName.trim()) {
-          this.errorMessage = "The option group name is required for multiple choice questions."
-          return
-        }
-        if (this.optionsQuestionList.length === 0) {
-          this.errorMessage = "Please add at least one option for the multiple choice question."
-          return
-        }
-        optionsGroupData = {
-          name: this.optionGroupName,
-          options_questions: this.optionsQuestionList
-        }
-        this.optionsGroupList.push(optionsGroupData)
-        this.emitUpdatedOptionsGroup()
       }
 
       this.questionsList.push(questionData)
@@ -212,16 +135,9 @@ export default Vue.extend({
     emitUpdatedQuestions() {
       this.$emit('update-questions', this.questionsList)
     },
-    emitUpdatedOptionsGroup() {
-      this.$emit('update-options-group', this.optionsGroupList)
-    },
     resetForm() {
       this.newQuestion = ''
-      this.questionType = { id: 1, question_type: 'Open Question' }
-      this.optionGroupName = ''
-      this.newOption = ''
-      this.optionsGroupList = []
-      this.optionsQuestionList = []
+      this.questionType = { id: 1, question_type: 'Text' }
     }
   },
 })

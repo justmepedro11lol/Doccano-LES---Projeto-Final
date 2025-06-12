@@ -84,6 +84,21 @@
       class="mt-4"
     >
       A discussão foi encerrada. Agora é possível configurar uma votação na seção "Annotation Rules".
+      
+      <!-- Botão para reverter fechamento (visível apenas para admins) -->
+      <div v-if="isProjectAdmin" class="text-center mt-3">
+        <v-btn
+          color="warning"
+          outlined
+          small
+          @click="reopenDiscussion"
+        >
+          <v-icon left small>
+            {{ mdiRefresh }}
+          </v-icon>
+          Reverter Fechamento
+        </v-btn>
+      </div>
     </v-alert>
 
     <!-- Snackbar para notificações -->
@@ -109,7 +124,7 @@
 <script lang="ts">
 import Vue from 'vue'
 import { mapGetters } from 'vuex'
-import { mdiCheckCircleOutline } from '@mdi/js'
+import { mdiCheckCircleOutline, mdiRefresh } from '@mdi/js'
 import type { DiscrepancyMessage } from '~/domain/models/example/discrepancy'
 
 export default Vue.extend({
@@ -133,7 +148,8 @@ export default Vue.extend({
         timeout: 3000
       },
       isProjectAdmin: false,
-      mdiCheckCircleOutline
+      mdiCheckCircleOutline,
+      mdiRefresh
     }
   },
 
@@ -192,8 +208,7 @@ export default Vue.extend({
       try {
         console.log('Recarregando mensagens...')
         const messages = await this.$repositories.discrepancy.fetchMessages(
-          this.projectId,
-          String(this.exampleId)
+          this.projectId
         )
         
         console.log('Resposta da API (tipo):', typeof messages)
@@ -237,7 +252,6 @@ export default Vue.extend({
       try {
         const msg = await this.$repositories.discrepancy.postMessage(
           this.projectId,
-          String(this.exampleId),
           this.newMessage
         )
         
@@ -273,10 +287,12 @@ export default Vue.extend({
     },
 
     scrollToBottom() {
-      const chatBody = this.$el.querySelector('.chat-body') as HTMLElement
-      if (chatBody) {
-        chatBody.scrollTop = chatBody.scrollHeight
-      }
+      this.$nextTick(() => {
+        const chatBody = this.$el.querySelector('.chat-body') as HTMLElement
+        if (chatBody) {
+          chatBody.scrollTop = chatBody.scrollHeight
+        }
+      })
     },
 
     async loadDatasetName() {
@@ -303,6 +319,16 @@ export default Vue.extend({
       this.snackbar = {
         show: true,
         text: 'A discussão foi encerrada com sucesso. Agora é possível configurar uma votação na seção "Annotation Rules".',
+        color: 'success',
+        timeout: 5000
+      }
+    },
+    
+    reopenDiscussion() {
+      this.$store.dispatch('discussion/reopenDiscussion')
+      this.snackbar = {
+        show: true,
+        text: 'A discussão foi reaberta com sucesso.',
         color: 'success',
         timeout: 5000
       }

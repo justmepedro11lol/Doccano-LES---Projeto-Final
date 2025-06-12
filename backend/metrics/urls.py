@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     CategoryTypeDistribution,
     CategoryTypePercentage,
+    DisagreementStatsAPI,
     MemberProgressAPI,
     ProgressAPI,
     RelationTypeDistribution,
@@ -20,5 +21,5 @@ urlpatterns = [
     path(route="category-percentage", view=CategoryTypePercentage.as_view(), name="category_percentage"),
     path(route="relation-percentage", view=RelationTypePercentage.as_view(), name="relation_percentage"),
     path(route="span-percentage", view=SpanTypePercentage.as_view(), name="span_percentage"),
-
+    path(route="disagreement-stats", view=DisagreementStatsAPI.as_view(), name="disagreement_stats"),
 ]

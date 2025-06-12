@@ -75,17 +75,16 @@ class DiscrepancyMessageListAPI(generics.ListCreateAPIView):
         return get_object_or_404(Project, pk=self.kwargs["project_id"])
 
     def get_queryset(self):
-        example_id = self.kwargs["example_id"]
         project_id = self.kwargs["project_id"]
-        print(f"Recuperando mensagens - Project ID: {project_id}, Example ID: {example_id}")
+        print(f"Recuperando mensagens do chat - Project ID: {project_id}")
         print(f"Request path: {self.request.path}")
         print(f"Request user: {self.request.user}")
         print(f"Request kwargs: {self.kwargs}")
         
-        # Primeiro, verifica se o exemplo pertence ao projeto
-        example = get_object_or_404(Example, pk=example_id, project_id=project_id)
+        # Verifica se o projeto existe
+        project = get_object_or_404(Project, pk=project_id)
         
-        queryset = DiscrepancyMessage.objects.filter(example_id=example_id)
+        queryset = DiscrepancyMessage.objects.filter(project_id=project_id)
         print(f"Query SQL: {queryset.query}")
         print(f"Encontradas {queryset.count()} mensagens")
         for msg in queryset:
@@ -93,15 +92,14 @@ class DiscrepancyMessageListAPI(generics.ListCreateAPIView):
         return queryset
 
     def perform_create(self, serializer):
-        example_id = self.kwargs["example_id"]
         project_id = self.kwargs["project_id"]
-        print(f"Criando nova mensagem - Project ID: {project_id}, Example ID: {example_id}, User: {self.request.user}")
+        print(f"Criando nova mensagem no chat - Project ID: {project_id}, User: {self.request.user}")
         
-        # Verifica se o exemplo pertence ao projeto antes de criar a mensagem
-        example = get_object_or_404(Example, pk=example_id, project_id=project_id)
+        # Verifica se o projeto existe antes de criar a mensagem
+        project = get_object_or_404(Project, pk=project_id)
         
         serializer.save(
-            example_id=example_id,
+            project_id=project_id,
             user=self.request.user
         )
         print("Mensagem criada com sucesso")

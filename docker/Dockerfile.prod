@@ -21,7 +21,6 @@ RUN pip install -U --no-cache-dir pip==23.0.1  setuptools==65.5.0 \
  && curl -sSL https://install.python-poetry.org | python - --version 1.5.1 \
  && export PATH="/root/.local/bin:$PATH" \
  && poetry export --without-hashes -o /requirements.txt \
- && echo "psycopg2-binary==2.8.6" >> /requirements.txt \
  && pip install --no-cache-dir -r /requirements.txt
 
 FROM python:${PYTHON_VERSION} AS runtime

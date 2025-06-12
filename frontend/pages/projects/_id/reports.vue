@@ -129,8 +129,7 @@ export default {
   },
   methods: {
     generateAnnotationReport() {
-      // TODO: Implement annotation report generation
-      console.log('Generating annotation report...')
+      this.$router.push(`/projects/${this.projectId}/disagreements-report`)
     },
     generateHistoryReport() {
       // TODO: Implement history report generation

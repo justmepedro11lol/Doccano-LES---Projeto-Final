@@ -23,9 +23,9 @@ urlpatterns = [
         name="relation_detail",
     ),
 
-    # Rota para chat de discrepância
+    # Rota para chat de discrepância do projeto
     path(
-        "examples/<int:example_id>/discrepancies/messages",
+        "discrepancies/messages",
         DiscrepancyMessageListAPI.as_view(),
         name="discrepancy_messages",
     ),

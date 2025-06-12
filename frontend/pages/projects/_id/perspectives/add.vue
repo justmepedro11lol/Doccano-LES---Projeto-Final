@@ -8,7 +8,6 @@
       :perspective-id="null"
       :items="items"
       @update-questions="updateQuestions"
-      @update-options-group="updateOptionsGroup"
     >
       <v-btn color="error" class="text-capitalize" @click="$router.back()"> Cancel </v-btn>
       <v-btn :disabled="!slotProps.valid" color="primary" class="text-capitalize" @click="save">
@@ -23,9 +22,7 @@ import Vue from 'vue'
 import FormCreate from '~/components/perspective/FormCreate.vue'
 import { CreatePerspectiveCommand } from '~/services/application/perspective/perspectiveCommand'
 import { PerspectiveDTO } from '~/services/application/perspective/perspectiveData'
-import { CreateOptionsGroupCommand } from '~/services/application/perspective/question/questionCommand'
 import {
-  OptionsGroupDTO,
   QuestionDTO,
   QuestionTypeDTO
 } from '~/services/application/perspective/question/questionData'
@@ -48,21 +45,18 @@ export default Vue.extend({
         members: []
       } as CreatePerspectiveCommand,
 
-      optionsGroupItem: [
-        {
-          name: '',
-          options_questions: []
-        }
-      ] as CreateOptionsGroupCommand[],
-
       questionTypeItem: [
         {
           id: 1,
-          question_type: 'Open Question'
+          question_type: 'Text'
         },
         {
           id: 2,
-          question_type: 'Closed Question'
+          question_type: 'Numeric'
+        },
+        {
+          id: 3,
+          question_type: 'True/False'
         }
       ] as QuestionTypeDTO[],
 
@@ -94,53 +88,41 @@ export default Vue.extend({
       this.editedItem.questions = questions
     },
 
-    updateOptionsGroup(optionsGroup: OptionsGroupDTO[]) {
-      this.optionsGroupItem = optionsGroup
-    },
-
     async save() {
       try {
         this.editedItem.project_id = Number(this.projectId)
         this.editedItem.members = await this.getAnnotatorIds();
-        let j = 0
-        const questionTypeOpen = await this.$services.questionType.findById(
+        
+        // Garantir que os tipos de pergunta existem
+        const questionTypeText = await this.$services.questionType.findById(
           this.projectId,
           this.questionTypeItem[0].id
         )
-        const questionTypeClosed = await this.$services.questionType.findById(
+        const questionTypeNumeric = await this.$services.questionType.findById(
           this.projectId,
           this.questionTypeItem[1].id
         )
-        if (!questionTypeOpen || !questionTypeOpen.id)
+        const questionTypeTrueFalse = await this.$services.questionType.findById(
+          this.projectId,
+          this.questionTypeItem[2].id
+        )
+        
+        if (!questionTypeText || !questionTypeText.id)
           await this.$services.questionType.create(this.projectId, {
             id: this.questionTypeItem[0].id,
             question_type: this.questionTypeItem[0].question_type
           })
-        if (!questionTypeClosed || !questionTypeClosed.id)
+        if (!questionTypeNumeric || !questionTypeNumeric.id)
           await this.$services.questionType.create(this.projectId, {
             id: this.questionTypeItem[1].id,
             question_type: this.questionTypeItem[1].question_type
           })
-        for (let i = 0; i < this.editedItem.questions.length; i++) {
-          if (this.editedItem.questions[i].type === 2) {
-            console.log(this.optionsGroupItem[j])
-            const existingOptionGroup = await this.$services.optionsGroup.findByName(
-              this.projectId,
-              this.optionsGroupItem[j].name
-            )
-
-            if (existingOptionGroup && existingOptionGroup.id) {
-              this.editedItem.questions[i].options_group = existingOptionGroup.id
-            } else {
-              const optionGroup = await this.$services.optionsGroup.create(
-                this.projectId,
-                this.optionsGroupItem[j]
-              )
-              this.editedItem.questions[i].options_group = optionGroup.id
-            }
-            j++
-          }
-        }
+        if (!questionTypeTrueFalse || !questionTypeTrueFalse.id)
+          await this.$services.questionType.create(this.projectId, {
+            id: this.questionTypeItem[2].id,
+            question_type: this.questionTypeItem[2].question_type
+          })
+        
         await this.service.create(this.projectId, this.editedItem)
         this.sucessMessage = 'A perspective has been successfully added to this project and an email has been sent to all annotators of the project'
         setTimeout(() => {

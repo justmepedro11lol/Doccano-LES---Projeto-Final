@@ -23,6 +23,14 @@ export const actions = {
     }
   },
   
+  reopenDiscussion({ commit }) {
+    commit('setDiscussionEnded', false)
+    // Remover do localStorage para manter o estado entre recarregamentos
+    if (process.client) {
+      localStorage.removeItem('discussionEnded')
+    }
+  },
+  
   initDiscussionState({ commit }) {
     if (process.client) {
       const isEnded = localStorage.getItem('discussionEnded') === 'true'
