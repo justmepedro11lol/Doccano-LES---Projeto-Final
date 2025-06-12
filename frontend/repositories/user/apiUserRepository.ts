@@ -38,6 +38,24 @@ export class APIUserRepository {
     return toModel(response.data)
   }
 
+  async checkHealth(): Promise<{ status: string; database: string }> {
+    const url = '/health'
+    const response = await this.request.get(url)
+    return response.data
+  }
+
+  async checkUserExists(username?: string, email?: string, userId?: number): Promise<{ username_exists?: boolean; email_exists?: boolean }> {
+    const url = `/${this.baseUrl}s/check-exists`
+    const payload: any = {}
+    
+    if (username) payload.username = username
+    if (email) payload.email = email
+    if (userId) payload.user_id = userId
+    
+    const response = await this.request.post(url, payload)
+    return response.data
+  }
+
   async list(username?: string): Promise<UserItem[]> {
     let url = `/${this.baseUrl}s`
 

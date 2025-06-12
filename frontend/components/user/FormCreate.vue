@@ -1,23 +1,36 @@
 <template>
   <v-card>
+    <v-alert v-if="databaseError" type="error" dismissible class="mb-4">
+      <v-icon left>mdi-database-alert</v-icon>
+      Base de dados indisponível. Por favor, tente novamente mais tarde.
+    </v-alert>
+    
     <v-card-title>Create a User</v-card-title>
     <v-card-text>
       <v-form ref="form" v-model="valid">
         <v-row>
           <v-col cols="12" sm="12">
-            <v-text-field :value="username" :counter="100" :label="'Username'"
-              :rules="[rules.required, rules.counter, rules.nameDuplicated]" outlined required
-              @input="$emit('update:username', $event)" />
+            <v-text-field 
+              :value="username" 
+              :counter="100" 
+              :label="'Username'"
+              :rules="[rules.required, rules.counter]" 
+              :error-messages="usernameErrors"
+              :loading="checkingUsername"
+              outlined 
+              required
+              @input="onUsernameChange" 
+            />
           </v-col>
         </v-row>
         <v-row>
           <v-col cols="12" sm="6">
             <v-text-field v-model="localFirstName" label="First name" outlined 
-              @input="$emit('update:first_name', localFirstName)" />
+              @input="$emit('update:firstName', localFirstName)" />
           </v-col>
           <v-col cols="12" sm="6">
             <v-text-field v-model="localLastName" label="Last name" outlined 
-            @input="$emit('update:last_name', localLastName)" />
+            @input="$emit('update:lastName', localLastName)" />
           </v-col>
         </v-row>
         <v-row>
@@ -26,8 +39,10 @@
               v-model="localEmail"
               label="Email address"
               :rules="[rules.email, rules.required]"
+              :error-messages="emailErrors"
+              :loading="checkingEmail"
               outlined
-              @input="$emit('update:email', localEmail)"
+              @input="onEmailChange"
             />
           </v-col>
         </v-row>
@@ -73,6 +88,26 @@
           </v-col>
         </v-row>
         <v-row>
+          <v-col cols="12" sm="6">
+            <v-checkbox
+              v-model="localIsStaff"
+              label="Staff Status"
+              hint="Designates whether the user can log into this admin site."
+              persistent-hint
+              @change="$emit('update:isStaff', localIsStaff)"
+            />
+          </v-col>
+          <v-col cols="12" sm="6">
+            <v-checkbox
+              v-model="localisSuperUser"
+              label="Superuser Status"
+              hint="Designates that this user has all permissions without explicitly assigning them."
+              persistent-hint
+              @change="$emit('update:isSuperUser', localisSuperUser)"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
           <v-col cols="12" sm="12">
             <slot :valid="valid" />
           </v-col>
@@ -103,17 +138,20 @@ export default Vue.extend({
       type: String,
       required: true
     },
-    first_name: {
+    firstName: {
       type: String,
-      required: false
+      required: false,
+      default: ''
     },
-    last_name: {
+    lastName: {
       type: String,
-      required: false
+      required: false,
+      default: ''
     },
     email: {
       type: String,
-      required: false
+      required: false,
+      default: ''
     },
     password: {
       type: String,
@@ -132,16 +170,30 @@ export default Vue.extend({
       default: false
     }
   },
+  
   data() {
     return {
       localPassword: this.password,
       localPasswordConfirmation: this.passwordConfirmation,
       localIsStaff: this.isStaff,
       localisSuperUser: this.isSuperUser,
-      localFirstName: this.first_name,
-      localLastName: this.last_name,
+      localFirstName: this.firstName,
+      localLastName: this.lastName,
       localEmail: this.email,
       valid: false,
+      
+      // Validação em tempo real
+      usernameErrors: [] as string[],
+      emailErrors: [] as string[],
+      checkingUsername: false,
+      checkingEmail: false,
+      usernameTimeout: null as any,
+      emailTimeout: null as any,
+      
+      // Health check
+      databaseError: false,
+      healthCheckInterval: null as any,
+      
       rules: {
         passwordsMatch: (
           v: string // @ts-ignore
@@ -150,9 +202,6 @@ export default Vue.extend({
         counter: (
           v: string // @ts-ignore
         ) => (v && v.length <= 100) || this.$t('rules.userNameRules').userNameLessThan30Chars,
-        nameDuplicated: (
-          v: string // @ts-ignore
-        ) => !this.isUsedName(v) || this.$t('rules.userNameRules').duplicated,
         minLength: (v: string) =>
           (v && v.length >= 8) || 'Your password must contain at least 8 characters.',
         noCommonWords: (v: string) => {
@@ -175,7 +224,7 @@ export default Vue.extend({
           const personalInfo = [this.username] // Add more fields if needed
           for (const info of personalInfo) {
             if (info && v.toLowerCase().includes(info.toLowerCase()))
-              return 'Your password can’t be too similar to your other personal information.'
+              return 'Your password cannot be too similar to your other personal information.'
           }
           return true
         }
@@ -187,6 +236,7 @@ export default Vue.extend({
       show1: false
     }
   },
+  
   watch: {
     password(newVal) {
       this.localPassword = newVal
@@ -194,20 +244,143 @@ export default Vue.extend({
     passwordConfirmation(newVal) {
       this.localPasswordConfirmation = newVal
     },
-    first_name(newVal) {
+    firstName(newVal) {
       this.localFirstName = newVal
     },
-    last_name(newVal) {
+    lastName(newVal) {
       this.localLastName = newVal
     },
     email(newVal) {
       this.localEmail = newVal
+    },
+    isStaff(newVal) {
+      this.localIsStaff = newVal
+    },
+    isSuperUser(newVal) {
+      this.localisSuperUser = newVal
     }
   },
+  
+  mounted() {
+    // Inicia verificação de saúde da base de dados
+    this.startHealthCheck()
+  },
+  
+  beforeDestroy() {
+    // Limpa os timers
+    if (this.usernameTimeout) clearTimeout(this.usernameTimeout)
+    if (this.emailTimeout) clearTimeout(this.emailTimeout)
+    if (this.healthCheckInterval) clearInterval(this.healthCheckInterval)
+  },
+  
   methods: {
+    onUsernameChange(value: string) {
+      this.$emit('update:username', value)
+      
+      // Limpa timeout anterior
+      if (this.usernameTimeout) clearTimeout(this.usernameTimeout)
+      
+      // Se campo vazio, limpa erros
+      if (!value || value.trim() === '') {
+        this.usernameErrors = []
+        return
+      }
+      
+      // Debounce - espera 500ms após parar de digitar
+      this.usernameTimeout = setTimeout(() => {
+        this.checkUsernameExists(value)
+      }, 500)
+    },
+    
+    onEmailChange(value: string) {
+      this.$emit('update:email', value)
+      this.localEmail = value
+      
+      // Limpa timeout anterior
+      if (this.emailTimeout) clearTimeout(this.emailTimeout)
+      
+      // Se campo vazio, limpa erros
+      if (!value || value.trim() === '') {
+        this.emailErrors = []
+        return
+      }
+      
+      // Verifica se email é válido primeiro
+      const emailRegex = /.+@.+\..+/
+      if (!emailRegex.test(value)) {
+        this.emailErrors = []
+        return
+      }
+      
+      // Debounce - espera 500ms após parar de digitar
+      this.emailTimeout = setTimeout(() => {
+        this.checkEmailExists(value)
+      }, 500)
+    },
+    
+    async checkUsernameExists(username: string) {
+      if (!username || username.trim() === '') return
+      
+      this.checkingUsername = true
+      this.usernameErrors = []
+      
+      try {
+        const response = await this.$repositories.user.checkUserExists(username, undefined, this.id)
+        if (response.username_exists) {
+          this.usernameErrors = ['Este nome de utilizador já está em uso']
+        }
+      } catch (error) {
+        console.error('Erro ao verificar username:', error)
+        if (error.response && error.response.status === 503) {
+          this.databaseError = true
+        }
+      } finally {
+        this.checkingUsername = false
+      }
+    },
+    
+    async checkEmailExists(email: string) {
+      if (!email || email.trim() === '') return
+      
+      this.checkingEmail = true
+      this.emailErrors = []
+      
+      try {
+        const response = await this.$repositories.user.checkUserExists(undefined, email, this.id)
+        if (response.email_exists) {
+          this.emailErrors = ['Este email já está em uso']
+        }
+      } catch (error) {
+        console.error('Erro ao verificar email:', error)
+        if (error.response && error.response.status === 503) {
+          this.databaseError = true
+        }
+      } finally {
+        this.checkingEmail = false
+      }
+    },
+    
+    startHealthCheck() {
+      // Verifica a saúde da base de dados a cada 1 segundo
+      this.healthCheckInterval = setInterval(async () => {
+        try {
+          await this.$repositories.user.checkHealth()
+          this.databaseError = false
+        } catch (error) {
+          console.error('Database health check failed:', error)
+          this.databaseError = true
+        }
+      }, 1000)
+    },
+    
     isUsedName(username: string): boolean {
       return (
         this.items.filter((item) => item.id !== this.id && item.username === username).length > 0
+      )
+    },
+    isUsedEmail(email: string): boolean {
+      return (
+        this.items.filter((item) => item.id !== this.id && item.email === email).length > 0
       )
     },
     isEqual(v: string): boolean {

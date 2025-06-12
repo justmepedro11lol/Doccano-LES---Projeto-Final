@@ -2,14 +2,19 @@
   <div>
     <v-alert v-if="sucessMessage" type="success" dismissible>{{ sucessMessage }}</v-alert>
     <v-alert v-if="errorMessage" type="error" dismissible>{{ errorMessage }}</v-alert>
+    <v-alert v-if="databaseError" type="error" dismissible class="mb-4">
+      <v-icon left>mdi-database-alert</v-icon>
+      Base de dados indisponível. Por favor, tente novamente mais tarde.
+    </v-alert>
+    
     <form-create v-bind.sync="editedItem" :items="items">
       <v-btn color="error" style="text-transform: none" @click="$router.push('/users')">
         Cancel
       </v-btn>
-      <v-btn :disabled="!isFormValid" color="primary" class="text-capitalize" @click="save">
+      <v-btn :disabled="!isFormValid || databaseError" color="primary" class="text-capitalize" @click="save">
         Save
       </v-btn>
-      <v-btn :disabled="!isFormValid" color="primary" style="text-transform: none" outlined @click="saveAndAnother">
+      <v-btn :disabled="!isFormValid || databaseError" color="primary" style="text-transform: none" outlined @click="saveAndAnother">
         Save and add another
       </v-btn>
     </form-create>
@@ -30,31 +35,53 @@ export default Vue.extend({
 
   middleware: ['check-auth', 'auth'],
 
+  async created() {
+    try {
+      this.items = await this.service.list()
+    } catch (error) {
+      console.error('Error loading users:', error)
+      if (error.response && error.response.status === 503) {
+        this.databaseError = true
+      }
+    }
+    
+    // Inicia verificação de saúde da base de dados
+    this.startHealthCheck()
+  },
+  
+  beforeDestroy() {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval)
+    }
+  },
+
   data() {
     return {
       editedItem: {
         username: '',
-        first_name: '',
-        last_name: '',
+        firstName: '',
+        lastName: '',
         email: '',
         password: '',
         passwordConfirmation: '',
         isSuperUser: false,
         isStaff: false
-      } as UserDTO,
+      } as any,
       defaultItem: {
         username: '',
-        first_name: '',
-        last_name: '',
+        firstName: '',
+        lastName: '',
         email: '',
         password: '',
         passwordConfirmation: '',
         isSuperUser: false,
         isStaff: false
-      } as UserDTO,
+      } as any,
       items: [] as UserDTO[],
       errorMessage: '',
-      sucessMessage: ''
+      sucessMessage: '',
+      databaseError: false,
+      healthCheckInterval: null as any
     }
   },
 
@@ -64,7 +91,7 @@ export default Vue.extend({
     },
 
     isFormValid(): boolean {
-      return !!this.editedItem.username && !!this.editedItem.password && !!this.editedItem.passwordConfirmation;
+      return !!this.editedItem.username && !!this.editedItem.password && !!this.editedItem.passwordConfirmation && !!this.editedItem.email;
     },
 
     service(): any {
@@ -75,8 +102,16 @@ export default Vue.extend({
   methods: {
     async save() {
       try {
-        await this.service.create(this.editedItem)
-        this.sucessMessage = 'The user was successfully created!'
+        // Converte para o formato esperado pelo backend
+        const userPayload = {
+          ...this.editedItem,
+          first_name: this.editedItem.firstName,
+          last_name: this.editedItem.lastName
+        }
+        
+        await this.service.create(userPayload)
+        this.sucessMessage = 'O utilizador foi criado com sucesso!'
+        this.databaseError = false
         setTimeout(() => {
           this.$router.push(`/users`)
         }, 1000)
@@ -87,8 +122,16 @@ export default Vue.extend({
 
     async saveAndAnother() {
       try {
-        await this.service.create(this.editedItem)
-        this.sucessMessage = 'The user was successfully created!'
+        // Converte para o formato esperado pelo backend
+        const userPayload = {
+          ...this.editedItem,
+          first_name: this.editedItem.firstName,
+          last_name: this.editedItem.lastName
+        }
+        
+        await this.service.create(userPayload)
+        this.sucessMessage = 'O utilizador foi criado com sucesso!'
+        this.databaseError = false
         this.editedItem = Object.assign({}, this.defaultItem)
         this.items = await this.service.list()
       } catch (error) {
@@ -98,18 +141,39 @@ export default Vue.extend({
 
     handleError(error: any) {
       this.editedItem = Object.assign({}, this.defaultItem)
-      if (error.response && error.response.status === 400) {
-        const errors = error.response.data
-        if (errors.username) {
-          this.errorMessage = errors.username[0]
-        } else if (errors.email) {
-          this.errorMessage = errors.email[0]
+      if (error.response) {
+        if (error.response.status === 503) {
+          this.databaseError = true
+          this.errorMessage = 'Base de dados indisponível. Por favor, tente novamente mais tarde.'
+        } else if (error.response.status === 400) {
+          const errors = error.response.data
+          if (errors.username) {
+            this.errorMessage = errors.username[0]
+          } else if (errors.email) {
+            this.errorMessage = errors.email[0]
+          } else {
+            this.errorMessage = JSON.stringify(errors)
+          }
         } else {
-          this.errorMessage = JSON.stringify(errors)
+          this.errorMessage = 'Erro ao criar utilizador. Por favor, tente novamente.'
         }
       } else {
-        this.errorMessage = 'Database is slow or unavailable. Please try again later.'
+        this.databaseError = true
+        this.errorMessage = 'Base de dados indisponível. Por favor, tente novamente mais tarde.'
       }
+    },
+    
+    startHealthCheck() {
+      // Verifica a saúde da base de dados a cada 1 segundo
+      this.healthCheckInterval = setInterval(async () => {
+        try {
+          await this.$repositories.user.checkHealth()
+          this.databaseError = false
+        } catch (error) {
+          console.error('Database health check failed:', error)
+          this.databaseError = true
+        }
+      }, 1000)
     }
   }
 })
