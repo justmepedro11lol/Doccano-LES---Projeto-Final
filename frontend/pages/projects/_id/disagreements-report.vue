@@ -155,6 +155,238 @@
         </v-row>
       </v-col>
     </v-row>
+
+    <!-- Análise de Perspectivas -->
+    <v-row v-if="hasDiscrepancies">
+      <v-col cols="12">
+        <v-card>
+          <v-card-title class="headline primary white--text">
+            Análise de Perspectivas
+            <v-spacer></v-spacer>
+            <v-chip color="white" text-color="primary" class="ml-2">
+              {{ totalPerspectives }} perspectivas analisadas
+            </v-chip>
+          </v-card-title>
+          <v-card-text class="pt-4">
+            <v-tabs v-model="perspectiveTab" grow>
+              <v-tab>Distribuição</v-tab>
+              <v-tab>Influência</v-tab>
+              <v-tab>Evolução</v-tab>
+            </v-tabs>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Tabela de Desacordos -->
+    <v-row v-if="hasDiscrepancies">
+      <v-col cols="12">
+        <v-card>
+          <v-card-title class="headline primary white--text">
+            Análise Detalhada de Desacordos
+            <v-spacer></v-spacer>
+            <v-chip color="white" text-color="primary" class="ml-2">
+              Limiar: {{ safeProject.minPercentage }}%
+            </v-chip>
+            <v-chip color="white" text-color="primary" class="ml-2">
+              Total: {{ totalDiscrepancies }} desacordos
+            </v-chip>
+          </v-card-title>
+
+          <v-card-text class="pt-4">
+            <div v-if="loading" class="d-flex justify-center align-center" style="height: 200px">
+              <v-progress-circular indeterminate color="primary"></v-progress-circular>
+            </div>
+            
+            <div v-else>
+              <!-- Filtros -->
+              <v-row>
+                <v-col cols="12" sm="6" md="3">
+                  <v-select
+                    v-model="filters.category"
+                    :items="categories"
+                    label="Filtrar por Categoria"
+                    clearable
+                    outlined
+                    dense
+                    prepend-icon="mdi-tag"
+                    @change="applyFilters"
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-select
+                    v-model="filters.annotator"
+                    :items="annotators"
+                    label="Filtrar por Anotador"
+                    clearable
+                    outlined
+                    dense
+                    prepend-icon="mdi-account"
+                    @change="applyFilters"
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-select
+                    v-model="filters.reportType"
+                    :items="['CSV', 'PDF']"
+                    label="Tipo de Relatório"
+                    clearable
+                    outlined
+                    dense
+                    prepend-icon="mdi-file-document"
+                    @change="onReportTypeChange"
+                    :disabled="false"
+                    class="clickable-select"
+                  ></v-select>
+                </v-col>
+                <v-col cols="12" sm="6" md="3">
+                  <v-select
+                    v-model="filters.perspective"
+                    :items="perspectives || []"
+                    label="Filtrar por Perspetiva"
+                    clearable
+                    outlined
+                    dense
+                    prepend-icon="mdi-eye"
+                    @change="applyFilters"
+                  ></v-select>
+                </v-col>
+              </v-row>
+
+              <v-text-field
+                v-model="search"
+                label="Pesquisar"
+                prepend-icon="mdi-magnify"
+                outlined
+                dense
+                clearable
+                class="mb-4"
+              ></v-text-field>
+                
+              <v-data-table
+                :headers="headers"
+                :items="filteredDiscrepancyItems"
+                :items-per-page="10"
+                class="elevation-1"
+                :search="search"
+              >
+                <template #[`item.annotator`]>
+                  <span>a1</span>
+                </template>
+                <template #[`item.percentage`]="{ item }">
+                  <v-chip :color="getPercentageColor(item.percentage)" dark small>
+                    {{ parseFloat(item.percentage).toFixed(2) }}%
+                  </v-chip>
+                  <v-progress-linear
+                    class="mt-1"
+                    :value="item.percentage"
+                    height="5"
+                    :color="getPercentageColor(item.percentage)"
+                  ></v-progress-linear>
+                </template>
+                <template #[`item.status`]="{ item }">
+                  <v-chip :color="item.percentage < safeProject.minPercentage ? 'error' : 'success'" dark small>
+                    {{ item.status }}
+                  </v-chip>
+                </template>
+                <template #[`item.details`]="{ item }">
+                  <v-btn
+                    small
+                    color="primary"
+                    @click="showDetails(item)"
+                  >
+                    <v-icon left small>mdi-information</v-icon>
+                    Detalhes
+                  </v-btn>
+                </template>
+              </v-data-table>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Diálogo de Detalhes -->
+    <v-dialog v-model="detailsDialog" max-width="600px">
+      <v-card>
+        <v-card-title class="headline primary white--text">
+          Detalhes do Desacordo
+          <v-spacer></v-spacer>
+          <v-btn icon dark @click="detailsDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <v-list>
+            <v-list-item v-for="(value, key) in selectedItem" :key="key">
+              <v-list-item-content>
+                <v-list-item-title class="font-weight-bold">{{ formatKey(key) }}</v-list-item-title>
+                <v-list-item-subtitle class="mt-1">{{ value }}</v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Diálogo de Partilha -->
+    <v-dialog v-model="shareDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="headline primary white--text">
+          Partilhar Relatório
+          <v-spacer></v-spacer>
+          <v-btn icon dark @click="shareDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <v-text-field
+            v-model="shareEmail"
+            label="Email do destinatário"
+            outlined
+            dense
+          ></v-text-field>
+          <v-textarea
+            v-model="shareMessage"
+            label="Mensagem"
+            outlined
+            dense
+            rows="3"
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" :loading="sendingShare" @click="sendShare">
+            Enviar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Diálogo de Exportação -->
+    <v-dialog v-model="exportDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="headline primary white--text">
+          Exportar Relatório
+          <v-spacer></v-spacer>
+          <v-btn icon dark @click="exportDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <v-radio-group v-model="exportFormat">
+            <v-radio label="PDF" value="pdf"></v-radio>
+            <v-radio label="CSV" value="csv"></v-radio>
+          </v-radio-group>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" :loading="exportLoading" @click="doExport">
+            Exportar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -495,9 +727,220 @@ export default {
     },
     onReportTypeChange(value) {
       this.filters.reportType = value;
-    }
-  }
-}
+    },
+    async doExport() {
+      this.exportLoading = true;
+      
+      try {
+        const projectName = this.safeProject.name || 'projeto';
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `relatorio-desacordos-${projectName}-${timestamp}`;
+        
+        if (this.exportFormat === 'pdf') {
+          await this.exportToPDF(filename);
+        } else if (this.exportFormat === 'csv') {
+          this.exportToCSV(filename);
+        }
+        
+        this.exportDialog = false;
+        
+        if (this.$toast) {
+          this.$toast.success('Relatório exportado com sucesso');
+        } else {
+          console.log('Relatório exportado com sucesso');
+        }
+      } catch (error) {
+        console.error('Erro ao exportar relatório:', error);
+        
+        if (this.$toast) {
+          this.$toast.error(`Erro ao exportar: ${error.message}`);
+        } else {
+          console.error(`Erro ao exportar: ${error.message}`);
+        }
+      } finally {
+        this.exportLoading = false;
+      }
+    },
+    exportToCSV(filename) {
+      try {
+        if (!this.filteredDiscrepancyItems || this.filteredDiscrepancyItems.length === 0) {
+          throw new Error('Não há dados para exportar.');
+        }
+        
+        const csvData = this.filteredDiscrepancyItems.map(item => ({
+          Elemento: item.label,
+          Categoria: item.category,
+          Anotador: item.annotator,
+          'Tipo de Texto': item.textType,
+          Perspetiva: item.perspective || 'Não definida',
+          'Taxa de Concordância': parseFloat(item.percentage).toFixed(2) + '%',
+          Status: item.status
+        }));
+        
+        const columns = Object.keys(csvData[0]);
+        let csvContent = columns.join(',');
+        
+        csvData.forEach(row => {
+          const rowValues = columns.map(col => {
+            const cell = row[col] ? String(row[col]) : '';
+            return cell.includes(',') || cell.includes('"') 
+              ? '"' + cell.replace(/"/g, '""') + '"' 
+              : cell;
+          });
+          csvContent += '\n' + rowValues.join(',');
+        });
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+          window.navigator.msSaveOrOpenBlob(blob, `${filename}.csv`);
+          return;
+        }
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}.csv`;
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 100);
+             } catch (error) {
+         console.error('Erro ao gerar CSV:', error);
+         throw new Error('Não foi possível gerar o CSV: ' + error.message);
+       }
+     },
+     
+     async exportToPDF(filename) {
+       try {
+         // Carregar jsPDF dinamicamente (para não incluir no bundle inicial)
+         const { jsPDF } = await import('jspdf');
+         const { default: autoTable } = await import('jspdf-autotable');
+         
+         // eslint-disable-next-line new-cap
+         const doc = new jsPDF();
+         
+         // Título
+         doc.setFontSize(20);
+         doc.text('Relatório de Anotações e Desacordos', 14, 20);
+         
+         // Informações do projeto
+         doc.setFontSize(12);
+         doc.text(`Projeto: ${this.safeProject.name || 'Sem nome'}`, 14, 30);
+         doc.text(`Limiar de concordância: ${this.safeProject.minPercentage}%`, 14, 38);
+         doc.text(`Total de desacordos: ${this.totalDiscrepancies}`, 14, 46);
+         doc.text(`Data do relatório: ${new Date().toLocaleDateString()}`, 14, 54);
+         
+         // Estatísticas de desacordos por categoria
+         doc.setFontSize(16);
+         doc.text('Desacordos por Categoria', 14, 70);
+         
+         const categoryData = Object.entries(this.categoryStats).map(([category, count]) => [
+           category, 
+           `${count} desacordos`
+         ]);
+         
+         autoTable(doc, {
+           startY: 75,
+           head: [['Categoria', 'Quantidade']],
+           body: categoryData
+         });
+         
+         // Estatísticas de desacordos por anotador
+         const annotatorTableY = doc.lastAutoTable.finalY + 15;
+         doc.setFontSize(16);
+         doc.text('Desacordos por Anotador', 14, annotatorTableY);
+         
+         const annotatorData = Object.entries(this.annotatorStats).map(([annotator, count]) => [
+           annotator, 
+           `${count} desacordos`
+         ]);
+         
+         autoTable(doc, {
+           startY: annotatorTableY + 5,
+           head: [['Anotador', 'Quantidade']],
+           body: annotatorData
+         });
+         
+         // Estatísticas de desacordos por tipo de texto
+         const textTypeTableY = doc.lastAutoTable.finalY + 15;
+         doc.setFontSize(16);
+         doc.text('Desacordos por Tipo de Texto', 14, textTypeTableY);
+         
+         const textTypeData = Object.entries(this.textTypeStats).map(([type, count]) => [
+           type, 
+           `${count} desacordos`
+         ]);
+         
+         autoTable(doc, {
+           startY: textTypeTableY + 5,
+           head: [['Tipo de Texto', 'Quantidade']],
+           body: textTypeData
+         });
+         
+         // Nova página para detalhes dos desacordos
+         doc.addPage();
+         doc.setFontSize(16);
+         doc.text('Detalhes dos Desacordos', 14, 20);
+         
+         const detailsData = this.filteredDiscrepancyItems
+           .filter(item => item.percentage < this.safeProject.minPercentage)
+           .map(item => [
+             item.label,
+             `${parseFloat(item.percentage).toFixed(2)}%`,
+             item.status,
+             item.category
+           ]);
+         
+         autoTable(doc, {
+           startY: 25,
+           head: [['Elemento', 'Taxa de Concordância', 'Status', 'Categoria']],
+           body: detailsData
+         });
+         
+         // Salvar o PDF usando output com método compatível com navegadores
+         const pdfOutput = doc.output('blob');
+         const url = URL.createObjectURL(pdfOutput);
+         
+         // Para browsers antigos como o IE
+         if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+           window.navigator.msSaveOrOpenBlob(pdfOutput, `${filename}.pdf`);
+           
+           // Redirecionar após o download
+           setTimeout(() => {
+             window.location.href = `/projects/${this.projectId}/reports`;
+           }, 500);
+           
+           return;
+         }
+         
+         // Para browsers modernos
+         const link = document.createElement('a');
+         link.href = url;
+         link.download = `${filename}.pdf`;
+         link.style.display = 'none';
+         document.body.appendChild(link);
+         link.click();
+         
+         // Limpar URL após download e redirecionar
+         setTimeout(() => {
+           URL.revokeObjectURL(url);
+           document.body.removeChild(link);
+           
+           // Redirecionar para a página de relatórios
+           this.$router.push(`/projects/${this.projectId}/reports`);
+         }, 500);
+       } catch (error) {
+         console.error('Erro ao gerar PDF:', error);
+         throw new Error('Não foi possível gerar o PDF. Verifique se todas as bibliotecas necessárias estão disponíveis.');
+       }
+     }
+   }
+ }
 </script>
 
 <style scoped>
