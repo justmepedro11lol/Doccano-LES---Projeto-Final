@@ -273,10 +273,12 @@ export default Vue.extend({
     },
 
     scrollToBottom() {
-      const chatBody = this.$el.querySelector('.chat-body') as HTMLElement
-      if (chatBody) {
-        chatBody.scrollTop = chatBody.scrollHeight
-      }
+      this.$nextTick(() => {
+        const chatBody = this.$el.querySelector('.chat-body') as HTMLElement
+        if (chatBody) {
+          chatBody.scrollTop = chatBody.scrollHeight
+        }
+      })
     },
 
     async loadDatasetName() {
