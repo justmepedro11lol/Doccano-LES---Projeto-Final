@@ -15,7 +15,7 @@
     <template v-else>
       <template v-if="isAdmin">
         <v-card-title>
-          <action-menu @create="$router.push('perspectives/add')" />
+          <action-menu :disabled="hasPerspectives" @create="$router.push('perspectives/add')" />
           <v-btn class="text-capitalize ms-2" outlined @click.stop="dialogDelete = true">
             {{ $t('generic.delete') }}
           </v-btn>
@@ -98,6 +98,9 @@ export default Vue.extend({
     },
     isAnswered(): boolean {
       return this.AlreadyAnswered
+    },
+    hasPerspectives(): boolean {
+      return this.items.length > 0
     }
   },
 
@@ -153,10 +156,10 @@ export default Vue.extend({
       try {
         const projectId = this.$route.params.id
         const response = await this.$services.perspective.list(projectId)
-        this.items = Array.isArray(response) ? response : [response]
+        this.items = response
       } catch (error) {
         console.error('Erro ao buscar perspectivas:', error)
-        alert('Erro ao buscar o papel ou perguntas')
+        this.items = []
       } finally {
         this.isLoading = false
       }
@@ -182,16 +185,19 @@ export default Vue.extend({
     async fetchQuestions() {
       this.isLoading = true
       try {
-        // Obtém a perspectiva (assumindo que há apenas uma)
+        // Obtém as perspectivas do projeto
         const perspectives = await this.$services.perspective.list(this.projectId)
-        const perspectiveId = perspectives.id
-        const questions = await this.$services.question.list(perspectiveId, this.projectId)
-        this.questionsList = questions.filter((question) => question.perspective_id === perspectiveId)
-        this.questionsList = questions
-        
-        console.log('Perguntas:', this.questionsList)
+        if (perspectives.length > 0) {
+          const perspectiveId = perspectives[0].id
+          const questions = await this.$services.question.list(perspectiveId, this.projectId)
+          this.questionsList = questions.filter((question) => question.perspective_id === perspectiveId)
+          console.log('Perguntas:', this.questionsList)
+        } else {
+          this.questionsList = []
+        }
       } catch (error) {
         console.error('Erro ao buscar perguntas:', error)
+        this.questionsList = []
       } finally {
         this.isLoading = false
       }
