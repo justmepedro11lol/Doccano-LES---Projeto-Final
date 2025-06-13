@@ -46,20 +46,41 @@
         </v-chip>
       </template>
 
-      <template #[`item.labelName`]="{ item }">
-        <span class="font-weight-medium">{{ item.labelName }}</span>
+      <template #[`item.labelPercentages`]="{ item }">
+        <div class="label-percentages">
+          <div 
+            v-for="(percentage, label) in item.labelPercentages" 
+            :key="label"
+            class="label-percentage-item"
+          >
+            <div class="d-flex align-center justify-space-between mb-1">
+              <span class="label-name font-weight-medium text-truncate">{{ label }}</span>
+              <span class="percentage-value ml-2">{{ Math.round(percentage) }}%</span>
+            </div>
+            <v-progress-linear
+              :value="percentage"
+              :color="getPercentageColor(percentage)"
+              height="6"
+              rounded
+              class="mb-1"
+            />
+          </div>
+        </div>
       </template>
 
-      <template #[`item.labelPercentage`]="{ item }">
-        <v-progress-linear
-          :value="parseInt(item.labelPercentage)"
-          :color="getPercentageColor(parseInt(item.labelPercentage))"
-          height="20"
-        >
-          <template #default="{ value }">
-            <strong>{{ value }}%</strong>
-          </template>
-        </v-progress-linear>
+      <template #[`item.maxPercentage`]="{ item }">
+        <div class="max-agreement-container">
+          <v-progress-linear
+            :value="item.maxPercentage"
+            :color="getPercentageColor(item.maxPercentage)"
+            height="16"
+            rounded
+          >
+            <template #default="{ value }">
+              <small class="white--text font-weight-bold">{{ Math.round(value) }}%</small>
+            </template>
+          </v-progress-linear>
+        </div>
       </template>
 
       <template #[`item.discrepancyBool`]="{ item }">
@@ -85,9 +106,9 @@ import { Percentage } from '~/domain/models/metrics/metrics'
 interface Row {
   exampleId: string
   exampleName: string
-  labelName: string
-  labelPercentage: number
+  labelPercentages: { [label: string]: number }
   discrepancyBool: string
+  maxPercentage: number
 }
 
 interface ComponentData {
@@ -140,9 +161,9 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
     headers () {
       return [
         { text: 'Example', value: 'exampleName', sortable: true },
-        { text: 'Status', value: 'discrepancyBool', sortable: false },
-        { text: 'Label', value: 'labelName', sortable: true },
-        { text: 'Agreement', value: 'labelPercentage', sortable: true }
+        { text: 'Status', value: 'discrepancyBool', sortable: true },
+        { text: 'Label Voting Percentages', value: 'labelPercentages', sortable: false },
+        { text: 'Max Agreement', value: 'maxPercentage', sortable: true }
       ]
     },
 
@@ -168,25 +189,25 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
           continue
         }
 
-        const [bestLabel, bestPerc] = entries.reduce(
-          (prev, curr) => (curr[1] > prev[1] ? curr : prev),
-          entries[0]
-        )
-        const hasDiscrepancy = bestPerc < this.discrepancyThreshold
+        // Encontrar a percentagem máxima para determinar se há discrepância
+        const maxPercentage = Math.max(...entries.map(([, perc]) => perc))
+        const hasDiscrepancy = maxPercentage < this.discrepancyThreshold
         const displayName = this.exampleNameMap[id]
 
         rows.push({
           exampleId: id.toString(),
           exampleName: displayName,
-          labelName: bestLabel,
-          labelPercentage: bestPerc,
-          discrepancyBool: hasDiscrepancy ? 'Yes' : 'No'
+          labelPercentages: labels,
+          discrepancyBool: hasDiscrepancy ? 'Yes' : 'No',
+          maxPercentage
         })
       }
 
       return rows.filter(item =>
         item.exampleName.toLowerCase().includes(this.search.toLowerCase()) ||
-        item.labelName.toLowerCase().includes(this.search.toLowerCase())
+        Object.keys(item.labelPercentages).some(label => 
+          label.toLowerCase().includes(this.search.toLowerCase())
+        )
       )
     },
 
@@ -254,5 +275,47 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
   padding-left: 20px;
   padding-right: 20px;
   margin-top: 10px;
+}
+
+.label-percentages {
+  min-width: 280px;
+  max-width: 350px;
+}
+
+.label-percentage-item {
+  margin-bottom: 6px;
+  padding: 4px 6px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 2px solid #e0e0e0;
+}
+
+.label-name {
+  font-size: 0.8rem;
+  color: #424242;
+  max-width: 160px;
+}
+
+.percentage-value {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #1976d2;
+  min-width: 35px;
+  text-align: right;
+}
+
+::v-deep .v-progress-linear {
+  border-radius: 3px !important;
+}
+
+::v-deep .v-data-table td {
+  vertical-align: top !important;
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+.max-agreement-container {
+  width: 100%;
+  min-width: 120px;
 }
 </style>

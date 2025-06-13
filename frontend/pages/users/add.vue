@@ -125,29 +125,6 @@ export default Vue.extend({
 
   middleware: ['check-auth', 'auth'],
 
-  async created() {
-    this.isLoading = true
-    try {
-      this.items = await this.service.list()
-    } catch (error) {
-      console.error('Error loading users:', error)
-      if (error.response && error.response.status === 503) {
-        this.databaseError = true
-      }
-    } finally {
-      this.isLoading = false
-    }
-    
-    // Inicia verificação de saúde da base de dados
-    this.startHealthCheck()
-  },
-  
-  beforeDestroy() {
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval)
-    }
-  },
-
   data() {
     return {
       editedItem: {
@@ -194,6 +171,29 @@ export default Vue.extend({
 
     service(): any {
       return this.$services.user
+    }
+  },
+
+  async created() {
+    this.isLoading = true
+    try {
+      this.items = await this.service.list()
+    } catch (error) {
+      console.error('Error loading users:', error)
+      if (error.response && error.response.status === 503) {
+        this.databaseError = true
+      }
+    } finally {
+      this.isLoading = false
+    }
+    
+    // Inicia verificação de saúde da base de dados
+    this.startHealthCheck()
+  },
+  
+  beforeDestroy() {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval)
     }
   },
 

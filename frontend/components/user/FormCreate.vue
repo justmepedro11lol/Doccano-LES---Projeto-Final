@@ -186,7 +186,7 @@
                   class="custom-checkbox"
                   @change="$emit('update:isStaff', localIsStaff)"
                 >
-                  <template v-slot:label>
+                  <template #label>
                     <div>
                       <div class="font-weight-medium">Status de Staff</div>
                       <div class="text-caption grey--text">
@@ -205,7 +205,7 @@
                   class="custom-checkbox"
                   @change="$emit('update:isSuperUser', localisSuperUser)"
                 >
-                  <template v-slot:label>
+                  <template #label>
                     <div>
                       <div class="font-weight-medium">Status de Superutilizador</div>
                       <div class="text-caption grey--text">

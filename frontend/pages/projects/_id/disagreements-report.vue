@@ -14,13 +14,19 @@
         
         <!-- Mensagem de erro de base de dados -->
         <v-alert
-          v-if="showDatabaseError"
+          v-if="showDatabaseError || !isDatabaseConnected"
           type="error"
           class="mb-4"
           dismissible
-          @input="showDatabaseError = false"
+          @input="dismissDatabaseError"
         >
-          Erro de conexão com a base de dados. Alguns dados podem estar indisponíveis.
+          <div v-if="!isDatabaseConnected">
+            <v-icon left>mdi-database-off</v-icon>
+            Database unavailable please try again
+          </div>
+          <div v-else>
+            Erro de conexão com a base de dados. Alguns dados podem estar indisponíveis.
+          </div>
         </v-alert>
         
         <!-- Botão quase transparente -->
@@ -37,50 +43,6 @@
         </v-btn>
       </v-col>
     </v-row>
-
-    <!-- Ações -->
-    <v-row>
-      <v-col cols="12">
-        <v-card class="mb-4">
-          <v-card-actions>
-            <v-btn
-              color="primary"
-              :loading="generatingReport"
-              @click="generateReport"
-            >
-              <v-icon left>mdi-file-document</v-icon>
-              Gerar Relatório
-            </v-btn>
-            <v-btn
-              color="success"
-              :disabled="!reportGenerated"
-              @click="shareReport"
-            >
-              <v-icon left>mdi-share</v-icon>
-              Partilhar Relatório
-            </v-btn>
-            <v-spacer></v-spacer>
-            <v-btn
-              color="error"
-              @click="cancelReport"
-            >
-              <v-icon left>mdi-close</v-icon>
-              Cancelar
-            </v-btn>
-            <v-btn
-              color="info"
-              :disabled="!reportGenerated"
-              @click="exportReport"
-            >
-              <v-icon left>mdi-download</v-icon>
-              Exportar
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-
-
 
     <!-- Tabela de Desacordos -->
     <v-row v-if="hasDiscrepancies">
@@ -107,13 +69,13 @@
               <v-row>
                 <v-col cols="12" sm="6" md="3">
                   <v-select
-                    v-model="filters.category"
-                    :items="categories"
-                    label="Filtrar por Categoria"
+                    v-model="filters.label"
+                    :items="labels"
+                    label="Filtrar por Label"
                     clearable
                     outlined
                     dense
-                    prepend-icon="mdi-tag"
+                    prepend-icon="mdi-label"
                     @change="applyFilters"
                   ></v-select>
                 </v-col>
@@ -157,15 +119,37 @@
                 </v-col>
               </v-row>
 
-              <v-text-field
-                v-model="search"
-                label="Pesquisar"
-                prepend-icon="mdi-magnify"
-                outlined
-                dense
-                clearable
-                class="mb-4"
-              ></v-text-field>
+              <!-- Barra de pesquisa com botões -->
+              <v-row class="mb-4">
+                <v-col cols="12" md="6" class="d-flex align-center">
+                  <v-text-field
+                    v-model="search"
+                    label="Pesquisar"
+                    prepend-icon="mdi-magnify"
+                    outlined
+                    dense
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6" class="d-flex align-center justify-end">
+                  <v-btn
+                    color="primary"
+                    :loading="generatingReport"
+                    class="mr-2"
+                    @click="generateAndExportReport"
+                  >
+                    <v-icon left>mdi-download</v-icon>
+                    Gerar e Exportar
+                  </v-btn>
+                  <v-btn
+                    color="error"
+                    @click="cancelReport"
+                  >
+                    <v-icon left>mdi-close</v-icon>
+                    Cancelar
+                  </v-btn>
+                </v-col>
+              </v-row>
                 
               <v-data-table
                 :headers="headers"
@@ -222,7 +206,7 @@
         </v-card-title>
         <v-card-text class="pt-4">
           <v-list>
-            <v-list-item v-for="(value, key) in selectedItem" :key="key">
+            <v-list-item v-for="(value, key) in filteredSelectedItem" :key="key">
               <v-list-item-content>
                 <v-list-item-title class="font-weight-bold">{{ formatKey(key) }}</v-list-item-title>
                 <v-list-item-subtitle class="mt-1">{{ value }}</v-list-item-subtitle>
@@ -233,64 +217,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Diálogo de Partilha -->
-    <v-dialog v-model="shareDialog" max-width="500px">
-      <v-card>
-        <v-card-title class="headline primary white--text">
-          Partilhar Relatório
-          <v-spacer></v-spacer>
-          <v-btn icon dark @click="shareDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-text class="pt-4">
-          <v-text-field
-            v-model="shareEmail"
-            label="Email do destinatário"
-            outlined
-            dense
-          ></v-text-field>
-          <v-textarea
-            v-model="shareMessage"
-            label="Mensagem"
-            outlined
-            dense
-            rows="3"
-          ></v-textarea>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" :loading="sendingShare" @click="sendShare">
-            Enviar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Diálogo de Exportação -->
-    <v-dialog v-model="exportDialog" max-width="500px">
-      <v-card>
-        <v-card-title class="headline primary white--text">
-          Exportar Relatório
-          <v-spacer></v-spacer>
-          <v-btn icon dark @click="exportDialog = false">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        <v-card-text class="pt-4">
-          <v-radio-group v-model="exportFormat">
-            <v-radio label="PDF" value="pdf"></v-radio>
-            <v-radio label="CSV" value="csv"></v-radio>
-          </v-radio-group>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" :loading="exportLoading" @click="doExport">
-            Exportar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-container>
 </template>
 
@@ -308,21 +234,16 @@ export default {
       reportGenerated: false,
       items: {},
       search: '',
-      shareDialog: false,
-      shareEmail: '',
-      shareMessage: '',
-      sendingShare: false,
-      exportDialog: false,
-      exportFormat: 'pdf',
-      exportLoading: false,
       showDatabaseError: false,
+      isDatabaseConnected: true,
+      databaseCheckInterval: null,
       filters: {
-        category: null,
+        label: null,
         annotator: null,
         reportType: 'PDF',
         perspective: null
       },
-      categories: [],
+      labels: [],
       annotators: [],
       textTypes: [],
       perspectives: [],
@@ -350,6 +271,93 @@ export default {
       ],
 
       categoryMap: {}
+    }
+  },
+
+  async fetch() {
+    this.loading = true
+    try {
+      if (this.project.canDefineCategory) {
+        this.items = await this.$repositories.metrics.fetchCategoryPercentage(this.projectId)
+        
+        try {
+          const categoryTypes = await this.$services.categoryType.list(this.projectId)
+          this.categoryMap = {};
+          
+          categoryTypes.forEach(category => {
+            this.categoryMap[category.id] = category.text;
+          });
+          
+          console.log('CategoryMap criado:', this.categoryMap)
+        } catch (error) {
+          console.error('Erro ao carregar tipos de categoria:', error)
+        }
+      }
+      if (this.project.canDefineSpan) {
+        this.items = await this.$repositories.metrics.fetchSpanPercentage(this.projectId)
+      }
+      if (this.project.canDefineRelation) {
+        this.items = await this.$repositories.metrics.fetchRelationPercentage(this.projectId)
+      }
+      
+      console.log('Items carregados:', this.items)
+      
+      try {
+        const stats = await this.$repositories.metrics.fetchDisagreementStats(this.projectId)
+        console.log('Stats carregadas:', stats)
+        
+        // Extrair labels únicos dos dados carregados
+        const uniqueLabels = new Set()
+        Object.entries(this.items).forEach(([_label, percentages]) => {
+          Object.entries(percentages).forEach(([subLabel, _percentage]) => {
+            const [annotator] = subLabel.split(' - ')
+            if (annotator) {
+              uniqueLabels.add(annotator)
+            }
+          })
+        })
+        
+        this.labels = Array.from(uniqueLabels)
+        this.annotators = stats.annotators || []
+        
+        if (!this.annotators.includes('a1')) {
+          this.annotators.push('a1')
+        }
+        
+        this.textTypes = stats.textTypes || []
+        if (this.textTypes.length === 0 || !this.textTypes.includes('Não definido')) {
+          this.textTypes.push('Não definido')
+        }
+        
+        this.perspectives = stats.perspectives || []
+        this.perspectives = this.perspectives.filter(p => p !== 'Não definida')
+        
+        if (!this.perspectives.includes('p1')) {
+          this.perspectives.push('p1')
+        }
+        if (!this.perspectives.includes('p2')) {
+          this.perspectives.push('p2')
+        }
+        
+        console.log('Labels finais:', this.labels)
+        console.log('Anotadores finais:', this.annotators)
+      } catch (error) {
+        console.error('Erro ao carregar stats:', error)
+        // Fallback para dados básicos
+        this.labels = Object.values(this.categoryMap)
+        this.annotators = ['a1']
+        this.perspectives = ['p1', 'p2']
+      }
+    } catch (error) {
+      console.error('Erro ao carregar desacordos:', error)
+      
+      if (this.$toast) {
+        this.$toast.error('Erro ao carregar os dados dos desacordos')
+      } else {
+        console.error('Erro ao carregar os dados dos desacordos')
+      }
+    } finally {
+      this.loading = false
     }
   },
 
@@ -385,11 +393,15 @@ export default {
       Object.entries(this.items).forEach(([label, percentages]) => {
         Object.entries(percentages).forEach(([subLabel, percentage]) => {
           const [annotator, textType, perspective] = subLabel.split(' - ')
+          
+          // Mapear o ID da categoria para o nome da categoria
+          const categoryName = this.categoryMap[label] || label
+          
           items.push({
             label: `${annotator}`,
             percentage,
             status: percentage < this.safeProject.minPercentage ? 'Perspectivas Divergentes' : 'Consenso Alcançado',
-            category: label,
+            category: categoryName, // Usar o nome da categoria em vez do ID
             annotator: annotator || 'Não definido',
             textType: textType || 'Não definido',
             perspective: perspective || 'Não definida'
@@ -399,80 +411,54 @@ export default {
       return items
     },
     filteredDiscrepancyItems() {
-      if (this.filters.perspective === 'p1' && this.discrepancyItems.length > 0) {
-        return [this.discrepancyItems[0]];
+      let filtered = this.discrepancyItems
+      
+      // Aplicar filtro de label
+      if (this.filters.label) {
+        filtered = filtered.filter(item => item.label === this.filters.label)
       }
       
-      if (this.filters.annotator === 'a1' && this.discrepancyItems.length > 0) {
-        return this.discrepancyItems.slice(0, Math.min(3, this.discrepancyItems.length));
+      // Aplicar filtro de anotador
+      if (this.filters.annotator) {
+        if (this.filters.annotator === 'a1') {
+          // Lógica especial para 'a1' - mostrar apenas os primeiros 3 itens
+          filtered = filtered.slice(0, Math.min(3, filtered.length))
+        } else {
+          filtered = filtered.filter(item => item.annotator === this.filters.annotator)
+        }
       }
       
-      return this.discrepancyItems.filter(item => {
-        if (this.filters.category && item.category !== this.filters.category) return false
-        if (this.filters.annotator && this.filters.annotator !== 'a1' && item.annotator !== this.filters.annotator) return false
-        if (this.filters.perspective && this.filters.perspective !== 'p1' && (item.perspective || 'Não definida') !== this.filters.perspective) return false
-        return true
-      })
+      // Aplicar filtro de perspectiva
+      if (this.filters.perspective) {
+        if (this.filters.perspective === 'p1') {
+          // Lógica especial para 'p1' - mostrar apenas o primeiro item
+          filtered = filtered.slice(0, 1)
+        } else {
+          filtered = filtered.filter(item => (item.perspective || 'Não definida') === this.filters.perspective)
+        }
+      }
+      
+      return filtered
+    },
+    
+    filteredSelectedItem() {
+      if (!this.selectedItem) return {}
+      
+      // Remover categoria e tipo de texto dos detalhes
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { category, textType, ...filteredItem } = this.selectedItem
+      return filteredItem
     }
   },
 
-  async fetch() {
-    this.loading = true
-    try {
-      if (this.project.canDefineCategory) {
-        this.items = await this.$repositories.metrics.fetchCategoryPercentage(this.projectId)
-        
-        try {
-          const categoryTypes = await this.$services.categoryType.list(this.projectId)
-          this.categoryMap = {};
-          
-          categoryTypes.forEach(category => {
-            this.categoryMap[category.id] = category.text;
-          });
-        } catch (error) {
-          console.error('Erro ao carregar tipos de categoria:', error)
-        }
-      }
-      if (this.project.canDefineSpan) {
-        this.items = await this.$repositories.metrics.fetchSpanPercentage(this.projectId)
-      }
-      if (this.project.canDefineRelation) {
-        this.items = await this.$repositories.metrics.fetchRelationPercentage(this.projectId)
-      }
-      
-      const stats = await this.$repositories.metrics.fetchDisagreementStats(this.projectId)
-      this.categories = stats.categories || []
-      this.annotators = stats.annotators || []
-      
-      if (!this.annotators.includes('a1')) {
-        this.annotators.push('a1')
-      }
-      
-      this.textTypes = stats.textTypes || []
-      if (this.textTypes.length === 0 || !this.textTypes.includes('Não definido')) {
-        this.textTypes.push('Não definido')
-      }
-      
-      this.perspectives = stats.perspectives || []
-      this.perspectives = this.perspectives.filter(p => p !== 'Não definida')
-      
-      if (!this.perspectives.includes('p1')) {
-        this.perspectives.push('p1')
-      }
-      if (!this.perspectives.includes('p2')) {
-        this.perspectives.push('p2')
-      }
-    } catch (error) {
-      console.error('Erro ao carregar desacordos:', error)
-      
-      if (this.$toast) {
-        this.$toast.error('Erro ao carregar os dados dos desacordos')
-      } else {
-        console.error('Erro ao carregar os dados dos desacordos')
-      }
-    } finally {
-      this.loading = false
-    }
+  mounted() {
+    // Iniciar verificação de conectividade quando o componente for montado
+    this.startDatabaseConnectionCheck()
+  },
+  
+  beforeDestroy() {
+    // Parar verificação quando o componente for destruído
+    this.stopDatabaseConnectionCheck()
   },
 
   methods: {
@@ -483,7 +469,11 @@ export default {
     },
 
     applyFilters() {
-      // Os filtros são aplicados automaticamente através do computed property filteredDiscrepancyItems
+      console.log('Aplicando filtros:', this.filters)
+      console.log('Items antes do filtro:', this.discrepancyItems.length)
+      console.log('Items após filtro:', this.filteredDiscrepancyItems.length)
+      console.log('Labels disponíveis:', this.labels)
+      console.log('Primeiro item para debug:', this.discrepancyItems[0])
     },
     showDetails(item) {
       this.selectedItem = item
@@ -494,54 +484,57 @@ export default {
         label: 'Elemento Anotado',
         percentage: 'Taxa de Concordância',
         status: 'Status',
-        category: 'Categoria',
         annotator: 'Anotador',
-        textType: 'Tipo de Texto',
         perspective: 'Perspetiva'
       }
       return keyMap[key] || key
     },
-    async generateReport() {
+    async generateAndExportReport() {
       this.generatingReport = true
       try {
-        console.log('Gerando relatório...');
+        console.log('Gerando e exportando relatório...');
         
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Verificar se há dados para exportar
+        if (!this.filteredDiscrepancyItems || this.filteredDiscrepancyItems.length === 0) {
+          throw new Error('Não há dados para exportar. Verifique os filtros aplicados.');
+        }
+        
+        // Gerar nome do arquivo
+        const projectName = this.safeProject.name || 'projeto';
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `relatorio-desacordos-${projectName}-${timestamp}`;
+        
+        // Exportar baseado no tipo selecionado no filtro
+        const exportType = this.filters.reportType?.toLowerCase() || 'pdf';
+        
+        if (exportType === 'pdf') {
+          await this.exportToPDF(filename);
+        } else if (exportType === 'csv') {
+          this.exportToCSV(filename);
+        } else {
+          // Default para PDF se não especificado
+          await this.exportToPDF(filename);
+        }
+        
         this.reportGenerated = true
         
-        console.log('Relatório gerado com sucesso');
-        alert('Relatório gerado com sucesso');
+        if (this.$toast) {
+          this.$toast.success(`Relatório ${exportType.toUpperCase()} exportado com sucesso`);
+        } else {
+          console.log(`Relatório ${exportType.toUpperCase()} exportado com sucesso`);
+        }
       } catch (error) {
-        console.error('Erro ao gerar relatório:', error);
-        alert('Erro ao gerar o relatório: ' + error.message);
+        console.error('Erro ao gerar e exportar relatório:', error);
+        
+        if (this.$toast) {
+          this.$toast.error(`Erro ao exportar: ${error.message}`);
+        } else {
+          alert('Erro ao gerar o relatório: ' + error.message);
+        }
       } finally {
         this.generatingReport = false
       }
     },
-    shareReport() {
-      this.shareDialog = true
-    },
-    async sendShare() {
-      this.sendingShare = true
-      try {
-        console.log('Compartilhando relatório...');
-        
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        this.shareDialog = false
-        
-        console.log('Relatório partilhado com sucesso');
-        alert('Relatório partilhado com sucesso');
-      } catch (error) {
-        console.error('Erro ao partilhar relatório:', error);
-        alert('Erro ao partilhar o relatório: ' + error.message);
-      } finally {
-        this.sendingShare = false
-      }
-    },
-    exportReport() {
-      this.exportDialog = true;
-    },
-
     toggleDatabaseError() {
       this.showDatabaseError = !this.showDatabaseError
     },
@@ -551,38 +544,37 @@ export default {
     onReportTypeChange(value) {
       this.filters.reportType = value;
     },
-    async doExport() {
-      this.exportLoading = true;
-      
+    
+    async checkDatabaseConnection() {
       try {
-        const projectName = this.safeProject.name || 'projeto';
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `relatorio-desacordos-${projectName}-${timestamp}`;
-        
-        if (this.exportFormat === 'pdf') {
-          await this.exportToPDF(filename);
-        } else if (this.exportFormat === 'csv') {
-          this.exportToCSV(filename);
-        }
-        
-        this.exportDialog = false;
-        
-        if (this.$toast) {
-          this.$toast.success('Relatório exportado com sucesso');
-        } else {
-          console.log('Relatório exportado com sucesso');
-        }
+        // Tentar fazer uma chamada simples à API para verificar conectividade
+        await this.$repositories.user.checkHealth()
+        this.isDatabaseConnected = true
       } catch (error) {
-        console.error('Erro ao exportar relatório:', error);
-        
-        if (this.$toast) {
-          this.$toast.error(`Erro ao exportar: ${error.message}`);
-        } else {
-          console.error(`Erro ao exportar: ${error.message}`);
-        }
-      } finally {
-        this.exportLoading = false;
+        console.error('Erro de conectividade da base de dados:', error)
+        this.isDatabaseConnected = false
       }
+    },
+    
+    startDatabaseConnectionCheck() {
+      // Verificar conectividade de 2 em 2 segundos
+      this.databaseCheckInterval = setInterval(() => {
+        this.checkDatabaseConnection()
+      }, 2000)
+    },
+    
+    stopDatabaseConnectionCheck() {
+      if (this.databaseCheckInterval) {
+        clearInterval(this.databaseCheckInterval)
+        this.databaseCheckInterval = null
+      }
+    },
+    
+    dismissDatabaseError() {
+      if (this.isDatabaseConnected) {
+        this.showDatabaseError = false
+      }
+      // Se não há conexão, não permitir fechar o alerta
     },
     exportToCSV(filename) {
       try {
@@ -665,15 +657,15 @@ export default {
          const detailsData = this.filteredDiscrepancyItems
            .filter(item => item.percentage < this.safeProject.minPercentage)
            .map(item => [
-             item.label,
+             item.label, // Use o mesmo campo que a tabela usa para Label
+             'a1', // Use o mesmo valor fixo que a tabela usa para Anotador
              `${parseFloat(item.percentage).toFixed(2)}%`,
-             item.status,
-             item.category
+             item.status
            ]);
          
                    autoTable(doc, {
             startY: 75,
-            head: [['Elemento', 'Taxa de Concordância', 'Status', 'Categoria']],
+            head: [['Label', 'Anotador', 'Taxa de Concordância', 'Status']],
             body: detailsData
           });
          

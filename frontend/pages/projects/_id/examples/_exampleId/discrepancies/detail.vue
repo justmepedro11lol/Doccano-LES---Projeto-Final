@@ -11,7 +11,7 @@
 
     <v-card class="chat-card">
       <v-card-title>
-        Discrepancy Discussion — Dataset {{ datasetName }}
+        Discrepancy Discussion - {{ datasetName }}
       </v-card-title>
   
       <v-card-text class="chat-body">
@@ -43,6 +43,18 @@
           </div>
         </v-list>
       </v-card-text>
+      
+      <!-- Mensagem de discussão fechada no chat -->
+      <v-alert
+        v-if="isDiscussionEnded"
+        type="info"
+        dense
+        text
+        class="ma-3"
+      >
+        <v-icon left small>mdi-lock</v-icon>
+        Discussão encerrada. Não é possível enviar novas mensagens.
+      </v-alert>
   
       <v-card-actions>
         <v-text-field
@@ -50,12 +62,13 @@
           dense
           hide-details
           class="flex-grow-1"
-          placeholder="Type your message..."
+          :placeholder="isDiscussionEnded ? 'Discussion closed - messages disabled' : 'Type your message...'"
+          :disabled="isDiscussionEnded"
           @keyup.enter="sendMessage"
         />
         <v-btn
           small
-          :disabled="!newMessage || isSending"
+          :disabled="!newMessage || isSending || isDiscussionEnded"
           @click="sendMessage"
         >
           {{ isSending ? 'Sending...' : 'Send' }}

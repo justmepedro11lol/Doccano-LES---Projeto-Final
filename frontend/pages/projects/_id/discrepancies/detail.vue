@@ -11,7 +11,7 @@
 
     <v-card class="chat-card">
       <v-card-title>
-        Discrepancy Discussion — Dataset {{ datasetName }}
+        Discrepancy Discussion - {{ datasetName }}
       </v-card-title>
   
       <v-card-text class="chat-body">
