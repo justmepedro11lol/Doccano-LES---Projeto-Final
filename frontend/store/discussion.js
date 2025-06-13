@@ -1,40 +1,55 @@
 export const state = () => ({
-  isDiscussionEnded: false
+  discussionsByProject: {} // Armazena estado por project_id: { projectId: { isDiscussionEnded: boolean } }
 })
 
 export const mutations = {
-  setDiscussionEnded(state, isEnded) {
-    state.isDiscussionEnded = isEnded
+  setDiscussionEnded(state, { projectId, isEnded }) {
+    // Criar um novo objeto para garantir reatividade
+    const newState = { ...state.discussionsByProject }
+    newState[projectId] = { isDiscussionEnded: isEnded }
+    state.discussionsByProject = newState
   }
 }
 
 export const getters = {
-  isDiscussionEnded(state) {
-    return state.isDiscussionEnded
+  isDiscussionEnded: (state) => (projectId) => {
+    return state.discussionsByProject[projectId]?.isDiscussionEnded || false
   }
 }
 
 export const actions = {
-  endDiscussion({ commit }) {
-    commit('setDiscussionEnded', true)
+  endDiscussion({ commit }, projectId) {
+    commit('setDiscussionEnded', { projectId, isEnded: true })
     // Persistir isso em localStorage para manter o estado entre recarregamentos
     if (process.client) {
-      localStorage.setItem('discussionEnded', 'true')
+      const discussionsState = JSON.parse(localStorage.getItem('discussionsState') || '{}')
+      discussionsState[projectId] = { isDiscussionEnded: true }
+      localStorage.setItem('discussionsState', JSON.stringify(discussionsState))
     }
   },
   
-  reopenDiscussion({ commit }) {
-    commit('setDiscussionEnded', false)
-    // Remover do localStorage para manter o estado entre recarregamentos
+  reopenDiscussion({ commit }, projectId) {
+    commit('setDiscussionEnded', { projectId, isEnded: false })
+    // Atualizar localStorage
     if (process.client) {
-      localStorage.removeItem('discussionEnded')
+      const discussionsState = JSON.parse(localStorage.getItem('discussionsState') || '{}')
+      if (discussionsState[projectId]) {
+        discussionsState[projectId].isDiscussionEnded = false
+      }
+      localStorage.setItem('discussionsState', JSON.stringify(discussionsState))
     }
   },
   
   initDiscussionState({ commit }) {
     if (process.client) {
-      const isEnded = localStorage.getItem('discussionEnded') === 'true'
-      commit('setDiscussionEnded', isEnded)
+      const discussionsState = JSON.parse(localStorage.getItem('discussionsState') || '{}')
+      Object.keys(discussionsState).forEach(projectId => {
+        const projectState = discussionsState[projectId]
+        commit('setDiscussionEnded', { 
+          projectId, 
+          isEnded: projectState.isDiscussionEnded || false 
+        })
+      })
     }
   }
 } 
