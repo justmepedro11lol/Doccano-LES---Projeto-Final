@@ -30,7 +30,7 @@
             >
               <v-list-item-content>
                 <v-list-item-title>
-                  <strong>{{ msg.user || 'Unknown user' }}:</strong> {{ msg.text || '' }}
+                  <strong :style="{ color: getUserColor(msg.user) }">{{ msg.user || 'Unknown user' }}:</strong> {{ msg.text || '' }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text--secondary">
                   {{ formatDate(msg.created_at) }}
@@ -151,7 +151,25 @@ export default Vue.extend({
       mdiCheckCircleOutline,
       mdiRefresh,
       // Variável local para forçar reatividade
-      localDiscussionEnded: false
+      localDiscussionEnded: false,
+      // Paleta de cores para os usuários
+      userColors: [
+        '#1976D2', // Azul
+        '#388E3C', // Verde
+        '#F57C00', // Laranja
+        '#7B1FA2', // Roxo
+        '#D32F2F', // Vermelho
+        '#0097A7', // Ciano
+        '#455A64', // Azul cinza
+        '#E64A19', // Laranja escuro
+        '#5D4037', // Marrom
+        '#689F38', // Verde claro
+        '#303F9F', // Índigo
+        '#C2185B', // Rosa
+        '#00796B', // Teal
+        '#FBC02D', // Amarelo
+        '#795548'  // Marrom claro
+      ]
     }
   },
 
@@ -210,6 +228,23 @@ export default Vue.extend({
       } catch (error) {
         return 'Invalid date'
       }
+    },
+
+    // Gera uma cor consistente baseada no nome do usuário
+    getUserColor(username: string): string {
+      if (!username) return this.userColors[0]
+      
+      // Função hash simples para gerar um índice baseado no nome
+      let hash = 0
+      for (let i = 0; i < username.length; i++) {
+        const char = username.charCodeAt(i)
+        hash = ((hash << 5) - hash) + char
+        hash = hash & hash // Converte para 32bit integer
+      }
+      
+      // Garante que o hash seja positivo e dentro do range das cores
+      const colorIndex = Math.abs(hash) % this.userColors.length
+      return this.userColors[colorIndex]
     },
 
     async loadMessages() {

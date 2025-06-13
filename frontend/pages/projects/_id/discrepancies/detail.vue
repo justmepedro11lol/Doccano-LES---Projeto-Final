@@ -30,15 +30,7 @@
             >
               <v-list-item-content>
                 <v-list-item-title>
-                  <span class="user-indicator" :style="{ backgroundColor: getUserColor(msg.user || 'Unknown user') }"></span>
-                  <span 
-                    class="username-text" 
-                    :class="`color-${getUserColorClass(msg.user || 'Unknown user')}`"
-                  >
-                    {{ msg.user || 'Unknown user' }}:
-                  </span>
-                  <small style="color: #999;">[{{ getUserColorClass(msg.user || 'Unknown user') }}]</small> 
-                  {{ msg.text || '' }}
+                  <strong :style="{ color: getUserColor(msg.user || 'Unknown user') }">{{ msg.user || 'Unknown user' }}:</strong> {{ msg.text || '' }}
                 </v-list-item-title>
                 <v-list-item-subtitle class="text--secondary">
                   {{ formatDate(msg.created_at) }}
