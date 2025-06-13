@@ -138,9 +138,9 @@
                     outlined
                     dense
                     prepend-icon="mdi-file-document"
-                    @change="onReportTypeChange"
                     :disabled="false"
                     class="clickable-select"
+                    @change="onReportTypeChange"
                   ></v-select>
                 </v-col>
                 <v-col cols="12" sm="6" md="3">

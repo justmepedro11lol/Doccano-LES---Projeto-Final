@@ -1,41 +1,143 @@
 <template>
-  <v-card>
-    <v-alert v-if="successMessage" type="success" dismissible @click="successMessage = ''">
-      {{ successMessage }}
-    </v-alert>
-    <v-alert v-if="errorMessage" type="error" dismissible @click="errorMessage = ''">
-      {{ errorMessage }}
-    </v-alert>
-    <v-alert v-if="databaseError" type="error" dismissible @click="databaseError = ''">
-      {{ databaseError }}
-    </v-alert>
-    <template v-if="isAnswered">
-      <v-card-title>Perspectiva pessoal já definida</v-card-title>
-    </template>
-    <template v-else>
-      <template v-if="isAdmin">
-        <v-card-title>
-          <action-menu :disabled="hasPerspectives" @create="$router.push('perspectives/add')" />
-          <v-btn class="text-capitalize ms-2" outlined @click.stop="dialogDelete = true">
-            {{ $t('generic.delete') }}
-          </v-btn>
-          <v-dialog v-model="dialogDelete">
-            <form-delete :selected="selected" @remove="handleDelete" @cancel="dialogDelete = false" />
-          </v-dialog>
+  <div class="perspectives-container">
+    <!-- Alertas com design melhorado -->
+    <v-slide-y-transition>
+      <v-alert
+        v-if="successMessage"
+        type="success"
+        dismissible
+        border="left"
+        colored-border
+        elevation="2"
+        class="ma-4"
+        @click="successMessage = ''"
+      >
+        <v-icon slot="prepend" color="success">mdi-check-circle</v-icon>
+        {{ successMessage }}
+      </v-alert>
+    </v-slide-y-transition>
+
+    <v-slide-y-transition>
+      <v-alert
+        v-if="errorMessage"
+        type="error"
+        dismissible
+        border="left"
+        colored-border
+        elevation="2"
+        class="ma-4"
+        @click="errorMessage = ''"
+      >
+        <v-icon slot="prepend" color="error">mdi-alert-circle</v-icon>
+        {{ errorMessage }}
+      </v-alert>
+    </v-slide-y-transition>
+
+    <v-slide-y-transition>
+      <v-alert
+        v-if="databaseError"
+        type="warning"
+        dismissible
+        border="left"
+        colored-border
+        elevation="2"
+        class="ma-4"
+        @click="databaseError = ''"
+      >
+        <v-icon slot="prepend" color="warning">mdi-database-alert</v-icon>
+        {{ databaseError }}
+      </v-alert>
+    </v-slide-y-transition>
+
+    <!-- Card principal com design melhorado -->
+    <v-card class="main-card" elevation="3">
+      <template v-if="isAnswered">
+        <v-card-title class="primary white--text d-flex align-center">
+          <v-icon left color="white" size="28">mdi-check-circle-outline</v-icon>
+          <span class="text-h5">Perspectiva Pessoal Já Definida</span>
         </v-card-title>
-        <perspective-list v-model="selected" :items="items" :is-loading="isLoading" />
+        <v-card-text class="pa-6 text-center">
+          <v-icon size="80" color="success" class="mb-4">mdi-account-check</v-icon>
+          <p class="text-h6 mb-0">A sua perspectiva pessoal já foi submetida para este projeto.</p>
+        </v-card-text>
       </template>
+
       <template v-else>
-        <!-- O componente form-answer deverá interpretar as perguntas e renderizar as opções de escolha múltipla -->
-        <form-answer
-          :questions-list="questionsList"
-          :options-list="optionsList"
-          :project-id="projectId"
-          @submit-answers="submitAnswers"
-        />
+        <template v-if="isAdmin">
+          <!-- Seção de Administração -->
+          <v-card-title class="primary white--text d-flex align-center">
+            <v-icon left color="white" size="28">mdi-cog</v-icon>
+            <span class="text-h5">Gestão de Perspectivas</span>
+          </v-card-title>
+          
+          <v-card-text class="pa-0">
+            <!-- Barra de ações com design melhorado -->
+            <v-toolbar flat color="grey lighten-4" class="px-4">
+              <action-menu 
+                :disabled="hasPerspectives" 
+                @create="$router.push('perspectives/add')"
+              />
+              <v-spacer></v-spacer>
+              <v-btn 
+                :disabled="selected.length === 0"
+                class="text-capitalize" 
+                outlined 
+                color="error"
+                @click.stop="dialogDelete = true"
+              >
+                <v-icon left>mdi-delete</v-icon>
+                {{ $t('generic.delete') }}
+              </v-btn>
+            </v-toolbar>
+
+            <!-- Lista de perspectivas -->
+            <div class="pa-4">
+              <perspective-list 
+                v-model="selected" 
+                :items="items" 
+                :is-loading="isLoading" 
+              />
+            </div>
+          </v-card-text>
+
+          <!-- Dialog de confirmação de exclusão -->
+          <v-dialog v-model="dialogDelete" max-width="500px">
+            <v-card>
+              <v-card-title class="error white--text">
+                <v-icon left color="white">mdi-delete-alert</v-icon>
+                Confirmar Exclusão
+              </v-card-title>
+              <v-card-text class="pa-4">
+                <p class="mb-0">Tem certeza que deseja excluir os itens selecionados?</p>
+              </v-card-text>
+              <v-card-actions class="pa-4">
+                <v-spacer></v-spacer>
+                <v-btn text @click="dialogDelete = false">Cancelar</v-btn>
+                <v-btn color="error" @click="handleDelete">Excluir</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </template>
+
+        <template v-else>
+          <!-- Seção do Utilizador -->
+          <v-card-title class="primary white--text d-flex align-center">
+            <v-icon left color="white" size="28">mdi-account-question</v-icon>
+            <span class="text-h5">Definir Perspectiva Pessoal</span>
+          </v-card-title>
+          
+          <v-card-text class="pa-6">
+            <form-answer
+              :questions-list="questionsList"
+              :options-list="optionsList"
+              :project-id="projectId"
+              @submit-answers="submitAnswers"
+            />
+          </v-card-text>
+        </template>
       </template>
-    </template>
-  </v-card>
+    </v-card>
+  </div>
 </template>
 
 <script lang="ts">
@@ -277,7 +379,53 @@ export default Vue.extend({
 </script>
 
 <style scoped>
-::v-deep .v-dialog {
-  width: 800px;
+.perspectives-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.main-card {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.v-card-title {
+  border-radius: 0 !important;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.v-alert {
+  border-radius: 12px !important;
+  font-weight: 500;
+}
+
+.v-toolbar {
+  border-radius: 0 !important;
+}
+
+.v-btn {
+  border-radius: 8px !important;
+  font-weight: 600;
+  text-transform: none !important;
+}
+
+.v-dialog .v-card {
+  border-radius: 16px !important;
+}
+
+/* Transições suaves */
+.v-slide-y-transition-enter-active,
+.v-slide-y-transition-leave-active {
+  transition: all 0.3s ease;
+}
+
+.v-slide-y-transition-enter,
+.v-slide-y-transition-leave-to {
+  transform: translateY(-15px);
+  opacity: 0;
 }
 </style>

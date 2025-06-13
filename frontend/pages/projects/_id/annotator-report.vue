@@ -77,7 +77,7 @@
                 
                 <div v-else>
                   <v-simple-table>
-                    <template v-slot:default>
+                    <template #default>
                       <thead>
                         <tr>
                           <th class="text-left">Métrica</th>

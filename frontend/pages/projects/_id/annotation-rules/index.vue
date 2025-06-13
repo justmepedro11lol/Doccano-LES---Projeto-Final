@@ -65,6 +65,7 @@
               @click="simulateDatabaseError = true"
             ></v-btn>
             <v-btn 
+              v-if="simulateDatabaseError"
               icon
               small
               text
@@ -72,7 +73,6 @@
               min-height="20"
               style="border: 1px solid #ddd; margin-left: 4px; width: 20px; height: 20px; padding: 0; background-color: #f0f0f0;"
               @click="simulateDatabaseError = false"
-              v-if="simulateDatabaseError"
             ></v-btn>
             <v-spacer></v-spacer>
             <v-btn 
@@ -214,22 +214,22 @@
                         :color="hasVotedForRule(ruleId) ? 'info' : 'grey'"
                         :text-color="hasVotedForRule(ruleId) ? 'white' : ''"
                       >
-                        <v-icon x-small left v-if="hasVotedForRule(ruleId)">mdi-check</v-icon>
+                        <v-icon v-if="hasVotedForRule(ruleId)" x-small left>mdi-check</v-icon>
                         {{ hasVotedForRule(ruleId) ? 'Voted' : 'Not voted' }}
                       </v-chip>
                       <v-chip
+                        v-if="hasVotedForRule(ruleId) && !isAdmin"
                         x-small
                         class="ml-2"
                         color="primary"
-                        v-if="hasVotedForRule(ruleId) && !isAdmin"
                       >
                         Your vote: {{ getUserVoteForRule(ruleId) === 'aprovar' ? 'Approve' : 'Reject' }}
                       </v-chip>
                       <v-chip
+                        v-if="ruleCategory(ruleId)"
                         x-small
                         class="ml-2"
                         :color="ruleCategory(ruleId) ? 'purple' : 'grey'"
-                        v-if="ruleCategory(ruleId)"
                       >
                         {{ ruleCategory(ruleId) }}
                       </v-chip>
@@ -262,8 +262,8 @@
                       color="success"
                       text
                       :disabled="hasVotedForRule(ruleId) || isAdmin"
-                      @click="voteForRule(ruleId, 'aprovar')"
                       class="mr-2"
+                      @click="voteForRule(ruleId, 'aprovar')"
                     >
                       <v-icon left small>mdi-thumb-up</v-icon>
                       Approve
@@ -319,7 +319,7 @@
                     {{ voting.description }}
                     <div class="text-caption">
                       {{ formatDate(voting.startDate) }} - {{ formatDate(voting.endDate) }}
-                      <v-chip x-small color="red" v-if="voting.endedEarly" class="ml-2">Ended early</v-chip>
+                      <v-chip v-if="voting.endedEarly" x-small color="red" class="ml-2">Ended early</v-chip>
                     </div>
                   </div>
                 </v-expansion-panel-header>

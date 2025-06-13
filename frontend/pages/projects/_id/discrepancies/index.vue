@@ -24,16 +24,16 @@
             <discrepancy-list
               v-model="selected"
               :items="items"
-              :isLoading="isLoading"
-              :discrepancyThreshold="project.minPercentage"
+              :is-loading="isLoading"
+              :discrepancy-threshold="project.minPercentage"
             />
           </v-card-text>
 
           <v-card-actions v-if="hasDiscrepancies" class="justify-center">
             <v-btn
               color="primary"
-              @click="goToChat"
               class="text-center"
+              @click="goToChat"
             >
               <v-icon left>mdi-message-text</v-icon>
               Discuss Discrepancies
