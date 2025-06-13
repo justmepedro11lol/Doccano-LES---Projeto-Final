@@ -3,6 +3,7 @@
     :title="title"
     :agree-text="buttonTrueText"
     :cancel-text="buttonFalseText"
+    :is-delete="isDelete"
     @agree="ok"
     @cancel="cancel"
   >
@@ -56,6 +57,10 @@ export default Vue.extend({
     buttonFalseText: {
       type: String,
       default: 'Cancel'
+    },
+    isDelete: {
+      type: Boolean,
+      default: false
     }
   },
 

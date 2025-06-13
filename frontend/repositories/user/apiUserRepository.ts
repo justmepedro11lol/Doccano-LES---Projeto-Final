@@ -74,10 +74,9 @@ export class APIUserRepository {
     return toModel(response.data)
   }
 
-  async delete(id: number): Promise<UserItem> {
-    const url = `/${this.baseUrl}s/${id}/delete`
-    const response = await this.request.delete(url)
-    return toModel(response.data)
+  async delete(id: number): Promise<void> {
+    const url = `/${this.baseUrl}s/${id}`
+    await this.request.delete(url)
   }
 
   async update(id: number, data: Partial<UserItem>): Promise<UserItem> {

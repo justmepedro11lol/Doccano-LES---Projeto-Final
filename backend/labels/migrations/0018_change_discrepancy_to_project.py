@@ -4,27 +4,71 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def migrate_discrepancy_messages_to_project(apps, schema_editor):
+    """
+    Migra as mensagens de discrepância do campo 'example' para 'project'
+    mapeando através da relação example -> project
+    """
+    DiscrepancyMessage = apps.get_model('labels', 'DiscrepancyMessage')
+    Example = apps.get_model('examples', 'Example')
+    
+    # Para cada mensagem de discrepância, encontrar o projeto através do exemplo
+    for message in DiscrepancyMessage.objects.all():
+        try:
+            example = Example.objects.get(id=message.example_id)
+            message.project_id = example.project_id
+            message.save()
+        except Example.DoesNotExist:
+            # Se o exemplo não existir, apagar a mensagem órfã
+            message.delete()
+
+
+def reverse_migrate_discrepancy_messages_to_example(apps, schema_editor):
+    """
+    Função reversa - não implementada pois perdemos a informação do exemplo
+    """
+    pass
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
         ("projects", "0011_project_minpercentage"),
         ("labels", "0017_discrepancymessage"),
+        ("examples", "0008_assignment"),  # Adicionar dependência dos exemplos
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name="discrepancymessage",
-            name="example",
-        ),
+        # Primeiro adicionar a coluna project (nullable temporariamente)
         migrations.AddField(
             model_name="discrepancymessage",
             name="project",
             field=models.ForeignKey(
-                default=39,
+                null=True,
+                blank=True,
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="discrepancy_messages",
                 to="projects.project",
             ),
-            preserve_default=False,
+        ),
+        # Migrar os dados
+        migrations.RunPython(
+            migrate_discrepancy_messages_to_project,
+            reverse_migrate_discrepancy_messages_to_example,
+        ),
+        # Remover o campo example
+        migrations.RemoveField(
+            model_name="discrepancymessage",
+            name="example",
+        ),
+        # Tornar o campo project obrigatório
+        migrations.AlterField(
+            model_name="discrepancymessage",
+            name="project",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="discrepancy_messages",
+                to="projects.project",
+            ),
         ),
     ]

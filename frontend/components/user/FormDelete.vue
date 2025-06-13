@@ -4,6 +4,7 @@
     title="Delete User"
     :message="$t('Are you sure you want to delete this user?')"
     item-key="text"
+    :is-delete="true"
     @ok="$emit('remove')"
     @cancel="$emit('cancel')"
   />

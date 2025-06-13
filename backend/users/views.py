@@ -144,4 +144,4 @@ class UserDeletion(generics.DestroyAPIView):
             return Response({"detail": "You cannot delete your own account."}, status=status.HTTP_403_FORBIDDEN)
 
         user.delete()  # Exclui o usuário
-        return Response({"detail": "User deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)

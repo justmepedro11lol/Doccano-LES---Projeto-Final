@@ -1,6 +1,6 @@
 <template>
   <v-card>
-    <v-toolbar color="primary white--text" flat>
+    <v-toolbar :color="isDelete ? 'error' : 'primary'" :class="isDelete ? 'white--text' : 'white--text'" flat>
       <v-toolbar-title>{{ title }}</v-toolbar-title>
     </v-toolbar>
     <v-card-text class="text--primary mt-3 pl-4">
@@ -23,6 +23,7 @@
         :disabled="disabled"
         class="text-none"
         text
+        :color="isDelete ? 'error' : 'primary'"
         data-test="delete-button"
         @click="agree"
       >
@@ -50,6 +51,10 @@ export default Vue.extend({
       default: ''
     },
     disabled: {
+      type: Boolean,
+      default: false
+    },
+    isDelete: {
       type: Boolean,
       default: false
     }
