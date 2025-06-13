@@ -1,9 +1,19 @@
-
-
-
-
 <template>
   <div class="container">
+    <!-- Botão para limpar todos os filtros -->
+    <div class="d-flex justify-end mb-3">
+      <v-btn 
+        color="secondary" 
+        outlined 
+        small 
+        @click="clearAllFilters"
+        :disabled="!hasActiveFilters"
+      >
+        <v-icon left small>mdi-filter-remove</v-icon>
+        Limpar Filtros
+      </v-btn>
+    </div>
+    
     <!-- Seleção da pergunta -->
     <v-select
       v-model="selectedQuestion"
@@ -259,6 +269,9 @@ export default Vue.extend({
         }
       })
       return result
+    },
+    hasActiveFilters() {
+      return this.selectedQuestion !== null || this.selectedUser !== null || this.selectedAnswer !== null || this.search !== ''
     }
   },
 
@@ -303,6 +316,12 @@ export default Vue.extend({
             console.log(`Member not found for ID ${memberId}`)
           })
       }
+    },
+    clearAllFilters() {
+      this.selectedQuestion = null
+      this.selectedUser = null
+      this.selectedAnswer = null
+      this.search = ''
     }
   }
 })

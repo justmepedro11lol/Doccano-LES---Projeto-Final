@@ -6,6 +6,9 @@
     <v-alert v-if="errorMessage" type="error" dismissible @click="errorMessage = ''">
       {{ errorMessage }}
     </v-alert>
+    <v-alert v-if="databaseError" type="error" dismissible @click="databaseError = ''">
+      {{ databaseError }}
+    </v-alert>
     <template v-if="isAnswered">
       <v-card-title>Perspectiva pessoal já definida</v-card-title>
     </template>
@@ -48,6 +51,7 @@ import {
   PerspectiveDTO,
   QuestionItem
 } from '~/domain/models/perspective/perspectiveItem'
+import { OptionsQuestionItem } from '~/domain/models/perspective/question/question'
 
 export default Vue.extend({
   components: {
@@ -71,10 +75,13 @@ export default Vue.extend({
       myRole: null as MemberItem | null,
       questionsList: [] as QuestionItem[],
       answersList: [] as AnswerItem[],
+      optionsList: [] as OptionsQuestionItem[],
       AlreadyAnswered: false,
       submitted: false,
       successMessage: '',
-      errorMessage: ''
+      errorMessage: '',
+      databaseError: '',
+      databaseCheckInterval: null as NodeJS.Timeout | null
     }
   },
 
@@ -106,13 +113,44 @@ export default Vue.extend({
       } else {
         await this.fetchQuestions()
         await this.fetchAnswers()
+        await this.fetchOptions()
       }
+      
+      // Iniciar verificação da database de 1 em 1 segundo
+      this.startDatabaseCheck()
     } catch (error) {
       console.error('Erro ao buscar o papel ou perguntas:', error)
     }
   },
 
+  beforeDestroy() {
+    // Limpar o intervalo quando o componente for destruído
+    if (this.databaseCheckInterval) {
+      clearInterval(this.databaseCheckInterval)
+    }
+  },
+
   methods: {
+    startDatabaseCheck() {
+      this.databaseCheckInterval = setInterval(async () => {
+        try {
+          // Fazer uma chamada simples para verificar se a database está disponível
+          await this.$services.perspective.list(this.projectId)
+          // Se chegou até aqui, a database está funcionando
+          if (this.databaseError) {
+            this.databaseError = ''
+          }
+        } catch (error: any) {
+          console.error('Erro na verificação da database:', error)
+          if (error.response && error.response.status >= 500) {
+            this.databaseError = 'Base de dados indisponível. Tentando reconectar...'
+          } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+            this.databaseError = 'Erro de conexão com a base de dados. Verificando conectividade...'
+          }
+        }
+      }, 1000) // 1 segundo
+    },
+
     async fetchPerspectives() {
       this.isLoading = true
       try {
@@ -160,6 +198,19 @@ export default Vue.extend({
       } catch (error) {
         console.error('Erro ao buscar perguntas:', error)
         this.questionsList = []
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async fetchOptions() {
+      this.isLoading = true
+      try {
+        const response = await this.$services.optionsQuestion.list(this.projectId)
+        this.optionsList = response
+        console.log('Opções:', this.optionsList)
+      } catch (error) {
+        console.error('Erro ao buscar opções:', error)
       } finally {
         this.isLoading = false
       }
