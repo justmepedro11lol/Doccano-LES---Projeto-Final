@@ -47,11 +47,16 @@ class PerspectiveCreation(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         project_id = request.data.get("project_id")
         if project_id and Perspective.objects.filter(project_id=project_id).exists():
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Este projeto já tem uma perspectiva"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         with transaction.atomic():
             serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            if not serializer.is_valid():
+                # Retornar erros de validação específicos
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             perspective = self.perform_create(serializer)
 
             questions_data = request.data.get("questions", [])

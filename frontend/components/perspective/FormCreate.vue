@@ -97,8 +97,15 @@ export default Vue.extend({
     },
 
     isFormValid(): boolean {
-      return this.questionsList.length > 0
+      return this.name.trim() !== '' && this.questionsList.length > 0
     },
+  },
+
+  watch: {
+    // Emitir mudanças no nome da perspectiva
+    name(newName) {
+      this.$emit('update-name', newName)
+    }
   },
   methods: {
 

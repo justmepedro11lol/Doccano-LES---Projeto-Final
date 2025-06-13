@@ -8,6 +8,7 @@ export class PerspectiveApplicationService {
 
   public async create(projectId: string, item: CreatePerspectiveCommand): Promise<PerspectiveDTO> {
     const perspective = PerspectiveItem.create(
+      item.name,
       item.project_id,
       item.questions.map(q => ({ ...q, perspective_id: q.perspective_id ?? 0 })),
       item.members

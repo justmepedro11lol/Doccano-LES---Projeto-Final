@@ -117,8 +117,14 @@ class PerspectiveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Perspective
-        fields = ("id", "project_id", "created_at", "members", "questions")
+        fields = ("id", "name", "project_id", "created_at", "members", "questions")
         read_only_fields = ("created_at",)
+
+    def validate_name(self, value):
+        # Verificar se já existe uma perspectiva com o mesmo nome em outros projetos
+        if Perspective.objects.filter(name=value).exists():
+            raise serializers.ValidationError("Já existe uma perspectiva noutro projeto com esse nome")
+        return value
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -269,4 +275,4 @@ class PerspectiveListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Perspective
-        fields = ("id", "project_id", "project_name", "creator_name", "created_at")
+        fields = ("id", "name", "project_id", "project_name", "creator_name", "created_at")

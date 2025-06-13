@@ -2,15 +2,24 @@
   <div>
     <v-alert v-if="sucessMessage" type="success" dismissible>{{ sucessMessage }}</v-alert>
     <v-alert v-if="errorMessage" type="error" dismissible>{{ errorMessage }}</v-alert>
+    <v-alert v-if="databaseError" type="error" persistent class="mb-4">
+      Database unavailable. Please try again later.
+    </v-alert>
     <form-create
-      v-slot="slotProps"
       v-bind.sync="editedItem"
       :perspective-id="null"
       :items="items"
+      :disabled="databaseError"
       @update-questions="updateQuestions"
+      @update-name="updateName"
     >
       <v-btn color="error" class="text-capitalize" @click="$router.back()"> Cancel </v-btn>
-      <v-btn :disabled="!slotProps.valid" color="primary" class="text-capitalize" @click="save">
+      <v-btn 
+        :disabled="!isFormValid || databaseError" 
+        color="primary" 
+        class="text-capitalize" 
+        @click="save"
+      >
         Save
       </v-btn>
     </form-create>
@@ -40,6 +49,7 @@ export default Vue.extend({
     return {
       editedItem: {
         id: null,
+        name: '',
         project_id: 0,
         questions: [],
         members: []
@@ -62,6 +72,7 @@ export default Vue.extend({
 
       defaultItem: {
         id: null,
+        name: '',
         project_id: 0,
         questions: [],
         members: []
@@ -69,7 +80,10 @@ export default Vue.extend({
 
       errorMessage: '',
       sucessMessage: '',
-      items: [] as PerspectiveDTO[]
+      items: [] as PerspectiveDTO[],
+      databaseError: false,
+      connectionCheckInterval: null as any,
+      perspectiveName: ''
     }
   },
 
@@ -80,7 +94,22 @@ export default Vue.extend({
 
     service(): any {
       return this.$services.perspective
+    },
+
+    // Validação completa do formulário
+    isFormValid(): boolean {
+      return this.perspectiveName.trim() !== '' && this.editedItem.questions.length > 0
     }
+  },
+
+  mounted() {
+    // Iniciar verificação da conexão quando o componente for montado
+    this.startConnectionCheck()
+  },
+
+  beforeDestroy() {
+    // Parar verificação quando o componente for destruído
+    this.stopConnectionCheck()
   },
 
   methods: {
@@ -88,9 +117,51 @@ export default Vue.extend({
       this.editedItem.questions = questions
     },
 
+    updateName(name: string) {
+      this.perspectiveName = name
+    },
+
+    // Verifica a conexão com a base de dados
+    async checkDatabaseConnection() {
+      try {
+        // Faz uma chamada simples para testar a conexão
+        await this.$repositories.member.fetchMyRole(this.projectId)
+        this.databaseError = false
+      } catch (error) {
+        console.error('Erro de conexão com a base de dados:', error)
+        this.databaseError = true
+      }
+    },
+
+    // Inicia a verificação periódica da conexão
+    startConnectionCheck() {
+      // Verificação inicial
+      this.checkDatabaseConnection()
+      
+      // Configurar verificação a cada 2 segundos
+      this.connectionCheckInterval = setInterval(() => {
+        this.checkDatabaseConnection()
+      }, 2000)
+    },
+
+    // Para a verificação periódica
+    stopConnectionCheck() {
+      if (this.connectionCheckInterval) {
+        clearInterval(this.connectionCheckInterval)
+        this.connectionCheckInterval = null
+      }
+    },
+
     async save() {
+      // Verificar se a base de dados está disponível antes de tentar salvar
+      if (this.databaseError) {
+        this.errorMessage = 'Database unavailable. Please try again later.'
+        return
+      }
+
       try {
         this.editedItem.project_id = Number(this.projectId)
+        this.editedItem.name = this.perspectiveName.trim()
         this.editedItem.members = await this.getAnnotatorIds();
         
         // Garantir que os tipos de pergunta existem
@@ -138,10 +209,29 @@ export default Vue.extend({
     },
     handleError(error: any) {
       this.editedItem = Object.assign({}, this.defaultItem)
-      if (error.response && error.response.status === 400) {
-        this.errorMessage = 'Already has a perspective with that name.'
+      
+      // Detectar erros de conexão com a base de dados
+      if (error.response && error.response.status === 503) {
+        this.databaseError = true
+        this.errorMessage = ''
+      } else if (error.response && error.response.status === 400) {
+        const errorData = error.response.data
+        
+        // Verificar se é erro de nome duplicado
+        if (errorData && errorData.name && errorData.name[0]) {
+          this.errorMessage = errorData.name[0]
+        } else if (errorData && errorData.error) {
+          this.errorMessage = errorData.error
+        } else {
+          this.errorMessage = 'Já existe uma perspectiva com esse nome.'
+        }
+        this.databaseError = false
+      } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+        this.databaseError = true
+        this.errorMessage = ''
       } else {
         this.errorMessage = 'Database is slow or unavailable. Please try again later.'
+        this.databaseError = false
       }
     }
   }
