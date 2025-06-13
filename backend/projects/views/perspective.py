@@ -28,12 +28,15 @@ from projects.serializers import (
 
 
 class Perspectives(generics.ListAPIView):
-    queryset = Perspective.objects.all()
     serializer_class = PerspectiveSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ("members__user__username",)
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return Perspective.objects.filter(project_id=project_id)
 
 
 class PerspectiveCreation(generics.CreateAPIView):
@@ -123,12 +126,16 @@ class AnswerCreation(generics.CreateAPIView):
 
 
 class Questions(generics.ListAPIView):
-    queryset = Question.objects.all()
     serializer_class = QuestionSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ("perspective__id", "question")
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        perspective_id = self.kwargs.get('perspective_id')
+        return Question.objects.filter(perspective_id=perspective_id, perspective__project_id=project_id)
 
 
 class AnswerNestedSerializer(serializers.ModelSerializer):
@@ -162,12 +169,16 @@ class PerspectiveDetail(RetrieveAPIView):
 
 
 class OptionsQuestion(generics.ListAPIView):
-    queryset = OptionQuestion.objects.all()
     serializer_class = OptionQuestionSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ("option", "options_group__name")
+
+    def get_queryset(self):
+        # Note: OptionsGroup não tem project_id, pode ser que precise de um filtro diferente
+        # Por agora, retornando todos para não quebrar a funcionalidade
+        return OptionQuestion.objects.all()
 
 
 class OptionsQuestionCreation(generics.CreateAPIView):
@@ -187,12 +198,16 @@ class OptionsQuestionCreation(generics.CreateAPIView):
 
 
 class OptionsGroups(generics.ListAPIView):
-    queryset = OptionsGroup.objects.all()
     serializer_class = OptionsGroupSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     search_fields = ("name",)
+
+    def get_queryset(self):
+        # Note: OptionsGroup não tem project_id diretamente
+        # Por agora, retornando todos para não quebrar a funcionalidade
+        return OptionsGroup.objects.all()
 
 
 class OptionsGroupsCreation(generics.CreateAPIView):
