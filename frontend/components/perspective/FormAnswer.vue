@@ -81,7 +81,7 @@ export default Vue.extend({
       type: Array as () => OptionsQuestionItem[],
       default: () => [],
     },
-    'project-id': {
+    projectId: {
       type: String,
       required: true,
     },
@@ -132,7 +132,7 @@ export default Vue.extend({
         answer: this.answers[question.id],
         questionType: question.type, // assume que question.type é informado
       }));
-      this.$emit("submit-answers", formattedAnswers, this['project-id']);
+      this.$emit("submit-answers", formattedAnswers, this.projectId);
       console.log("Respostas enviadas:", formattedAnswers);
     },
     clearAnswers() {
