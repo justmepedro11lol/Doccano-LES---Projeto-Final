@@ -487,7 +487,9 @@ export default {
   },
   
   computed: {
-    ...mapGetters('discussion', ['isDiscussionEnded']),
+    isDiscussionEnded() {
+      return this.$store.getters['discussion/isDiscussionEnded'](this.projectId)
+    },
     ...mapGetters('voting', [
       'activeVoting', 
       'annotationRules', 

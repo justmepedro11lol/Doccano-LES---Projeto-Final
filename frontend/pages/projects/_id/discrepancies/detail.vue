@@ -158,6 +158,8 @@ export default Vue.extend({
       isProjectAdmin: false,
       mdiCheckCircleOutline,
       mdiRefresh,
+      // Variável local para forçar reatividade
+      localDiscussionEnded: false,
       // Paleta de cores para os usuários
       userColors: [
         '#1976D2', // Azul
@@ -181,7 +183,12 @@ export default Vue.extend({
 
   computed: {
     ...mapGetters('auth', ['getUsername']),
-    ...mapGetters('discussion', ['isDiscussionEnded']),
+    isDiscussionEnded() {
+      // Usar variável local para garantir reatividade
+      const storeValue = this.$store.getters['discussion/isDiscussionEnded'](this.projectId)
+      console.log('isDiscussionEnded computed - projectId:', this.projectId, 'storeValue:', storeValue, 'localValue:', this.localDiscussionEnded)
+      return this.localDiscussionEnded
+    },
     username(): string {
       return this.getUsername || ''
     },
@@ -205,6 +212,18 @@ export default Vue.extend({
         })
       },
       deep: true
+    },
+    // Sincronizar store com variável local
+    '$store.state.discussion.discussionsByProject': {
+      handler(newState) {
+        console.log('Store discussion mudou:', newState)
+        if (this.projectId && newState[this.projectId]) {
+          this.localDiscussionEnded = newState[this.projectId].isDiscussionEnded || false
+          console.log('Atualizou localDiscussionEnded para:', this.localDiscussionEnded)
+        }
+      },
+      deep: true,
+      immediate: true
     }
   },
 
@@ -214,6 +233,9 @@ export default Vue.extend({
     this.checkAdminRole()
     // Carregar estado da discussão
     this.$store.dispatch('discussion/initDiscussionState')
+    // Inicializar variável local com valor do store
+    this.localDiscussionEnded = this.$store.getters['discussion/isDiscussionEnded'](this.projectId)
+    console.log('created - localDiscussionEnded inicializado para:', this.localDiscussionEnded)
   },
 
   methods: {
@@ -375,7 +397,10 @@ export default Vue.extend({
     },
     
     endDiscussion() {
-      this.$store.dispatch('discussion/endDiscussion')
+      this.$store.dispatch('discussion/endDiscussion', this.projectId)
+      // Atualizar variável local imediatamente
+      this.localDiscussionEnded = true
+      console.log('endDiscussion - localDiscussionEnded definido para:', this.localDiscussionEnded)
       this.snackbar = {
         show: true,
         text: 'A discussão foi encerrada com sucesso. Agora é possível configurar uma votação na seção "Annotation Rules".',
@@ -385,7 +410,10 @@ export default Vue.extend({
     },
     
     reopenDiscussion() {
-      this.$store.dispatch('discussion/reopenDiscussion')
+      this.$store.dispatch('discussion/reopenDiscussion', this.projectId)
+      // Atualizar variável local imediatamente
+      this.localDiscussionEnded = false
+      console.log('reopenDiscussion - localDiscussionEnded definido para:', this.localDiscussionEnded)
       this.snackbar = {
         show: true,
         text: 'A discussão foi reaberta com sucesso. Agora é possível continuar a discussão.',
