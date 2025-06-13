@@ -99,12 +99,14 @@ class QuestionSerializer(serializers.ModelSerializer):
     perspective = serializers.PrimaryKeyRelatedField(
         queryset=Perspective.objects.all(), required=False
     )
+    perspective_id = serializers.IntegerField(source='perspective.id', read_only=True)
     type = serializers.PrimaryKeyRelatedField(queryset=QuestionType.objects.all())
+    type_id = serializers.IntegerField(source='type.id', read_only=True)
     options_group = serializers.PrimaryKeyRelatedField(queryset=OptionsGroup.objects.all(), required=False)
 
     class Meta:
         model = Question
-        fields = ("id", "question", "perspective", "answers", "type", "options_group")
+        fields = ("id", "question", "perspective", "perspective_id", "answers", "type", "type_id", "options_group")
 
 
 class PerspectiveSerializer(serializers.ModelSerializer):

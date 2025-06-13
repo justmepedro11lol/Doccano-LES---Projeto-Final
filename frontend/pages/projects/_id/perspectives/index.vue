@@ -146,13 +146,11 @@ import { mapGetters } from 'vuex'
 import ActionMenu from '@/components/perspective/ActionMenu.vue'
 import PerspectiveList from '@/components/perspective/PerspectiveList.vue'
 import FormAnswer from '~/components/perspective/FormAnswer.vue'
-import {
-  AnswerItem,
-  CreateAnswerCommand,
-  MemberItem,
-  PerspectiveDTO,
-  QuestionItem
-} from '~/domain/models/perspective/perspectiveItem'
+import { AnswerItem } from '~/domain/models/perspective/answer/answer'
+import { QuestionItem } from '~/domain/models/perspective/question/question'
+import { PerspectiveDTO } from '~/services/application/perspective/perspectiveData'
+import { CreateAnswerCommand } from '~/services/application/perspective/answer/answerCommand'
+import { MemberItem } from '~/domain/models/member/member'
 import { OptionsQuestionItem } from '~/domain/models/perspective/question/question'
 
 export default Vue.extend({
@@ -287,18 +285,42 @@ export default Vue.extend({
     async fetchQuestions() {
       this.isLoading = true
       try {
+        console.log('🔍 Iniciando fetchQuestions para projeto:', this.projectId)
+        
         // Obtém as perspectivas do projeto
         const perspectives = await this.$services.perspective.list(this.projectId)
+        console.log('📋 Perspectivas encontradas:', perspectives)
+        
         if (perspectives.length > 0) {
           const perspectiveId = perspectives[0].id
+          console.log('🎯 Usando perspectiva ID:', perspectiveId)
+          
           const questions = await this.$services.question.list(perspectiveId, this.projectId)
+          console.log('Perguntas obtidas da API:', questions)
+          
+          // Debug detalhado do filtro
+          console.log('Perspective ID para filtro:', perspectiveId)
+          questions.forEach((question, index) => {
+            console.log(`Pergunta ${index}:`, {
+              id: question.id,
+              question: question.question,
+              perspective_id: question.perspective_id,
+              type: question.type
+            })
+          })
+          
           this.questionsList = questions.filter((question) => question.perspective_id === perspectiveId)
-          console.log('Perguntas:', this.questionsList)
+          console.log('Perguntas filtradas:', this.questionsList)
+          console.log('Total de perguntas:', this.questionsList.length)
         } else {
+          console.log('⚠️ Nenhuma perspectiva encontrada para o projeto')
           this.questionsList = []
         }
       } catch (error) {
-        console.error('Erro ao buscar perguntas:', error)
+        console.error('❌ Erro ao buscar perguntas:', error)
+        const err = error as any
+        console.error('📄 Detalhes do erro:', err.response?.data)
+        console.error('🔢 Status do erro:', err.response?.status)
         this.questionsList = []
       } finally {
         this.isLoading = false

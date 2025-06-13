@@ -66,7 +66,58 @@
                 </v-radio-group>
               </div>
 
-              <!-- Perguntas de texto livre -->
+              <!-- Perguntas de texto livre (tipo 1) -->
+              <div v-else-if="question.type === 1" class="text-input-container">
+                <v-text-field
+                  v-model="answers[question.id]"
+                  label="Digite a sua resposta"
+                  outlined
+                  dense
+                  clearable
+                  class="custom-text-field"
+                  :rules="textValidationRules"
+                  prepend-inner-icon="mdi-pencil-outline"
+                />
+              </div>
+
+              <!-- Perguntas numéricas (tipo 2) -->
+              <div v-else-if="question.type === 2" class="numeric-input-container">
+                <v-text-field
+                  v-model.number="answers[question.id]"
+                  label="Digite um número"
+                  outlined
+                  dense
+                  clearable
+                  type="number"
+                  class="custom-text-field"
+                  :rules="numericValidationRules"
+                  prepend-inner-icon="mdi-numeric"
+                />
+              </div>
+
+              <!-- Perguntas verdadeiro/falso (tipo 3) -->
+              <div v-else-if="question.type === 3" class="boolean-input-container">
+                <v-radio-group 
+                  v-model="answers[question.id]" 
+                  class="custom-radio-group"
+                  row
+                >
+                  <v-radio
+                    label="Sim"
+                    value="true"
+                    class="custom-radio mr-6"
+                    color="success"
+                  />
+                  <v-radio
+                    label="Não"
+                    value="false"
+                    class="custom-radio"
+                    color="error"
+                  />
+                </v-radio-group>
+              </div>
+
+              <!-- Fallback para outros tipos -->
               <div v-else class="text-input-container">
                 <v-text-field
                   v-model="answers[question.id]"
@@ -75,8 +126,8 @@
                   dense
                   clearable
                   class="custom-text-field"
-                  :rules="[v => !!v || 'Este campo é obrigatório']"
-                  prepend-inner-icon="mdi-pencil-outline"
+                  :rules="textValidationRules"
+                  prepend-inner-icon="mdi-help-circle-outline"
                 />
               </div>
             </v-card-text>
@@ -178,11 +229,25 @@ export default Vue.extend({
     isFormValid(): boolean {
       return this.questionsList.every((question) => {
         const answer = this.answers[question.id];
-        // Para perguntas de escolha múltipla (options_group !== null), verifica se o valor não é undefined ou null
+        
+        // Para perguntas de escolha múltipla (options_group !== null)
         if (question.options_group !== null) {
           return answer !== undefined && answer !== null;
-        } else {
-          // Para perguntas de texto, verifica se há valor não vazio
+        }
+        // Para perguntas de texto (tipo 1)
+        else if (question.type === 1) {
+          return typeof answer === "string" && answer.trim().length > 0;
+        }
+        // Para perguntas numéricas (tipo 2)
+        else if (question.type === 2) {
+          return answer !== null && answer !== undefined && answer !== '' && !isNaN(Number(answer));
+        }
+        // Para perguntas verdadeiro/falso (tipo 3)
+        else if (question.type === 3) {
+          return answer === "true" || answer === "false";
+        }
+        // Fallback para outros tipos
+        else {
           return typeof answer === "string" && answer.trim().length > 0;
         }
       });
@@ -190,9 +255,25 @@ export default Vue.extend({
     answeredQuestions(): number {
       return this.questionsList.filter((question) => {
         const answer = this.answers[question.id];
+        
+        // Para perguntas de escolha múltipla (options_group !== null)
         if (question.options_group !== null) {
           return answer !== undefined && answer !== null;
-        } else {
+        }
+        // Para perguntas de texto (tipo 1)
+        else if (question.type === 1) {
+          return typeof answer === "string" && answer.trim().length > 0;
+        }
+        // Para perguntas numéricas (tipo 2)
+        else if (question.type === 2) {
+          return answer !== null && answer !== undefined && answer !== '' && !isNaN(Number(answer));
+        }
+        // Para perguntas verdadeiro/falso (tipo 3)
+        else if (question.type === 3) {
+          return answer === "true" || answer === "false";
+        }
+        // Fallback para outros tipos
+        else {
           return typeof answer === "string" && answer.trim().length > 0;
         }
       }).length;
@@ -200,11 +281,23 @@ export default Vue.extend({
     progressPercentage(): number {
       if (this.questionsList.length === 0) return 0;
       return (this.answeredQuestions / this.questionsList.length) * 100;
+    },
+    textValidationRules() {
+      return [(v: any) => !!v || 'Este campo é obrigatório'];
+    },
+    numericValidationRules() {
+      return [
+        (v: any) => v !== null && v !== undefined && v !== '' || 'Este campo é obrigatório',
+        (v: any) => !isNaN(Number(v)) || 'Deve ser um número válido'
+      ];
     }
   },
   methods: {
-    getOptionsForQuestion(optionsGroup: number) {
+    getOptionsForQuestion(optionsGroup: number | undefined) {
       // Filtra as opções cujo options_group corresponde
+      if (optionsGroup === undefined || optionsGroup === null) {
+        return [];
+      }
       return this.optionsList.filter(option => option.options_group === optionsGroup);
     },
     openConfirmDialog() {
@@ -299,6 +392,32 @@ export default Vue.extend({
 
 .text-input-container {
   padding: 8px 0;
+}
+
+.numeric-input-container {
+  padding: 8px 0;
+}
+
+.boolean-input-container {
+  padding: 8px 0;
+}
+
+.boolean-input-container .v-radio-group {
+  justify-content: center;
+}
+
+.boolean-input-container .custom-radio {
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin: 4px 8px;
+  transition: all 0.3s ease;
+  background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.boolean-input-container .custom-radio:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .custom-text-field {
