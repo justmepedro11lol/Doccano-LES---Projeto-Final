@@ -56,7 +56,7 @@
           :color="getPercentageColor(parseInt(item.labelPercentage))"
           height="20"
         >
-          <template v-slot:default="{ value }">
+          <template #default="{ value }">
             <strong>{{ value }}%</strong>
           </template>
         </v-progress-linear>
@@ -136,23 +136,6 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
     }
   },
 
-  watch: {
-    items: {
-      immediate: true,
-      async handler(newItems) {
-        if (newItems) {
-          for (const id of Object.keys(newItems)) {
-            await this.resolveExampleName(id)
-          }
-        }
-      }
-    }
-  },
-
-  async mounted () {
-    // Removido pois agora está sendo tratado pelo watcher
-  },
-
   computed: {
     headers () {
       return [
@@ -227,6 +210,23 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
     itemKey () {
       return 'exampleId'
     }
+  },
+
+  watch: {
+    items: {
+      immediate: true,
+      async handler(newItems) {
+        if (newItems) {
+          for (const id of Object.keys(newItems)) {
+            await this.resolveExampleName(id)
+          }
+        }
+      }
+    }
+  },
+
+  async mounted () {
+    // Removido pois agora está sendo tratado pelo watcher
   },
 
   methods: {

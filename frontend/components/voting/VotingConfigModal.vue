@@ -23,15 +23,15 @@
                 offset-y
                 min-width="auto"
               >
-                <template v-slot:activator="{ on, attrs }">
+                <template #activator="{ on, attrs }">
                   <v-text-field
                     v-model="startDate"
                     label="Data de Início"
                     prepend-icon="mdi-calendar"
                     readonly
                     v-bind="attrs"
-                    v-on="on"
                     :rules="startDateRules"
+                    v-on="on"
                   ></v-text-field>
                 </template>
                 <v-date-picker
@@ -50,15 +50,15 @@
                 offset-y
                 min-width="auto"
               >
-                <template v-slot:activator="{ on, attrs }">
+                <template #activator="{ on, attrs }">
                   <v-text-field
                     v-model="endDate"
                     label="Data de Fim"
                     prepend-icon="mdi-calendar"
                     readonly
                     v-bind="attrs"
-                    v-on="on"
                     :rules="endDateRules"
+                    v-on="on"
                   ></v-text-field>
                 </template>
                 <v-date-picker
@@ -147,8 +147,8 @@
         <v-btn
           :loading="saving"
           color="primary"
-          @click="saveConfig"
           :disabled="!isFormValid"
+          @click="saveConfig"
         >
           Salvar
         </v-btn>

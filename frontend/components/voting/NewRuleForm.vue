@@ -36,8 +36,8 @@
           <v-btn
             :loading="saving"
             color="primary"
-            @click="saveRule"
             :disabled="!isFormValid"
+            @click="saveRule"
           >
             Salvar
           </v-btn>
