@@ -1,0 +1,37 @@
+# Generated manually for AnnotatorReportConfig model
+
+from django.conf import settings
+from django.db import migrations, models
+import django.db.models.deletion
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+        ('projects', '0001_initial'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='AnnotatorReportConfig',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('dataset_ids', models.JSONField(blank=True, default=list)),
+                ('annotator_ids', models.JSONField(blank=True, default=list)),
+                ('data_inicial', models.DateTimeField(blank=True, null=True)),
+                ('data_final', models.DateTimeField(blank=True, null=True)),
+                ('categoria_labels', models.JSONField(blank=True, default=list)),
+                ('perspectiva_ids', models.JSONField(blank=True, default=list)),
+                ('estado_desacordo', models.CharField(choices=[('todos', 'Todos'), ('em_desacordo', 'Em desacordo'), ('resolvido', 'Resolvido')], default='todos', max_length=20)),
+                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('project', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='annotator_reports', to='projects.project')),
+            ],
+            options={
+                'ordering': ['-created_at'],
+            },
+        ),
+    ] 

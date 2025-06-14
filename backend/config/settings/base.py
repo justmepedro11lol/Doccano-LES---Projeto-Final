@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "labels",
     "label_types",
     "examples",
+    "reports",
     "rest_framework",
     "rest_framework.authtoken",
     "django_filters",
