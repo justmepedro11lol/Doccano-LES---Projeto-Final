@@ -218,10 +218,11 @@ export default Vue.extend({
     // Extrai as perguntas disponíveis e adiciona a opção "Todas as perguntas"
     availableQuestions() {
       const questionsSet = new Set<string>()
-      const projectItems = this.items.filter(
-        item => Number(item.project_id) === Number(this.projectId)
-      )
-      projectItems.forEach(item => {
+      const itemsToProcess = this.projectId ? 
+        this.items.filter(item => Number(item.project_id) === Number(this.projectId)) :
+        this.items;
+
+      itemsToProcess.forEach(item => {
         if (Array.isArray(item.questions)) {
           item.questions.forEach(q => {
             if (q.question) {
@@ -235,10 +236,11 @@ export default Vue.extend({
     // Extrai os utilizadores disponíveis a partir das respostas e adiciona "Todos os utilizadores"
     availableUsers() {
       const usersSet = new Set<string>()
-      const projectItems = this.items.filter(
-        item => Number(item.project_id) === Number(this.projectId)
-      )
-      projectItems.forEach(item => {
+      const itemsToProcess = this.projectId ? 
+        this.items.filter(item => Number(item.project_id) === Number(this.projectId)) :
+        this.items;
+
+      itemsToProcess.forEach(item => {
         if (Array.isArray(item.questions)) {
           item.questions.forEach(q => {
             if (Array.isArray(q.answers)) {
@@ -264,10 +266,11 @@ export default Vue.extend({
     // Extrai as respostas disponíveis e adiciona "Todas as respostas"
     availableAnswers() {
       const answersSet = new Set<string>()
-      const projectItems = this.items.filter(
-        item => Number(item.project_id) === Number(this.projectId)
-      )
-      projectItems.forEach(item => {
+      const itemsToProcess = this.projectId ? 
+        this.items.filter(item => Number(item.project_id) === Number(this.projectId)) :
+        this.items;
+
+      itemsToProcess.forEach(item => {
         if (Array.isArray(item.questions)) {
           item.questions.forEach(q => {
             if (Array.isArray(q.answers)) {
@@ -286,11 +289,12 @@ export default Vue.extend({
     // Processa os itens gerando uma linha para cada resposta e aplicando os filtros selecionados
     processedItems() {
       const result: Array<{ id: number; memberName: string; question: string; answer: string }> = []
-      const projectItems = this.items.filter(
-        item => Number(item.project_id) === Number(this.projectId)
-      )
+      const itemsToProcess = this.projectId ? 
+        this.items.filter(item => Number(item.project_id) === Number(this.projectId)) :
+        this.items;
+
       let counter = 0
-      projectItems.forEach(item => {
+      itemsToProcess.forEach(item => {
         if (Array.isArray(item.questions)) {
           item.questions.forEach(q => {
             // Filtra pela pergunta, se selecionada
