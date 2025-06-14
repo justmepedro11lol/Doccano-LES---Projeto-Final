@@ -48,8 +48,8 @@ class UserSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {
             "password": {"write_only": True, "required": False},
-            "is_superuser": {"read_only": True},
-            "is_staff": {"read_only": True},
+            "is_superuser": {"required": False},
+            "is_staff": {"required": False},
         }
 
     def update(self, instance, validated_data):
