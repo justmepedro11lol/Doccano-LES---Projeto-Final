@@ -116,24 +116,21 @@ export default Vue.extend({
     }
   },
 
-  mounted() {
-    this.fetchUsers()
+  async fetch() {
+    this.isLoading = true
+    try {
+      const response = await this.$services.user.list()
+      this.items = response
+      this.databaseError = false
+    } catch (error) {
+      console.error('Erro ao buscar utilizadores:', error)
+      this.handleError(error, 'Erro ao carregar utilizadores')
+    } finally {
+      this.isLoading = false
+    }
   },
 
   methods: {
-    async fetchUsers() {
-      this.isLoading = true
-      try {
-        const response = await this.$services.user.list()
-        this.items = response
-        this.databaseError = false
-      } catch (error) {
-        console.error('Erro ao buscar utilizadores:', error)
-        this.handleError(error, 'Erro ao carregar utilizadores')
-      } finally {
-        this.isLoading = false
-      }
-    },
     async deleteUser(userId: number) {
       this.isLoading = true
       try {

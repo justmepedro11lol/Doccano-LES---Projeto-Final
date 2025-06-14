@@ -52,6 +52,7 @@
                 dense
                 prepend-inner-icon="mdi-account-circle"
                 class="custom-field"
+                :rules="[rules.required]"
                 @input="$emit('update:firstName', localFirstName)" 
               />
             </v-col>
@@ -63,6 +64,7 @@
                 dense
                 prepend-inner-icon="mdi-account-circle-outline"
                 class="custom-field"
+                :rules="[rules.required]"
                 @input="$emit('update:lastName', localLastName)" 
               />
             </v-col>

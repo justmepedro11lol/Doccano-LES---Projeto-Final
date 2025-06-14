@@ -61,34 +61,37 @@
           v-bind.sync="editedItem" 
           :items="items"
           :is-edit-mode="true"
+          :id="userId"
         >
-          <!-- Botões de ação com design melhorado -->
-          <div class="actions-container mt-6">
-            <div class="d-flex flex-wrap gap-3 justify-center">
-              <v-btn
-                color="error"
-                outlined
-                large
-                class="action-btn"
-                @click="$router.push('/users')"
-              >
-                <v-icon left>mdi-close</v-icon>
-                Cancelar
-              </v-btn>
+          <template #default="{ valid }">
+            <!-- Botões de ação com design melhorado -->
+            <div class="actions-container mt-6">
+              <div class="d-flex flex-wrap gap-3 justify-center">
+                <v-btn
+                  color="error"
+                  outlined
+                  large
+                  class="action-btn"
+                  @click="$router.push('/users')"
+                >
+                  <v-icon left>mdi-close</v-icon>
+                  Cancelar
+                </v-btn>
 
-              <v-btn
-                :disabled="!isFormValid || databaseError"
-                color="primary"
-                large
-                elevated
-                class="action-btn primary-btn"
-                @click="save"
-              >
-                <v-icon left>mdi-content-save</v-icon>
-                Guardar Alterações
-              </v-btn>
+                <v-btn
+                  :disabled="!valid || databaseError"
+                  color="primary"
+                  large
+                  elevated
+                  class="action-btn primary-btn"
+                  @click="save"
+                >
+                  <v-icon left>mdi-content-save</v-icon>
+                  Guardar Alterações
+                </v-btn>
+              </div>
             </div>
-          </div>
+          </template>
         </form-create>
       </v-card-text>
     </v-card>
@@ -136,8 +139,9 @@ export default Vue.extend({
     },
 
     isFormValid(): boolean {
-      // Validação simplificada
-      return !!(this.editedItem?.username && this.editedItem?.email)
+      // This computed property is no longer directly used for button disabling.
+      // The 'valid' state from the FormCreate component is now used directly.
+      return true; // Or remove if not used elsewhere.
     },
 
     service(): any {
@@ -250,13 +254,11 @@ export default Vue.extend({
           } else if (errors.email) {
             this.errorMessage = 'Email já existe.'
           } else {
-            this.errorMessage = 'Dados inválidos. Verifique os campos.'
+            this.errorMessage = 'Erro de validação desconhecido.'
           }
         } else {
-          this.errorMessage = 'Erro ao guardar utilizador.'
+          this.errorMessage = `Erro: ${error.message || 'Erro desconhecido'}`
         }
-      } else {
-        this.errorMessage = 'Erro de rede. Tente novamente.'
       }
     }
   }
