@@ -41,7 +41,8 @@ import {
   mdiCommentTextOutline,
   mdiArrowCollapse,
   mdiFormatListChecks,
-  mdiFileChart
+  mdiFileChart,
+  mdiChartLine
 } from '@mdi/js'
 import { getLinkToAnnotationPage } from '~/presenter/linkToAnnotationPage'
 
@@ -143,6 +144,12 @@ export default {
           icon: mdiFileChart,
           text: 'Reports',
           link: 'reports',
+          isVisible: this.isProjectAdmin
+        },
+        {
+          icon: mdiChartLine,
+          text: 'Statistics',
+          link: 'statistics',
           isVisible: this.isProjectAdmin
         },
         {
