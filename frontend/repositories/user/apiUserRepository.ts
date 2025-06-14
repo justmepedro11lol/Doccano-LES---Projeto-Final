@@ -86,7 +86,9 @@ export class APIUserRepository {
       username: data.username,
       first_name: data.first_name ?? '',
       last_name: data.last_name ?? '',
-      email: data.email ?? ''
+      email: data.email ?? '',
+      is_superuser: data.isSuperUser ?? false,
+      is_staff: data.isStaff ?? false
     }
 
     if (data.password && data.passwordConfirmation) {

@@ -1,19 +1,19 @@
 <template>
-  <div class="user-create-container">
+  <div class="user-edit-container">
     <!-- Alertas com design melhorado -->
     <v-slide-y-transition>
       <v-alert
-        v-if="sucessMessage"
+        v-if="successMessage"
         type="success"
         dismissible
         border="left"
         colored-border
         elevation="2"
         class="ma-4"
-        @click="sucessMessage = ''"
+        @click="successMessage = ''"
       >
         <v-icon slot="prepend" color="success">mdi-check-circle</v-icon>
-        {{ sucessMessage }}
+        {{ successMessage }}
       </v-alert>
     </v-slide-y-transition>
 
@@ -51,12 +51,17 @@
     <!-- Card principal com design melhorado -->
     <v-card class="main-card" elevation="3">
       <v-card-title class="primary white--text d-flex align-center">
-        <v-icon left color="white" size="28">mdi-account-plus</v-icon>
-        <span class="text-h5">Criar Novo Utilizador</span>
+        <v-icon left color="white" size="28">mdi-account-edit</v-icon>
+        <span class="text-h5">Editar Utilizador</span>
       </v-card-title>
 
       <v-card-text class="pa-6">
-        <form-create v-bind.sync="editedItem" :items="items" :is-edit-mode="false">
+        <form-create 
+          v-if="editedItem && !isLoading"
+          v-bind.sync="editedItem" 
+          :items="items"
+          :is-edit-mode="true"
+        >
           <!-- Botões de ação com design melhorado -->
           <div class="actions-container mt-6">
             <div class="d-flex flex-wrap gap-3 justify-center">
@@ -80,19 +85,7 @@
                 @click="save"
               >
                 <v-icon left>mdi-content-save</v-icon>
-                Guardar
-              </v-btn>
-
-              <v-btn
-                :disabled="!isFormValid || databaseError"
-                color="secondary"
-                outlined
-                large
-                class="action-btn"
-                @click="saveAndAnother"
-              >
-                <v-icon left>mdi-plus</v-icon>
-                Guardar e Criar Outro
+                Guardar Alterações
               </v-btn>
             </div>
           </div>
@@ -127,46 +120,24 @@ export default Vue.extend({
 
   data() {
     return {
-      editedItem: {
-        username: '',
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        passwordConfirmation: '',
-        isSuperUser: false,
-        isStaff: false
-      } as any,
-      defaultItem: {
-        username: '',
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        passwordConfirmation: '',
-        isSuperUser: false,
-        isStaff: false
-      } as any,
+      editedItem: null as UserDTO | null,
+      originalUser: null as UserDTO | null,
       items: [] as UserDTO[],
       errorMessage: '',
-      sucessMessage: '',
-      databaseError: false,
-      healthCheckInterval: null as any,
-      isLoading: false
+      successMessage: '',
+      isLoading: false,
+      databaseError: false
     }
   },
 
   computed: {
-    projectId(): string {
-      return this.$route.params.id
+    userId(): number {
+      return parseInt(this.$route.params.id)
     },
 
     isFormValid(): boolean {
-      return !!this.editedItem.username && 
-             !!this.editedItem.password && 
-             !!this.editedItem.passwordConfirmation && 
-             !!this.editedItem.email &&
-             this.editedItem.password === this.editedItem.passwordConfirmation;
+      // Validação simplificada
+      return !!(this.editedItem?.username && this.editedItem?.email)
     },
 
     service(): any {
@@ -177,72 +148,91 @@ export default Vue.extend({
   async created() {
     this.isLoading = true
     try {
+      // Carrega lista de usuários para validação e busca o usuário específico
       this.items = await this.service.list()
-    } catch (error) {
-      console.error('Error loading users:', error)
-      if (error.response && error.response.status === 503) {
-        this.databaseError = true
+      
+      // Busca o usuário específico na lista
+      this.originalUser = this.items.find(user => user.id === this.userId) || null
+      
+      if (!this.originalUser) {
+        this.errorMessage = 'Utilizador não encontrado.'
+        setTimeout(() => {
+          this.$router.push('/users')
+        }, 2000)
+        return
       }
+      
+      // Cria uma cópia do usuário para edição
+      this.editedItem = {
+        id: this.originalUser.id,
+        username: this.originalUser.username,
+        firstName: this.originalUser.firstName,
+        lastName: this.originalUser.lastName,
+        email: this.originalUser.email,
+        isSuperUser: this.originalUser.isSuperUser,
+        isStaff: this.originalUser.isStaff,
+        password: '', // Senha sempre vazia na edição
+        passwordConfirmation: ''
+      }
+
+      console.log('=== UTILIZADOR CARREGADO ===')
+      console.log('Dados originais:', this.originalUser)
+      console.log('Dados para edição:', this.editedItem)
+      
+    } catch (error) {
+      console.error('Error loading user:', error)
+      this.errorMessage = `Erro ao carregar utilizador: ${error.message || 'Erro desconhecido'}`
     } finally {
       this.isLoading = false
     }
     
-    // Inicia verificação de saúde da base de dados
-    this.startHealthCheck()
+    // Não inicia health check para melhorar performance
+    // this.startHealthCheck()
   },
   
   beforeDestroy() {
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval)
-    }
+    // Não há mais health check para limpar
   },
 
   methods: {
     async save() {
+      if (!this.editedItem) return
+      
       this.isLoading = true
+      this.errorMessage = ''
+      this.successMessage = ''
+      
       try {
-        // Converte para o formato esperado pelo backend
-        const userPayload = {
-          ...this.editedItem,
+        // Prepara payload para envio
+        const userPayload: any = {
+          username: this.editedItem.username,
           first_name: this.editedItem.firstName,
-          last_name: this.editedItem.lastName
+          last_name: this.editedItem.lastName,
+          email: this.editedItem.email,
+          isSuperUser: this.editedItem.isSuperUser,
+          isStaff: this.editedItem.isStaff
         }
         
-        await this.service.create(userPayload)
-        this.sucessMessage = 'O utilizador foi criado com sucesso!'
-        this.databaseError = false
-        setTimeout(() => {
-          this.$router.push(`/users`)
-        }, 1500)
+        // Debug: Log para verificar os valores
+        console.log('=== GUARDAR UTILIZADOR ===')
+        console.log('isSuperUser:', this.editedItem.isSuperUser)
+        console.log('isStaff:', this.editedItem.isStaff)
+        console.log('Payload:', userPayload)
+        
+        // Só inclui senha se foi preenchida
+        if (this.editedItem.password && this.editedItem.passwordConfirmation) {
+          userPayload.password = this.editedItem.password
+          userPayload.passwordConfirmation = this.editedItem.passwordConfirmation
+        }
+        
+        await this.service.update(this.userId, userPayload)
+        
+        // Sucesso - redireciona imediatamente
+        this.$router.push('/users')
+        
       } catch (error: any) {
-        this.handleError(error)
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async saveAndAnother() {
-      this.isLoading = true
-      try {
-        // Converte para o formato esperado pelo backend
-        const userPayload = {
-          ...this.editedItem,
-          first_name: this.editedItem.firstName,
-          last_name: this.editedItem.lastName
-        }
-        
-        await this.service.create(userPayload)
-        this.sucessMessage = 'O utilizador foi criado com sucesso! Pode criar outro.'
-        this.databaseError = false
-        this.editedItem = Object.assign({}, this.defaultItem)
-        this.items = await this.service.list()
-        
-        // Limpa mensagem após 3 segundos
-        setTimeout(() => {
-          this.sucessMessage = ''
-        }, 3000)
-      } catch (error) {
-        this.handleError(error)
+        console.error('Erro ao guardar:', error)
+        this.errorMessage = 'Erro ao guardar utilizador. Tente novamente.'
       } finally {
         this.isLoading = false
       }
@@ -256,41 +246,25 @@ export default Vue.extend({
         } else if (error.response.status === 400) {
           const errors = error.response.data
           if (errors.username) {
-            this.errorMessage = `Nome de utilizador: ${errors.username[0]}`
+            this.errorMessage = 'Nome de utilizador já existe.'
           } else if (errors.email) {
-            this.errorMessage = `Email: ${errors.email[0]}`
-          } else if (errors.password) {
-            this.errorMessage = `Palavra-passe: ${errors.password[0]}`
+            this.errorMessage = 'Email já existe.'
           } else {
-            this.errorMessage = 'Dados inválidos. Verifique os campos e tente novamente.'
+            this.errorMessage = 'Dados inválidos. Verifique os campos.'
           }
         } else {
-          this.errorMessage = 'Erro ao criar utilizador. Por favor, tente novamente.'
+          this.errorMessage = 'Erro ao guardar utilizador.'
         }
       } else {
-        this.databaseError = true
-        this.errorMessage = 'Base de dados indisponível. Por favor, tente novamente mais tarde.'
+        this.errorMessage = 'Erro de rede. Tente novamente.'
       }
-    },
-    
-    startHealthCheck() {
-      // Verifica a saúde da base de dados a cada 2 segundos
-      this.healthCheckInterval = setInterval(async () => {
-        try {
-          await this.$repositories.user.checkHealth()
-          this.databaseError = false
-        } catch (error) {
-          console.error('Database health check failed:', error)
-          this.databaseError = true
-        }
-      }, 2000)
     }
   }
 })
 </script>
 
 <style scoped>
-.user-create-container {
+.user-edit-container {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 20px;

@@ -55,9 +55,19 @@
 
       <!-- Ações (ícone de editar) -->
       <template #[`item.actions`]="{ item }">
-        <v-icon small @click="$emit('editUser', item)">
-          {{ mdiPencil }}
-        </v-icon>
+        <v-tooltip bottom>
+          <template #activator="{ on, attrs }">
+            <v-icon 
+              small 
+              v-bind="attrs" 
+              v-on="on"
+              @click="$emit('editUserPage', item)"
+            >
+              {{ mdiPencil }}
+            </v-icon>
+          </template>
+          <span>Editar Utilizador</span>
+        </v-tooltip>
       </template>
     </v-data-table>
   </div>

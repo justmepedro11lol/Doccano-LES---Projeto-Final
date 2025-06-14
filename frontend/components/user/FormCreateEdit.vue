@@ -137,7 +137,7 @@
           </v-row>
 
           <!-- Indicador de força da palavra-passe -->
-          <v-row>
+          <v-row v-if="localPassword">
             <v-col cols="12">
               <div class="password-strength">
                 <div class="d-flex align-center mb-2">
@@ -267,15 +267,15 @@ export default Vue.extend({
       required: false,
       default: ''
     },
-    isEditMode: {
-      type: Boolean,
-      default: false
-    },
     isSuperUser: {
       type: Boolean,
       default: false
     },
     isStaff: {
+      type: Boolean,
+      default: false
+    },
+    isEditMode: {
       type: Boolean,
       default: false
     }
@@ -304,10 +304,17 @@ export default Vue.extend({
       databaseError: false,
       healthCheckInterval: null as any,
       
-      rules: {
-        passwordsMatch: (
-          v: string // @ts-ignore
-        ) => this.isEqual(v) || 'As palavras-passe devem coincidir',
+      mdiReload,
+      show2: false,
+      mdiEye,
+      mdiEyeOff,
+      show1: false
+    }
+  },
+
+  computed: {
+    rules() {
+      return {
         required: (v: string) => !!v || 'Campo obrigatório',
         counter: (
           v: string // @ts-ignore
@@ -338,16 +345,9 @@ export default Vue.extend({
           }
           return true
         }
-      },
-      mdiReload,
-      show2: false,
-      mdiEye,
-      mdiEyeOff,
-      show1: false
-    }
-  },
+      }
+    },
 
-  computed: {
     passwordCreateRules() {
       return [
         this.rules.required,
@@ -389,7 +389,7 @@ export default Vue.extend({
       return [
         this.rules.required,
         this.rules.counter,
-        this.rules.passwordsMatch
+        (v: string) => this.isEqual(v) || 'As palavras-passe devem coincidir'
       ]
     },
 
@@ -464,7 +464,8 @@ export default Vue.extend({
   },
   
   mounted() {
-    // Não inicia health check para melhorar performance
+    // Inicia verificação de saúde da base de dados
+    this.startHealthCheck()
   },
   
   beforeDestroy() {
@@ -559,6 +560,19 @@ export default Vue.extend({
       } finally {
         this.checkingEmail = false
       }
+    },
+    
+    startHealthCheck() {
+      // Verifica a saúde da base de dados a cada 2 segundos
+      this.healthCheckInterval = setInterval(async () => {
+        try {
+          await this.$repositories.user.checkHealth()
+          this.databaseError = false
+        } catch (error) {
+          console.error('Database health check failed:', error)
+          this.databaseError = true
+        }
+      }, 2000)
     },
     
     isUsedName(username: string): boolean {
@@ -691,4 +705,4 @@ export default Vue.extend({
   border-radius: 4px !important;
   overflow: hidden;
 }
-</style>
+</style> 

@@ -65,15 +65,13 @@
       <v-dialog v-model="dialogDelete">
         <form-delete :selected="selected" @remove="handleDelete" @cancel="dialogDelete = false" />
       </v-dialog>
-      <v-dialog v-model="dialogEdit">
-        <form-edit :user="selected[0]" @confirmEdit="handleEdit" @cancel="dialogEdit = false" />
-      </v-dialog>
+
     </v-card-title>
     <user-list
       v-model="selected"
       :items="items"
       :is-loading="isLoading"
-      @editUser="openEditDialog"
+      @editUserPage="openEditPage"
     />
   </v-card>
 </template>
@@ -84,12 +82,11 @@ import { mapGetters } from 'vuex'
 import FormDelete from '@/components/user/FormDelete.vue'
 import UserList from '@/components/user/UserList.vue'
 import { UserDTO } from '~/services/application/user/userData'
-import FormEdit from '@/components/user/FormEdit.vue'
+
 
 export default Vue.extend({
   components: {
     FormDelete,
-    FormEdit,
     UserList
   },
 
@@ -102,7 +99,6 @@ export default Vue.extend({
       dialogDelete: false,
       items: [] as UserDTO[],
       selected: [] as UserDTO[],
-      dialogEdit: false,
       isLoading: false,
       tab: 0,
       drawerLeft: null,
@@ -273,33 +269,9 @@ export default Vue.extend({
         this.isLoading = false
       }
     },
-    async handleEdit(updatedUser: UserDTO) {
-      this.isLoading = true
-      this.clearMessages()
-      
-      try {
-        await this.$services.user.update(updatedUser.id, updatedUser)
 
-        // Atualiza localmente a lista com os dados editados
-        this.items = this.items.map((user) => (user.id === updatedUser.id ? updatedUser : user))
-
-        this.dialogEdit = false
-        this.selected = []
-        this.databaseError = false
-        
-        this.successMessage = 'Utilizador editado com sucesso!'
-        this.hideMessageAfterDelay('successMessage')
-        
-      } catch (error) {
-        console.error('Erro ao editar utilizador:', error)
-        this.handleError(error, 'Erro ao editar utilizador')
-      } finally {
-        this.isLoading = false
-      }
-    },
-    openEditDialog(user: UserDTO) {
-      this.selected = [user]
-      this.dialogEdit = true
+    openEditPage(user: UserDTO) {
+      this.$router.push(`/users/edit/${user.id}`)
     },
     handleError(error: any, defaultMessage: string) {
       const err = error as any

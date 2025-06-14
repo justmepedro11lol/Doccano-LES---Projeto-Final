@@ -10,6 +10,8 @@ export class UserDTO {
   first_name?: string
   last_name?: string
   email?: string
+  firstName?: string
+  lastName?: string
 
   constructor(item: UserItem) {
     this.id = item.id
@@ -21,5 +23,7 @@ export class UserDTO {
     this.first_name = item.first_name ?? ''
     this.last_name = item.last_name ?? ''
     this.email = item.email ?? ''
+    this.firstName = this.first_name
+    this.lastName = this.last_name
   }
 }

@@ -27,18 +27,26 @@
               :is-loading="isLoading"
               :discrepancy-threshold="project.minPercentage"
             />
-          </v-card-text>
 
-          <v-card-actions v-if="hasDiscrepancies" class="justify-center">
-            <v-btn
-              color="primary"
-              class="text-center"
-              @click="goToChat"
-            >
-              <v-icon left>mdi-message-text</v-icon>
-              Discuss Discrepancies
-            </v-btn>
-          </v-card-actions>
+            <!-- Botões de ação abaixo dos filtros -->
+            <div v-if="hasDiscrepancies" class="d-flex justify-center mt-4">
+              <v-btn
+                color="primary"
+                class="mr-3"
+                @click="goToSideBySideComparison"
+              >
+                <v-icon left>mdi-compare</v-icon>
+                Comparar Anotações Lado a Lado
+              </v-btn>
+              <v-btn
+                color="primary"
+                @click="goToChat"
+              >
+                <v-icon left>mdi-message-text</v-icon>
+                Discuss Discrepancies
+              </v-btn>
+            </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -108,9 +116,14 @@ export default Vue.extend({
       return this.$route.params.id
     },
     hasDiscrepancies(): boolean {
-      return Object.values(this.items).some(item => 
+      // Mostrar botões se há dados de métricas (discrepâncias ou não)
+      const hasData = Object.keys(this.items).length > 0
+      const hasRealDiscrepancies = Object.values(this.items).some(item => 
         Object.values(item).some(percentage => percentage < this.project.minPercentage)
       )
+      
+      // Mostrar se há dados OU discrepâncias reais
+      return hasData || hasRealDiscrepancies
     }
   },
 
@@ -131,6 +144,11 @@ export default Vue.extend({
   },
 
   methods: {
+    goToSideBySideComparison() {
+      this.$router.push(
+        `/projects/${this.projectId}/discrepancies/side-by-side`
+      )
+    },
     goToChat() {
       this.$router.push(
         `/projects/${this.projectId}/examples/19/discrepancies/detail`
