@@ -33,6 +33,7 @@ import { APIDiscrepancyRepository } from '~/repositories/discrepancy/discrepancy
 import { APIUserRepository } from '~/repositories/user/apiUserRepository'
 import { APICatalogRepository } from '~/repositories/upload/apiCatalogRepository'
 import { APIParseRepository } from '~/repositories/upload/apiParseRepository'
+import { APIAnnotatorReportRepository } from '~/repositories/reports/apiAnnotatorReportRepository'
 
 export interface Repositories {
   // User
@@ -86,6 +87,9 @@ export interface Repositories {
 
   // Discrepancy chat
   discrepancy: APIDiscrepancyRepository
+
+  // Reports
+  annotatorReport: APIAnnotatorReportRepository
 }
 
 declare module 'vue/types/vue' {
@@ -146,6 +150,9 @@ const repositories: Repositories = {
 
   // Discrepancy chat
   discrepancy: new APIDiscrepancyRepository(),
+
+  // Reports
+  annotatorReport: new APIAnnotatorReportRepository(),
 }
 
 const plugin: Plugin = (_, inject) => {

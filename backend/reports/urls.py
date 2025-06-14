@@ -2,10 +2,26 @@ from django.urls import path
 from .views import (
     AnnotatorReportAPIView,
     AnnotatorReportExportAPIView,
-    annotator_report_metadata
+    annotator_report_metadata,
+    test_reports_connection,
+    debug_annotator_data
 )
 
 urlpatterns = [
+    # Teste de conexão
+    path(
+        'test-reports/',
+        test_reports_connection,
+        name='test_reports'
+    ),
+    
+    # Debug de dados de anotadores
+    path(
+        'projects/<int:project_id>/reports/annotators/debug',
+        debug_annotator_data,
+        name='debug_annotator_data'
+    ),
+    
     # Relatório de anotadores
     path(
         'projects/<int:project_id>/reports/annotators',
