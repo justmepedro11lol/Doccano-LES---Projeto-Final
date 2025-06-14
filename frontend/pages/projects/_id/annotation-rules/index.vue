@@ -1,82 +1,19 @@
 <template>
   <v-container fluid class="pa-8">
-    <!-- Header elegante -->
+    <!-- Header principal da página -->
     <div class="mb-8">
-      <h1 class="text-h4 font-weight-bold primary--text mb-2">
-        Regras de Anotação
-      </h1>
-      <p class="text-subtitle-1 grey--text text--darken-1">
-        Os utilizadores podem votar nas regras de anotação do projeto.
-      </p>
-    </div>
-
-    <!-- Estado da discussão -->
-    <v-row class="mb-6">
-      <v-col cols="12">
-        <v-alert
-          v-if="!isDiscussionEnded"
-          type="info"
-          text
-          prominent
-          border="left"
-          class="mb-4"
-        >
-          <div class="d-flex align-center">
-            <v-icon left color="info">mdi-information</v-icon>
-            <div>
-              <div class="font-weight-medium">Discussão em Andamento</div>
-              <div class="text-caption mt-1">
-                Antes de configurar uma votação, é necessário que a discussão sobre discrepâncias seja finalizada.
-                Acesse a página de <router-link :to="`/projects/${projectId}/discrepancies`" class="font-weight-medium">discrepâncias</router-link> para participar.
-              </div>
-            </div>
-          </div>
-        </v-alert>
-        
-        <v-alert
-          v-else-if="hasActiveVoting"
-          type="warning"
-          text
-          prominent
-          border="left"
-          class="mb-4"
-        >
-          <div class="d-flex align-center">
-            <v-icon left color="warning">mdi-vote</v-icon>
-            <div>
-              <div class="font-weight-medium">Votação em Andamento</div>
-              <div class="text-caption mt-1">
-                Já existe uma votação em curso. Aguarde o término da votação atual antes de configurar uma nova.
-              </div>
-            </div>
-          </div>
-        </v-alert>
-        
-        <v-alert
-          v-else
-          type="success"
-          text
-          prominent
-          border="left"
-          class="mb-4"
-        >
-          <div class="d-flex align-center">
-            <v-icon left color="success">mdi-check-circle</v-icon>
-            <div>
-              <div class="font-weight-medium">Pronto para Votar</div>
-              <div class="text-caption mt-1">
-                A discussão foi finalizada. Pode configurar uma nova votação.
-              </div>
-            </div>
-          </div>
-        </v-alert>
-      </v-col>
-    </v-row>
-
-    <!-- Botão de configuração (apenas para administradores) -->
-    <v-row v-if="canConfigureVoting" class="mb-6">
-      <v-col cols="12" class="text-right">
+      <div class="d-flex align-center justify-space-between">
+        <div>
+          <h1 class="text-h4 font-weight-bold primary--text mb-2">
+            Regras de Anotação
+          </h1>
+          <p class="text-subtitle-1 grey--text text--darken-1">
+            Os utilizadores podem votar nas regras de anotação do projeto.
+          </p>
+        </div>
+        <!-- Botão de configuração integrado no header -->
         <v-btn 
+          v-if="canConfigureVoting"
           color="primary" 
           large
           elevation="2"
@@ -86,56 +23,156 @@
           <v-icon left>mdi-cog</v-icon>
           Configurar Nova Votação
         </v-btn>
-      </v-col>
-    </v-row>
+      </div>
+    </div>
 
-    <!-- Votação ativa -->
+    <!-- Estados da votação integrados -->
+    <div class="mb-6">
+      <!-- Estado: Discussão em andamento -->
+      <v-alert
+        v-if="!isDiscussionEnded"
+        type="info"
+        prominent
+        border="left"
+        class="mb-4"
+      >
+        <div class="d-flex align-center">
+          <v-icon left color="info" size="28">mdi-information</v-icon>
+          <div>
+            <div class="font-weight-bold text-h6">Discussão em Andamento</div>
+            <div class="text-body-2 mt-1">
+              Antes de configurar uma votação, é necessário que a discussão sobre discrepâncias seja finalizada.
+              <router-link :to="`/projects/${projectId}/discrepancies`" class="font-weight-medium text-decoration-underline">
+                Acesse a página de discrepâncias
+              </router-link> para participar.
+            </div>
+          </div>
+        </div>
+      </v-alert>
+      
+      <!-- Estado: Sem votação ativa -->
+      <v-alert
+        v-else-if="!hasActiveVoting"
+        type="success"
+        prominent
+        border="left"
+        class="mb-4"
+      >
+        <div class="d-flex align-center">
+          <v-icon left color="success" size="28">mdi-check-circle</v-icon>
+          <div>
+            <div class="font-weight-bold text-h6">Pronto para Votar</div>
+            <div class="text-body-2 mt-1">
+              A discussão foi finalizada. {{ canConfigureVoting ? 'Pode configurar uma nova votação.' : 'Aguarde que o administrador configure a votação.' }}
+            </div>
+          </div>
+        </div>
+      </v-alert>
+    </div>
+
+    <!-- Votação Ativa - Seção Principal -->
     <div v-if="activeVoting">
-      <v-card elevation="4" class="mb-8">
-        <v-card-title class="primary white--text d-flex align-center">
-          <v-icon left color="white">mdi-poll</v-icon>
-          <span class="text-h6">Votação em Andamento</span>
-          <v-spacer></v-spacer>
-          <v-btn 
-            v-if="canConfigureVoting" 
-            color="error" 
-            outlined
-            dark
-            @click="confirmEndVoting = true"
-          >
-            <v-icon left small>mdi-stop</v-icon>
-            Terminar Votação
-          </v-btn>
-        </v-card-title>
-        
-        <v-card-text class="pa-6">
-          <!-- Informações da votação -->
-          <v-row class="mb-4">
-            <v-col cols="12" md="6">
-              <div class="d-flex align-center mb-3">
-                <v-icon color="primary" class="mr-3">mdi-calendar-start</v-icon>
+      <!-- Header da Votação Ativa -->
+      <v-card elevation="6" class="mb-8 voting-main-card">
+        <div class="voting-header-gradient">
+          <v-card-title class="white--text py-6">
+            <div class="d-flex align-center justify-space-between w-100">
+              <div class="d-flex align-center">
+                <v-icon left color="white" size="36">mdi-poll</v-icon>
                 <div>
-                  <div class="text-caption grey--text">Data de Início</div>
-                  <div class="font-weight-medium">{{ formatDate(activeVoting.startDate) }}</div>
+                  <h2 class="text-h5 font-weight-bold mb-1">
+                    {{ activeVoting.name || 'Votação de Regras de Anotação' }}
+                  </h2>
+                  <p class="text-body-1 mb-0 font-weight-light">
+                    {{ activeVoting.description || 'Votação em andamento para aprovação das regras de anotação.' }}
+                  </p>
                 </div>
               </div>
+            </div>
+          </v-card-title>
+        </div>
+        
+        <!-- Informações da votação -->
+        <v-card-text class="pa-6">
+          <!-- Painel de controle do admin -->
+          <div v-if="isProjectAdmin" class="mb-6">
+            <v-card elevation="2" color="orange lighten-5" class="admin-control-panel">
+              <v-card-text class="pa-4">
+                <div class="d-flex align-center justify-space-between">
+                  <div class="d-flex align-center">
+                    <v-avatar color="orange" size="48" class="mr-4">
+                      <v-icon color="white" size="28">mdi-account-tie</v-icon>
+                    </v-avatar>
+                    <div>
+                      <h3 class="text-h6 font-weight-bold mb-1">Painel de Administração</h3>
+                      <p class="text-body-2 grey--text text--darken-1 mb-1">
+                        Gerir votação em andamento
+                      </p>
+                      <v-chip
+                        small
+                        color="orange"
+                        text-color="white"
+                        class="mt-1"
+                      >
+                        <v-icon left small>mdi-information</v-icon>
+                        Administradores não podem votar
+                      </v-chip>
+                    </div>
+                  </div>
+                  
+                  <v-btn 
+                    color="error"
+                    dark
+                    large
+                    elevation="4"
+                    class="end-voting-btn"
+                    @click="confirmEndVoting = true"
+                  >
+                    <v-icon left>mdi-stop-circle</v-icon>
+                    Terminar Votação
+                  </v-btn>
+                </div>
+              </v-card-text>
+            </v-card>
+          </div>
+
+          <v-row class="mb-4">
+            <v-col cols="12" sm="6" md="3">
+              <v-card outlined class="text-center pa-4">
+                <v-icon color="primary" size="32" class="mb-2">mdi-calendar-start</v-icon>
+                <div class="text-caption grey--text">Data de Início</div>
+                <div class="font-weight-bold">{{ formatDate(activeVoting.startDate) }}</div>
+              </v-card>
             </v-col>
             
-            <v-col cols="12" md="6">
-              <div class="d-flex align-center mb-3">
-                <v-icon color="primary" class="mr-3">mdi-calendar-end</v-icon>
-                <div>
-                  <div class="text-caption grey--text">Data de Término</div>
-                  <div class="font-weight-medium">{{ formatDate(activeVoting.endDate) }}</div>
+            <v-col cols="12" sm="6" md="3">
+              <v-card outlined class="text-center pa-4">
+                <v-icon color="primary" size="32" class="mb-2">mdi-calendar-end</v-icon>
+                <div class="text-caption grey--text">Data de Término</div>
+                <div class="font-weight-bold">{{ formatDate(activeVoting.endDate) }}</div>
+              </v-card>
+            </v-col>
+            
+            <v-col cols="12" sm="6" md="3">
+              <v-card outlined class="text-center pa-4">
+                <v-icon color="primary" size="32" class="mb-2">mdi-format-list-bulleted</v-icon>
+                <div class="text-caption grey--text">Total de Regras</div>
+                <div class="font-weight-bold">{{ activeVoting.rules.length }}</div>
+              </v-card>
+            </v-col>
+            
+            <v-col cols="12" sm="6" md="3">
+              <v-card outlined class="text-center pa-4">
+                <v-icon :color="allVotesSubmitted ? 'success' : 'warning'" size="32" class="mb-2">
+                  {{ allVotesSubmitted ? 'mdi-check-circle' : 'mdi-clock-outline' }}
+                </v-icon>
+                <div class="text-caption grey--text">Seu Status</div>
+                <div class="font-weight-bold">
+                  {{ allVotesSubmitted ? 'Concluído' : 'Pendente' }}
                 </div>
-              </div>
+              </v-card>
             </v-col>
           </v-row>
-          
-          <div class="mb-6">
-            <div class="text-caption grey--text mb-2">Descrição</div>
-            <div class="text-body-1">{{ activeVoting.description }}</div>
-          </div>
 
           <!-- Filtros melhorados -->
           <v-expansion-panels v-model="showFilters" class="mb-6">
@@ -212,26 +249,6 @@
             </v-expansion-panel>
           </v-expansion-panels>
 
-          <!-- Mensagem para administradores de projeto -->
-          <v-alert
-            v-if="isProjectAdmin"
-            type="info"
-            text
-            prominent
-            border="left"
-            class="mb-6"
-          >
-            <div class="d-flex align-center">
-              <v-icon left color="info">mdi-account-tie</v-icon>
-              <div>
-                <div class="font-weight-medium">Administrador do Projeto</div>
-                <div class="text-caption mt-1">
-                  Como administrador do projeto, não pode votar nas regras de anotação. Pode apenas configurar e gerir as votações.
-                </div>
-              </div>
-            </div>
-          </v-alert>
-
           <!-- Lista de regras moderna -->
           <div v-if="filteredRules.length > 0">
             <!-- Contador de regras -->
@@ -244,133 +261,134 @@
               </div>
             </div>
 
-            <!-- Cards das regras -->
+            <!-- Cards das regras - Design minimalista -->
             <v-row>
               <v-col v-for="ruleId in filteredRules" :key="ruleId" cols="12">
                 <v-card 
-                  elevation="2" 
+                  flat
+                  outlined
                   :class="[
-                    'mb-4 transition-all',
-                    { 'rule-voted': hasVotedForRule(ruleId) || pendingVotes[ruleId] }
+                    'rule-card-minimal',
+                    { 
+                      'rule-voted': hasVotedForRule(ruleId),
+                      'rule-pending': !hasVotedForRule(ruleId) && pendingVotes[ruleId],
+                      'rule-not-voted': !hasVotedForRule(ruleId) && !pendingVotes[ruleId]
+                    }
                   ]"
                 >
-                  <v-card-text class="pa-6">
-                    <v-row align="center">
+                  <v-card-text class="pa-4">
+                    <v-row no-gutters align="center">
                       <!-- Informações da regra -->
-                      <v-col cols="12" md="8">
-                        <div class="d-flex align-start mb-3">
+                      <v-col cols="12" :md="canVote ? 8 : 12">
+                        <div class="d-flex align-center">
+                          <!-- Status indicator -->
+                          <div class="status-indicator mr-3">
+                            <v-icon 
+                              :color="hasVotedForRule(ruleId) ? 'success' : (pendingVotes[ruleId] ? 'warning' : 'grey lighten-1')"
+                              size="20"
+                            >
+                              {{ hasVotedForRule(ruleId) ? 'mdi-check-circle' : (pendingVotes[ruleId] ? 'mdi-clock-outline' : 'mdi-circle-outline') }}
+                            </v-icon>
+                          </div>
+                          
                           <div class="flex-grow-1">
-                            <h3 class="text-h6 font-weight-bold mb-2">
-                              {{ getRuleName(ruleId) }}
-                            </h3>
-                            <p class="text-body-2 grey--text text--darken-1 mb-3">
-                              {{ getRuleDescription(ruleId) }}
-                            </p>
-                            
-                            <!-- Status chips -->
-                            <div class="d-flex flex-wrap gap-2">
-                              <v-chip
-                                small
-                                :color="hasVotedForRule(ruleId) || pendingVotes[ruleId] ? 'success' : 'grey'"
-                                :outlined="!hasVotedForRule(ruleId) && !pendingVotes[ruleId]"
-                              >
-                                <v-icon left x-small>
-                                  {{ hasVotedForRule(ruleId) || pendingVotes[ruleId] ? 'mdi-check' : 'mdi-circle-outline' }}
-                                </v-icon>
-                                {{ hasVotedForRule(ruleId) || pendingVotes[ruleId] ? 'Votado' : 'Pendente' }}
-                              </v-chip>
+                            <div class="d-flex align-center mb-1">
+                              <h3 class="text-subtitle-1 font-weight-bold mr-2">
+                                {{ getRuleName(ruleId) }}
+                              </h3>
                               
+                              <!-- Category chip (se existir) -->
                               <v-chip
                                 v-if="ruleCategory(ruleId)"
-                                small
-                                color="purple"
+                                x-small
+                                color="primary"
                                 outlined
+                                class="ml-2"
                               >
                                 {{ ruleCategory(ruleId) }}
                               </v-chip>
                             </div>
-                          </div>
-                        </div>
-                        
-                        <!-- Estatísticas de votos -->
-                        <div class="d-flex gap-4">
-                          <div class="d-flex align-center">
-                            <v-icon color="success" class="mr-2">mdi-thumb-up</v-icon>
-                            <span class="font-weight-medium">{{ ruleVotes(ruleId).aprovar }} Aprovações</span>
-                          </div>
-                          <div class="d-flex align-center">
-                            <v-icon color="error" class="mr-2">mdi-thumb-down</v-icon>
-                            <span class="font-weight-medium">{{ ruleVotes(ruleId).rejeitar }} Rejeições</span>
+                            
+                            <p class="text-body-2 grey--text text--darken-1 mb-0">
+                              {{ getRuleDescription(ruleId) }}
+                            </p>
+                            
+                            <!-- Estatísticas de votos (só mostra depois de votar ou para admin) -->
+                            <div v-if="hasVotedForRule(ruleId) || isProjectAdmin" class="mt-2">
+                              <div class="d-flex align-center">
+                                <v-chip
+                                  x-small
+                                  color="success"
+                                  text-color="white"
+                                  class="mr-2"
+                                >
+                                  <v-icon left x-small>mdi-thumb-up</v-icon>
+                                  {{ ruleVotes(ruleId).aprovar }}
+                                </v-chip>
+                                
+                                <v-chip
+                                  x-small
+                                  color="error"
+                                  text-color="white"
+                                  class="mr-2"
+                                >
+                                  <v-icon left x-small>mdi-thumb-down</v-icon>
+                                  {{ ruleVotes(ruleId).rejeitar }}
+                                </v-chip>
+                                
+                                <v-chip
+                                  x-small
+                                  :color="getVoteResultColor(ruleId)"
+                                  text-color="white"
+                                >
+                                  {{ getVoteResultText(ruleId) }}
+                                </v-chip>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </v-col>
                       
-                      <!-- Área de votação -->
-                      <v-col cols="12" md="4">
-                        <div class="text-center">
-                          <!-- Se pode votar e não votou ainda -->
-                          <div v-if="canVote && !hasVotedForRule(ruleId)" class="voting-area">
-                            <div class="mb-3">
-                              <div class="text-caption grey--text mb-2">Seu Voto:</div>
-                              <v-btn-toggle
-                                :value="pendingVotes[ruleId] || null"
-                                @change="setPendingVote(ruleId, $event)"
-                                mandatory
-                                borderless
-                                color="primary"
-                              >
-                                <v-btn
-                                  value="aprovar"
-                                  :color="pendingVotes[ruleId] === 'aprovar' ? 'success' : ''"
-                                  :outlined="pendingVotes[ruleId] !== 'aprovar'"
-                                  class="mr-2"
-                                >
-                                  <v-icon left>mdi-thumb-up</v-icon>
-                                  Aprovar
-                                </v-btn>
-                                <v-btn
-                                  value="rejeitar"
-                                  :color="pendingVotes[ruleId] === 'rejeitar' ? 'error' : ''"
-                                  :outlined="pendingVotes[ruleId] !== 'rejeitar'"
-                                >
-                                  <v-icon left>mdi-thumb-down</v-icon>
-                                  Rejeitar
-                                </v-btn>
-                              </v-btn-toggle>
-                            </div>
+                      <!-- Área de votação minimalista -->
+                      <v-col v-if="canVote" cols="12" md="4">
+                        <div class="d-flex justify-end">
+                          <!-- Se não votou ainda -->
+                          <div v-if="!hasVotedForRule(ruleId)" class="d-flex">
+                            <v-btn
+                              :color="pendingVotes[ruleId] === 'aprovar' ? 'success' : 'grey lighten-2'"
+                              :dark="pendingVotes[ruleId] === 'aprovar'"
+                              small
+                              class="mr-2 vote-btn"
+                              @click="setPendingVote(ruleId, pendingVotes[ruleId] === 'aprovar' ? null : 'aprovar')"
+                            >
+                              <v-icon small left>mdi-thumb-up</v-icon>
+                              Aprovar
+                            </v-btn>
+                            
+                            <v-btn
+                              :color="pendingVotes[ruleId] === 'rejeitar' ? 'error' : 'grey lighten-2'"
+                              :dark="pendingVotes[ruleId] === 'rejeitar'"
+                              small
+                              class="vote-btn"
+                              @click="setPendingVote(ruleId, pendingVotes[ruleId] === 'rejeitar' ? null : 'rejeitar')"
+                            >
+                              <v-icon small left>mdi-thumb-down</v-icon>
+                              Rejeitar
+                            </v-btn>
                           </div>
                           
-                          <!-- Se pode votar e já votou -->
-                          <div v-else-if="canVote && hasVotedForRule(ruleId)" class="text-center">
-                            <v-chip 
+                          <!-- Se já votou -->
+                          <div v-else>
+                            <v-chip
                               :color="getUserVoteForRule(ruleId) === 'aprovar' ? 'success' : 'error'"
-                              large
-                              class="white--text font-weight-bold"
+                              small
+                              dark
                             >
-                              <v-icon left>
+                              <v-icon left small>
                                 {{ getUserVoteForRule(ruleId) === 'aprovar' ? 'mdi-thumb-up' : 'mdi-thumb-down' }}
                               </v-icon>
                               {{ getUserVoteForRule(ruleId) === 'aprovar' ? 'Aprovado' : 'Rejeitado' }}
                             </v-chip>
-                          </div>
-                          
-                          <!-- Se é admin do projeto -->
-                          <div v-else-if="isProjectAdmin" class="text-center">
-                            <div class="pa-4">
-                              <v-chip color="orange" outlined large class="mb-2">
-                                <v-icon left>mdi-account-tie</v-icon>
-                                Admin do Projeto
-                              </v-chip>
-                              <div class="text-caption grey--text">
-                                Não pode votar
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <!-- Estado loading ou indefinido -->
-                          <div v-else class="text-center">
-                            <v-progress-circular indeterminate size="24"></v-progress-circular>
-                            <div class="text-caption grey--text mt-2">Carregando...</div>
                           </div>
                         </div>
                       </v-col>
@@ -380,62 +398,72 @@
               </v-col>
             </v-row>
             
-            <!-- Painel de submissão (apenas para anotadores) -->
-            <div v-if="canVote" class="mt-8">
-              <v-card color="grey lighten-5" elevation="0" class="pa-6">
-                <v-row align="center">
-                  <v-col cols="12" md="8">
+            <!-- Painel de submissão minimalista -->
+            <div v-if="canVote" class="mt-6">
+              <v-card 
+                flat
+                outlined
+                :color="allVotesSubmitted ? 'success lighten-5' : 'grey lighten-5'"
+                class="submission-panel-minimal"
+              >
+                <v-card-text class="pa-4">
+                  <div v-if="allVotesSubmitted || votesSuccessfullySubmitted">
+                    <!-- Estado concluído -->
                     <div class="d-flex align-center">
-                      <v-icon 
-                        :color="hasVotedAllRules ? 'success' : 'warning'" 
-                        size="32" 
-                        class="mr-4"
-                      >
-                        {{ hasVotedAllRules ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-                      </v-icon>
-                      <div>
-                        <div class="text-h6 font-weight-bold">
-                          {{ hasVotedAllRules ? 'Votação Completa' : 'Votação Pendente' }}
+                      <v-icon color="success" size="24" class="mr-3">mdi-check-circle</v-icon>
+                      <div class="flex-grow-1">
+                        <div class="text-subtitle-1 font-weight-bold success--text">
+                          Votação Submetida com Sucesso
                         </div>
                         <div class="text-body-2 grey--text">
-                          <span v-if="remainingVotesCount > 0">
-                            Faltam {{ remainingVotesCount }} {{ remainingVotesCount === 1 ? 'regra' : 'regras' }} para votar
-                          </span>
-                          <span v-else>
-                            Todas as regras foram selecionadas. Pode submeter a votação.
-                          </span>
+                          Obrigado pela sua participação!
                         </div>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div v-else-if="!votesSuccessfullySubmitted">
+                    <!-- Estado pendente -->
+                    <div class="d-flex align-center justify-space-between">
+                      <div class="d-flex align-center flex-grow-1">
+                        <v-icon 
+                          :color="hasVotedAllRules ? 'primary' : 'grey'" 
+                          size="24" 
+                          class="mr-3"
+                        >
+                          {{ hasVotedAllRules ? 'mdi-send' : 'mdi-vote' }}
+                        </v-icon>
+                        <div class="flex-grow-1">
+                          <div class="text-subtitle-1 font-weight-bold">
+                            {{ hasVotedAllRules ? 'Pronto para Submeter' : 'Votação em Progresso' }}
+                          </div>
+                          <div class="text-body-2 grey--text">
+                            {{ activeVoting.rules.length - remainingVotesCount }} de {{ activeVoting.rules.length }} regras selecionadas
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <v-btn
+                        color="primary"
+                        :disabled="!hasVotedAllRules || isSubmittingVotes"
+                        :loading="isSubmittingVotes"
+                        @click="submitAllVotes"
+                      >
+                        <v-icon left small>mdi-send</v-icon>
+                        Submeter
+                      </v-btn>
+                    </div>
                     
-                    <!-- Barra de progresso -->
+                    <!-- Barra de progresso minimalista -->
                     <v-progress-linear
                       :value="votingProgress"
                       color="primary"
-                      height="12"
+                      height="4"
                       rounded
-                      class="mt-4"
+                      class="mt-3"
                     ></v-progress-linear>
-                    
-                    <div class="text-center text-caption mt-2 grey--text">
-                      {{ activeVoting.rules.length - remainingVotesCount }} de {{ activeVoting.rules.length }} regras votadas
-                    </div>
-                  </v-col>
-                  
-                  <v-col cols="12" md="4" class="text-center">
-                    <v-btn
-                      color="primary"
-                      x-large
-                      :disabled="!hasVotedAllRules || isSubmittingVotes"
-                      :loading="isSubmittingVotes"
-                      @click="submitAllVotes"
-                      elevation="4"
-                    >
-                      <v-icon left>mdi-send</v-icon>
-                      Submeter Votação
-                    </v-btn>
-                  </v-col>
-                </v-row>
+                  </div>
+                </v-card-text>
               </v-card>
             </div>
           </div>
@@ -469,7 +497,12 @@
               <v-expansion-panel-header>
                 <div class="d-flex align-center">
                   <div class="flex-grow-1">
-                    <div class="font-weight-medium">{{ voting.description }}</div>
+                    <div class="font-weight-medium">
+                      {{ voting.name || voting.description }}
+                    </div>
+                    <div v-if="voting.name && voting.description" class="text-caption grey--text mb-1">
+                      {{ voting.description }}
+                    </div>
                     <div class="text-caption grey--text">
                       {{ formatDate(voting.startDate) }} - {{ formatDate(voting.endDate) }}
                     </div>
@@ -595,6 +628,7 @@ export default {
       // Novo: armazenar votos temporários antes do submit
       pendingVotes: {},
       isSubmittingVotes: false,
+      votesSuccessfullySubmitted: false,
       filters: {
         keyword: '',
         voteStatus: null,
@@ -686,9 +720,9 @@ export default {
       // Apply vote status filter
       if (this.filters.voteStatus) {
         if (this.filters.voteStatus === 'voted') {
-          filtered = filtered.filter(ruleId => this.hasVotedForRule(ruleId) || this.pendingVotes[ruleId])
+          filtered = filtered.filter(ruleId => this.hasVotedForRule(ruleId))
         } else if (this.filters.voteStatus === 'not-voted') {
-          filtered = filtered.filter(ruleId => !this.hasVotedForRule(ruleId) && !this.pendingVotes[ruleId])
+          filtered = filtered.filter(ruleId => !this.hasVotedForRule(ruleId))
         }
       }
       
@@ -788,6 +822,19 @@ export default {
       const votedRules = totalRules - this.remainingVotesCount
       
       return (votedRules / totalRules) * 100
+    },
+    
+    allVotesSubmitted() {
+      if (!this.activeVoting || !this.activeVoting.rules || !this.canVote) {
+        return false
+      }
+      
+      // Verificar se o usuário votou em todas as regras (votos já submetidos e confirmados)
+      const totalRules = this.activeVoting.rules.length
+      const votedRules = this.activeVoting.rules.filter(ruleId => this.hasVotedForRule(ruleId)).length
+      
+      // Só considera como "tudo submetido" se todos os votos foram confirmados (não pendentes)
+      return votedRules === totalRules && Object.keys(this.pendingVotes).length === 0
     }
   },
   
@@ -796,6 +843,7 @@ export default {
     activeVoting(newVoting, oldVoting) {
       if (newVoting?.id !== oldVoting?.id) {
         this.pendingVotes = {}
+        this.votesSuccessfullySubmitted = false
       }
     }
   },
@@ -804,8 +852,9 @@ export default {
     const projectId = this.$route.params.id
     this.project = await this.$services.project.findById(projectId)
     
-    // Inicializar votos pendentes
+    // Inicializar votos pendentes e estado de submissão
     this.pendingVotes = {}
+    this.votesSuccessfullySubmitted = false
     
     // Load discussion state
     this.$store.dispatch('discussion/initDiscussionState')
@@ -964,6 +1013,13 @@ export default {
           // Limpar votos pendentes
           this.pendingVotes = {}
           
+          // Marcar como votos submetidos com sucesso
+          this.votesSuccessfullySubmitted = true
+          
+          // Forçar atualização para mostrar a mensagem imediatamente
+          this.$forceUpdate()
+          await this.$nextTick()
+          
           this.snackbar = {
             show: true,
             text: 'Votação submetida com sucesso! Todos os seus votos foram registrados.',
@@ -985,34 +1041,143 @@ export default {
       } finally {
         this.isSubmittingVotes = false
       }
+    },
+    
+    getUserVotesSummary() {
+      let aprovar = 0;
+      let rejeitar = 0;
+      
+      if (this.activeVoting && this.activeVoting.rules) {
+        this.activeVoting.rules.forEach(ruleId => {
+          const userVote = this.getUserVoteForRule(ruleId);
+          if (userVote === 'aprovar') aprovar++;
+          if (userVote === 'rejeitar') rejeitar++;
+        });
+      }
+      
+      return { aprovar, rejeitar };
+    },
+    
+    getVoteResultColor(ruleId) {
+      const votes = this.ruleVotes(ruleId)
+      if (votes.aprovar > votes.rejeitar) {
+        return 'success'
+      } else if (votes.aprovar < votes.rejeitar) {
+        return 'error'
+      } else {
+        return 'grey'
+      }
+    },
+    
+    getVoteResultText(ruleId) {
+      const votes = this.ruleVotes(ruleId)
+      if (votes.aprovar > votes.rejeitar) {
+        return 'Aprovada'
+      } else if (votes.aprovar < votes.rejeitar) {
+        return 'Rejeitada'
+      } else {
+        return 'Empate'
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+/* Cards das regras minimalistas */
+.rule-card-minimal {
+  border-radius: 8px !important;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0 !important;
+}
+
+.rule-card-minimal:hover {
+  border-color: #1976d2 !important;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1) !important;
+}
+
 .rule-voted {
-  border-left: 4px solid #4CAF50 !important;
+  border-left: 3px solid #4CAF50 !important;
+  background-color: #f8fff8 !important;
 }
 
-.voting-area {
-  padding: 16px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
+.rule-pending {
+  border-left: 3px solid #FF9800 !important;
+  background-color: #fffbf0 !important;
 }
 
-.gap-2 > * {
-  margin-right: 8px;
-  margin-bottom: 8px;
+.rule-not-voted {
+  border-left: 3px solid #e0e0e0 !important;
 }
 
-.transition-all {
-  transition: all 0.3s ease;
+/* Botões de votação */
+.vote-btn {
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  text-transform: none !important;
 }
 
-.v-card:hover {
+.vote-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Status indicator */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Painel de submissão minimalista */
+.submission-panel-minimal {
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+}
+
+.submission-panel-minimal:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .vote-btn {
+    margin-bottom: 8px !important;
+  }
+}
+
+/* Header da votação principal */
+.voting-header-gradient {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.3);
+}
+
+.voting-main-card {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+/* Painel de administração melhorado */
+.admin-control-panel {
+  border-left: 4px solid #FF9800;
+  border-radius: 12px !important;
+}
+
+.end-voting-btn {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.end-voting-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4) !important;
+}
+
+.end-voting-btn:active {
+  transform: translateY(0);
 }
 </style> 

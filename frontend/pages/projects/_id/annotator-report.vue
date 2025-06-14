@@ -1,444 +1,326 @@
 <template>
-  <v-container>
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex align-center mb-6">
-          <v-btn icon class="mr-4" @click="$router.back()">
-            <v-icon>{{ mdiArrowLeft }}</v-icon>
-          </v-btn>
-          <h1 class="text-h4">Relatório de Anotadores</h1>
-        </div>
-      </v-col>
-    </v-row>
+  <v-container fluid class="pa-0">
+    <!-- Header Section -->
+    <div class="hero-section">
+      <v-container>
+        <v-row align="center" class="py-8">
+          <v-col cols="12" class="text-center">
+            <v-icon size="64" color="white" class="mb-4">mdi-account-group</v-icon>
+            <h1 class="display-1 font-weight-bold white--text mb-2">
+              Relatórios de Anotadores
+            </h1>
+            <p class="subtitle-1 white--text">
+              Análise completa do desempenho e progresso da equipe de anotação
+            </p>
+          </v-col>
+        </v-row>
+      </v-container>
+    </div>
 
-    <!-- Filtros -->
-    <v-row>
-      <v-col cols="12">
-        <v-card class="mb-4">
-          <v-card-title>
-            <v-icon left>{{ mdiFilter }}</v-icon>
-            Filtros
-          </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" md="3">
+    <!-- Main Content -->
+    <v-container class="py-8">
+      <!-- Summary Cards -->
+      <v-row v-if="report">
+        <v-col cols="12" md="4">
+          <v-card class="text-center pa-4" elevation="2">
+            <v-icon size="48" color="primary" class="mb-3">mdi-account-multiple</v-icon>
+            <h3 class="headline font-weight-bold">{{ filteredSummary.total_anotadores }}</h3>
+            <p class="body-2 grey--text">Total de Anotadores</p>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-card class="text-center pa-4" elevation="2">
+            <v-icon size="48" color="success" class="mb-3">mdi-check-circle</v-icon>
+            <h3 class="headline font-weight-bold">{{ filteredSummary.total_anotacoes }}</h3>
+            <p class="body-2 grey--text">Anotações Concluídas</p>
+          </v-card>
+        </v-col>
+        <v-col cols="12" md="4">
+          <v-card class="text-center pa-4" elevation="2">
+            <v-icon size="48" color="warning" class="mb-3">mdi-alert-circle</v-icon>
+            <h3 class="headline font-weight-bold">{{ filteredSummary.taxa_desacordo_global_percent }}%</h3>
+            <p class="body-2 grey--text">Taxa de Desacordo Global</p>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <v-row class="mt-6">
+        <!-- Filters Panel -->
+        <v-col cols="12" lg="3">
+          <v-card elevation="2">
+            <v-card-title class="primary white--text">
+              <v-icon left color="white">mdi-filter</v-icon>
+              Filtros
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-form @submit.prevent="applyFilters">
+                <!-- Anotadores -->
                 <v-select
                   v-model="filters.annotator_id"
                   :items="metadata.annotators"
-                  :loading="loadingMetadata"
                   item-text="name"
                   item-value="id"
                   label="Anotadores"
                   multiple
                   chips
-                  clearable
+                  small-chips
+                  deletable-chips
+                  class="mb-3"
                 ></v-select>
-              </v-col>
-              
-              <v-col cols="12" md="3">
+
+                <!-- Datasets -->
                 <v-select
                   v-model="filters.dataset_id"
                   :items="metadata.datasets"
-                  :loading="loadingMetadata"
                   item-text="name"
                   item-value="id"
                   label="Datasets"
                   multiple
                   chips
-                  clearable
+                  small-chips
+                  deletable-chips
+                  class="mb-3"
                 ></v-select>
-              </v-col>
-              
-              <v-col cols="12" md="3">
-                <v-menu
-                  v-model="dateStartMenu"
-                  :close-on-content-click="false"
-                  transition="scale-transition"
-                  offset-y
-                  min-width="auto"
-                >
-                  <template #activator="{ on, attrs }">
-                    <v-text-field
-                      v-model="filters.data_inicial"
-                      label="Data Inicial"
-                      prepend-icon="mdi-calendar"
-                      readonly
-                      clearable
-                      v-bind="attrs"
-                      v-on="on"
-                    ></v-text-field>
-                  </template>
-                  <v-date-picker
-                    v-model="filters.data_inicial"
-                    @input="dateStartMenu = false"
-                  ></v-date-picker>
-                </v-menu>
-              </v-col>
-              
-              <v-col cols="12" md="3">
-                <v-menu
-                  v-model="dateEndMenu"
-                  :close-on-content-click="false"
-                  transition="scale-transition"
-                  offset-y
-                  min-width="auto"
-                >
-                  <template #activator="{ on, attrs }">
-                    <v-text-field
-                      v-model="filters.data_final"
-                      label="Data Final"
-                      prepend-icon="mdi-calendar"
-                      readonly
-                      clearable
-                      v-bind="attrs"
-                      v-on="on"
-                    ></v-text-field>
-                  </template>
-                  <v-date-picker
-                    v-model="filters.data_final"
-                    @input="dateEndMenu = false"
-                  ></v-date-picker>
-                </v-menu>
-              </v-col>
-            </v-row>
-            
-            <v-row>
-              <v-col cols="12" md="4">
+
+                <!-- Período -->
+                <v-text-field
+                  v-model="filters.data_inicial"
+                  label="Data Inicial"
+                  type="date"
+                  class="mb-3"
+                ></v-text-field>
+
+                <v-text-field
+                  v-model="filters.data_final"
+                  label="Data Final"
+                  type="date"
+                  class="mb-3"
+                ></v-text-field>
+
+                <!-- Categorias -->
                 <v-select
                   v-model="filters.categoria_label"
                   :items="metadata.categories"
-                  :loading="loadingMetadata"
                   label="Categorias"
                   multiple
                   chips
-                  clearable
+                  small-chips
+                  deletable-chips
+                  class="mb-3"
                 ></v-select>
-              </v-col>
-              
-              <v-col cols="12" md="4">
+
+                <!-- Perspetivas -->
                 <v-select
                   v-model="filters.perspectiva_id"
                   :items="metadata.perspectives"
-                  :loading="loadingMetadata"
                   item-text="name"
                   item-value="id"
-                  label="Perspectivas"
+                  label="Perspetivas"
                   multiple
                   chips
-                  clearable
+                  small-chips
+                  deletable-chips
+                  class="mb-3"
                 ></v-select>
-              </v-col>
-              
-              <v-col cols="12" md="4">
+
+                <!-- Estado de Desacordo -->
                 <v-select
                   v-model="filters.estado_desacordo"
                   :items="metadata.disagreement_states"
-                  :loading="loadingMetadata"
                   item-text="label"
                   item-value="value"
-                  label="Estado do Desacordo"
-                  clearable
+                  label="Estado de Desacordo"
+                  class="mb-4"
                 ></v-select>
-              </v-col>
-            </v-row>
-            
-            <v-row>
-              <v-col cols="12" md="6">
+
+                <!-- Ordenação -->
                 <v-select
                   v-model="filters.sort_by"
                   :items="metadata.sort_options"
-                  :loading="loadingMetadata"
                   item-text="label"
                   item-value="value"
                   label="Ordenar por"
+                  class="mb-3"
                 ></v-select>
-              </v-col>
-              
-              <v-col cols="12" md="3">
+
                 <v-select
                   v-model="filters.order"
                   :items="[
-                    { text: 'Decrescente', value: 'desc' },
-                    { text: 'Crescente', value: 'asc' }
+                    { text: 'Crescente', value: 'asc' },
+                    { text: 'Decrescente', value: 'desc' }
                   ]"
-                  item-text="text"
-                  item-value="value"
                   label="Ordem"
+                  class="mb-4"
                 ></v-select>
-              </v-col>
-              
-              <v-col cols="12" md="3">
-                <v-select
-                  v-model="filters.page_size"
-                  :items="[5, 10, 20, 50]"
-                  label="Itens por página"
-                ></v-select>
-              </v-col>
-            </v-row>
-            
-            <v-row>
-              <v-col cols="12">
-                <v-btn
-                  :loading="loadingReport"
-                  color="primary"
-                  class="mr-2"
-                  @click="generateReport"
-                >
-                  <v-icon left>{{ mdiChartBox }}</v-icon>
-                  Gerar Relatório
+
+                <v-btn color="primary" type="submit" block class="mb-2" :loading="isLoading">
+                  <v-icon left>mdi-magnify</v-icon>
+                  Aplicar Filtros
                 </v-btn>
-                
-                <v-btn
-                  :loading="loadingExport"
-                  :disabled="!reportData"
-                  color="success"
-                  class="mr-2"
-                  @click="exportReport('csv')"
-                >
-                  <v-icon left>{{ mdiFileExcel }}</v-icon>
-                  Exportar CSV
-                </v-btn>
-                
-                <v-btn
-                  :loading="loadingExport"
-                  :disabled="!reportData"
-                  color="error"
-                  class="mr-2"
-                  @click="exportReport('pdf')"
-                >
-                  <v-icon left>{{ mdiFileDocument }}</v-icon>
-                  Exportar PDF
-                </v-btn>
-                
-                <v-btn
-                  color="grey"
-                  outlined
-                  @click="clearFilters"
-                >
-                  <v-icon left>{{ mdiRefresh }}</v-icon>
+
+                <v-btn color="grey" block @click="clearFilters">
+                  <v-icon left>mdi-filter-off</v-icon>
                   Limpar Filtros
                 </v-btn>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+              </v-form>
+            </v-card-text>
+          </v-card>
 
-    <!-- Resumo Global -->
-    <v-row v-if="reportData">
-      <v-col cols="12">
-        <v-card class="mb-4">
-          <v-card-title>
-            <v-icon left>{{ mdiChartLine }}</v-icon>
-            Resumo Global
-          </v-card-title>
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" md="4">
-                <v-card color="primary" dark>
-                  <v-card-text>
-                    <div class="text-h4">{{ reportData.resumo_global.total_anotadores }}</div>
-                    <div>Total de Anotadores</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              
-              <v-col cols="12" md="4">
-                <v-card color="success" dark>
-                  <v-card-text>
-                    <div class="text-h4">{{ reportData.resumo_global.total_anotacoes.toLocaleString() }}</div>
-                    <div>Total de Anotações</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-              
-              <v-col cols="12" md="4">
-                <v-card color="warning" dark>
-                  <v-card-text>
-                    <div class="text-h4">{{ reportData.resumo_global.taxa_desacordo_global_percent }}%</div>
-                    <div>Taxa de Desacordo Global</div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+          <!-- Export Panel -->
+          <v-card elevation="2" class="mt-4">
+            <v-card-title class="success white--text">
+              <v-icon left color="white">mdi-download</v-icon>
+              Exportar
+            </v-card-title>
+            <v-card-text class="pa-4">
+              <v-btn color="success" block class="mb-2" :loading="isExporting" @click="exportReport('csv')">
+                <v-icon left>mdi-file-delimited</v-icon>
+                Exportar CSV
+              </v-btn>
+              <v-btn color="red" block :loading="isExporting" @click="exportReport('pdf')">
+                <v-icon left>mdi-file-pdf-box</v-icon>
+                Exportar PDF
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-col>
 
-    <!-- Tabela de Anotadores -->
-    <v-row v-if="reportData">
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <v-icon left>{{ mdiTable }}</v-icon>
-            Detalhes dos Anotadores
-          </v-card-title>
-          <v-card-text>
-            <v-data-table
-              :headers="tableHeaders"
-              :items="reportData.detalhe_anotadores"
-              :loading="loadingReport"
-              :items-per-page="filters.page_size"
-              :page="filters.page"
-              class="elevation-1"
-              @update:page="updatePage"
-            >
-              <template #[`item.nome_anotador`]="{ item }">
-                <div class="d-flex align-center">
-                  <v-avatar size="32" color="primary" class="white--text mr-2">
-                    {{ getInitials(item.nome_anotador) }}
-                  </v-avatar>
-                  {{ item.nome_anotador }}
-                </div>
-              </template>
-              
-              <template #[`item.tempo_total_min`]="{ item }">
-                {{ item.tempo_total_min.toFixed(1) }} min
-              </template>
-              
-              <template #[`item.tempo_medio_por_anotacao_seg`]="{ item }">
-                {{ item.tempo_medio_por_anotacao_seg.toFixed(1) }} seg
-              </template>
-              
-              <template #[`item.taxa_desacordo_percent`]="{ item }">
-                <v-chip
-                  :color="getDisagreementColor(item.taxa_desacordo_percent)"
-                  text-color="white"
-                  small
-                >
-                  {{ item.taxa_desacordo_percent.toFixed(1) }}%
-                </v-chip>
-              </template>
-              
-              <template #[`item.score_concordancia_medio`]="{ item }">
-                <v-progress-linear
-                  :value="item.score_concordancia_medio * 100"
-                  :color="getAgreementColor(item.score_concordancia_medio)"
-                  height="20"
-                  background-color="grey lighten-3"
-                >
-                  <small>{{ item.score_concordancia_medio.toFixed(2) }}</small>
-                </v-progress-linear>
-              </template>
-              
-              <template #[`item.perspectivas_usadas`]="{ item }">
-                <v-chip
-                  v-for="perspective in item.perspectivas_usadas"
-                  :key="perspective"
-                  small
-                  class="mr-1"
-                >
-                  {{ perspective }}
-                </v-chip>
-              </template>
-              
-              <template #[`item.categorias_mais_frequentes`]="{ item }">
-                <v-chip
-                  v-for="category in item.categorias_mais_frequentes"
-                  :key="category"
-                  small
-                  outlined
-                  class="mr-1"
-                >
-                  {{ category }}
-                </v-chip>
-              </template>
-              
-              <template #[`item.primeira_anotacao`]="{ item }">
-                {{ formatDate(item.primeira_anotacao) }}
-              </template>
-              
-              <template #[`item.ultima_anotacao`]="{ item }">
-                {{ formatDate(item.ultima_anotacao) }}
-              </template>
-            </v-data-table>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+        <!-- Results Table -->
+        <v-col cols="12" lg="9">
+          <v-card elevation="2">
+            <v-card-title class="info white--text">
+              <v-icon left color="white">mdi-table</v-icon>
+              Relatório de Anotadores
+              <v-spacer></v-spacer>
+              <span class="caption">{{ filteredAnnotators.length }} resultados</span>
+            </v-card-title>
+            
+            <v-card-text class="pa-0">
+              <v-skeleton-loader
+                v-if="isLoading"
+                type="table-tbody"
+              ></v-skeleton-loader>
 
-    <!-- Gráficos -->
-    <v-row v-if="reportData && showCharts">
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>Distribuição de Anotações por Anotador</v-card-title>
-          <v-card-text>
-            <div ref="annotationsChart" style="height: 300px;"></div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-      
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>Taxa de Desacordo por Anotador</v-card-title>
-          <v-card-text>
-            <div ref="disagreementChart" style="height: 300px;"></div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+              <v-data-table
+                v-else-if="report && report.detalhe_anotadores.length > 0"
+                :headers="tableHeaders"
+                :items="filteredAnnotators"
+                :page="currentPage"
+                :items-per-page="itemsPerPage"
+                :server-items-length="totalItems"
+                class="elevation-0"
+                @update:page="updatePage"
+                @update:items-per-page="updateItemsPerPage"
+              >
+                <!-- Nome do Anotador -->
+                <template #[`item.nome_anotador`]="{ item }">
+                  <div class="d-flex align-center">
+                    <v-avatar size="32" color="primary" class="white--text mr-2">
+                      {{ getInitials(item.nome_anotador) }}
+                    </v-avatar>
+                    <div>
+                      <div class="font-weight-medium">{{ item.nome_anotador }}</div>
+                      <div class="caption grey--text">ID: {{ item.annotator_id }}</div>
+                    </div>
+                  </div>
+                </template>
 
-    <!-- Loading/Error States -->
-    <v-row v-if="loadingReport">
-      <v-col cols="12">
-        <v-card>
-          <v-card-text class="text-center">
-            <v-progress-circular indeterminate size="64"></v-progress-circular>
-            <div class="mt-4">Gerando relatório...</div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+                <!-- Taxa de Desacordo -->
+                <template #[`item.taxa_desacordo_percent`]="{ item }">
+                  <v-chip 
+                    :color="getDisagreementColor(item.taxa_desacordo_percent)" 
+                    text-color="white" 
+                    small
+                  >
+                    {{ item.taxa_desacordo_percent.toFixed(1) }}%
+                  </v-chip>
+                </template>
 
-    <v-row v-if="error">
-      <v-col cols="12">
-        <v-alert type="error" class="mb-4">
-          {{ error }}
-        </v-alert>
-      </v-col>
-    </v-row>
+                <!-- Score de Concordância -->
+                <template #[`item.score_concordancia_medio`]="{ item }">
+                  <div class="text-center">
+                    <v-progress-circular
+                      :value="item.score_concordancia_medio * 100"
+                      :color="getScoreColor(item.score_concordancia_medio)"
+                      size="40"
+                      width="4"
+                    >
+                      {{ (item.score_concordancia_medio * 100).toFixed(0) }}
+                    </v-progress-circular>
+                  </div>
+                </template>
+
+                <!-- Perspetivas -->
+                <template #[`item.perspectivas_usadas`]="{ item }">
+                  <v-chip 
+                    v-for="perspectiva in item.perspectivas_usadas.slice(0, 2)" 
+                    :key="perspectiva"
+                    small 
+                    class="ma-1"
+                  >
+                    {{ perspectiva }}
+                  </v-chip>
+                  <v-chip v-if="item.perspectivas_usadas.length > 2" small class="ma-1">
+                    +{{ item.perspectivas_usadas.length - 2 }}
+                  </v-chip>
+                </template>
+
+                <!-- Categorias -->
+                <template #[`item.categorias_mais_frequentes`]="{ item }">
+                  <v-chip 
+                    v-for="categoria in item.categorias_mais_frequentes.slice(0, 3)" 
+                    :key="categoria"
+                    small 
+                    color="grey lighten-2"
+                    class="ma-1"
+                  >
+                    {{ categoria }}
+                  </v-chip>
+                </template>
+
+                <!-- Tempo Total -->
+                <template #[`item.tempo_total_min`]="{ item }">
+                  {{ formatTime(item.tempo_total_min) }}
+                </template>
+
+                <!-- Tempo Médio -->
+                <template #[`item.tempo_medio_por_anotacao_seg`]="{ item }">
+                  {{ item.tempo_medio_por_anotacao_seg.toFixed(1) }}s
+                </template>
+
+                <!-- Data -->
+                <template #[`item.primeira_anotacao`]="{ item }">
+                  {{ formatDate(item.primeira_anotacao) }}
+                </template>
+
+                <template #[`item.ultima_anotacao`]="{ item }">
+                  {{ formatDate(item.ultima_anotacao) }}
+                </template>
+              </v-data-table>
+
+              <div v-else-if="!isLoading" class="text-center py-8">
+                <v-icon size="80" color="grey lighten-2" class="mb-4">mdi-file-search</v-icon>
+                <h3 class="headline grey--text mb-2">Nenhum resultado encontrado</h3>
+                <p class="body-1 grey--text">
+                  Tente ajustar os filtros para encontrar dados.
+                </p>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </v-container>
 </template>
 
 <script>
-import {
-  mdiArrowLeft,
-  mdiFilter,
-  mdiChartBox,
-  mdiFileExcel,
-  mdiFileDocument,
-  mdiRefresh,
-  mdiChartLine,
-  mdiTable
-} from '@mdi/js'
-
 export default {
   layout: 'project',
-  
   data() {
     return {
-      // Icons
-      mdiArrowLeft,
-      mdiFilter,
-      mdiChartBox,
-      mdiFileExcel,
-      mdiFileDocument,
-      mdiRefresh,
-      mdiChartLine,
-      mdiTable,
-      
-      // State
-      loadingMetadata: false,
-      loadingReport: false,
-      loadingExport: false,
-      error: null,
-      dateStartMenu: false,
-      dateEndMenu: false,
-      showCharts: true,
-      
-      // Data
+      isLoading: false,
+      isExporting: false,
+      report: null,
       metadata: {
         annotators: [],
         categories: [],
@@ -447,15 +329,11 @@ export default {
         sort_options: [],
         disagreement_states: []
       },
-      
-      reportData: null,
-      
-      // Filters
       filters: {
         dataset_id: [],
         annotator_id: [],
-        data_inicial: null,
-        data_final: null,
+        data_inicial: '',
+        data_final: '',
         categoria_label: [],
         perspectiva_id: [],
         estado_desacordo: 'todos',
@@ -464,212 +342,221 @@ export default {
         page: 1,
         page_size: 10
       },
-      
-      // Table configuration
+      currentPage: 1,
+      itemsPerPage: 10,
+      totalItems: 0,
       tableHeaders: [
-        { text: 'Anotador', value: 'nome_anotador', sortable: false },
+        { text: 'Anotador', value: 'nome_anotador', sortable: false, width: '200px' },
         { text: 'Total Anotações', value: 'total_anotacoes', align: 'center' },
         { text: 'Datasets', value: 'datasets_distintos', align: 'center' },
         { text: 'Tempo Total', value: 'tempo_total_min', align: 'center' },
         { text: 'Tempo Médio', value: 'tempo_medio_por_anotacao_seg', align: 'center' },
         { text: 'Taxa Desacordo', value: 'taxa_desacordo_percent', align: 'center' },
+        { text: 'Desacordos Resolvidos', value: 'desacordos_resolvidos', align: 'center' },
         { text: 'Score Concordância', value: 'score_concordancia_medio', align: 'center' },
-        { text: 'Perspectivas', value: 'perspectivas_usadas', sortable: false },
+        { text: 'Perspetivas', value: 'perspectivas_usadas', sortable: false },
         { text: 'Categorias Top', value: 'categorias_mais_frequentes', sortable: false },
         { text: 'Primeira Anotação', value: 'primeira_anotacao', align: 'center' },
         { text: 'Última Anotação', value: 'ultima_anotacao', align: 'center' }
       ]
     }
   },
-  
   computed: {
     projectId() {
       return this.$route.params.id
-    }
-  },
-  
-  async created() {
-    await this.loadMetadata()
-  },
-  
-  methods: {
-    async loadMetadata() {
-      this.loadingMetadata = true
-      this.error = null
-      
-      try {
-        // Para demonstração, vou simular os metadados
-        // Na implementação real, chamaria a API: /projects/{id}/reports/annotators/metadata
-        
-        // Carregar dados básicos do projeto existente
-        const members = await this.$repositories.member.list(this.projectId)
-        
-        this.metadata = {
-          annotators: members.map(member => ({
-            id: member.user.toString(),
-            name: member.username,
-            username: member.username
-          })),
-          categories: ['LOC', 'ORG', 'PER', 'MISC', 'DATE', 'TIME'],
-          perspectives: [
-            { id: '1', name: 'Jurídica' },
-            { id: '2', name: 'Linguística' },
-            { id: '3', name: 'Técnica' }
-          ],
-          datasets: [
-            { id: 'dataset_1', name: 'Dataset Principal' },
-            { id: 'dataset_2', name: 'Dataset Teste' },
-            { id: 'dataset_3', name: 'Dataset Validação' }
-          ],
-          sort_options: [
-            { value: 'total_anotacoes', label: 'Total de Anotações' },
-            { value: 'nome_anotador', label: 'Nome do Anotador' },
-            { value: 'taxa_desacordo_percent', label: 'Taxa de Desacordo' },
-            { value: 'score_concordancia_medio', label: 'Score de Concordância' },
-            { value: 'tempo_total_min', label: 'Tempo Total' }
-          ],
-          disagreement_states: [
-            { value: 'todos', label: 'Todos' },
-            { value: 'em_desacordo', label: 'Em Desacordo' },
-            { value: 'resolvido', label: 'Resolvido' }
-          ]
-        }
-        
-      } catch (error) {
-        console.error('Erro ao carregar metadados:', error)
-        this.error = 'Erro ao carregar metadados do relatório'
-      } finally {
-        this.loadingMetadata = false
-      }
     },
     
-    generateReport() {
-      this.loadingReport = true
-      this.error = null
+    // Filtrar anotadores baseado nos critérios selecionados
+    filteredAnnotators() {
+      if (!this.report || !this.report.detalhe_anotadores) {
+        return []
+      }
       
-      try {
-        // Para demonstração, vou simular dados do relatório
-        // Na implementação real, chamaria: /projects/{id}/reports/annotators
-        
-        // Simular dados realistas
-        const mockAnnotators = this.metadata.annotators.map((annotator) => ({
-          annotator_id: annotator.id,
-          nome_anotador: annotator.name,
-          total_anotacoes: Math.floor(Math.random() * 2000) + 100,
-          datasets_distintos: Math.floor(Math.random() * 3) + 1,
-          tempo_total_min: Math.floor(Math.random() * 500) + 50,
-          tempo_medio_por_anotacao_seg: Math.floor(Math.random() * 60) + 15,
-          taxa_desacordo_percent: Math.random() * 25,
-          desacordos_resolvidos: Math.floor(Math.random() * 50) + 5,
-          score_concordancia_medio: 0.5 + Math.random() * 0.5,
-          perspectivas_usadas: ['Jurídica', 'Linguística'].slice(0, Math.floor(Math.random() * 2) + 1),
-          categorias_mais_frequentes: ['LOC', 'ORG', 'PER'].slice(0, 3),
-          primeira_anotacao: new Date(2024, 0, Math.floor(Math.random() * 30) + 1).toISOString(),
-          ultima_anotacao: new Date(2024, 11, Math.floor(Math.random() * 30) + 1).toISOString()
-        }))
-        
-        this.reportData = {
-          filtros_aplicados: { ...this.filters },
-          resumo_global: {
-            total_anotadores: mockAnnotators.length,
-            total_anotacoes: mockAnnotators.reduce((sum, ann) => sum + ann.total_anotacoes, 0),
-            taxa_desacordo_global_percent: 17.2
-          },
-          detalhe_anotadores: mockAnnotators
-        }
-        
-        // Gerar gráficos após carregar dados
-        this.$nextTick(() => {
-          this.generateCharts()
+      let filtered = [...this.report.detalhe_anotadores]
+      
+      console.log('DEBUG: Aplicando filtros locais aos dados:', this.filters)
+      console.log('DEBUG: Dados originais:', filtered.length, 'anotadores')
+      
+      // Filtrar por anotador específico
+      if (this.filters.annotator_id && this.filters.annotator_id.length > 0) {
+        filtered = filtered.filter(annotator => 
+          this.filters.annotator_id.includes(annotator.annotator_id)
+        )
+        console.log('DEBUG: Após filtro de anotador:', filtered.length, 'anotadores')
+      }
+      
+      // Filtrar por categoria
+      if (this.filters.categoria_label && this.filters.categoria_label.length > 0) {
+        filtered = filtered.filter(annotator => {
+          return annotator.categorias_mais_frequentes.some(categoria =>
+            this.filters.categoria_label.includes(categoria)
+          )
         })
-        
-      } catch (error) {
-        console.error('Erro ao gerar relatório:', error)
-        this.error = 'Erro ao gerar relatório de anotadores'
-      } finally {
-        this.loadingReport = false
+        console.log('DEBUG: Após filtro de categoria:', filtered.length, 'anotadores')
       }
-    },
-    
-    exportReport(format) {
-      this.loadingExport = true
       
-      try {
-        // Para demonstração, vou simular a exportação
-        // Na implementação real, chamaria: /projects/{id}/reports/annotators/export?format={format}
+      // Filtrar por estado de desacordo
+      if (this.filters.estado_desacordo && this.filters.estado_desacordo !== 'todos') {
+        if (this.filters.estado_desacordo === 'em_desacordo') {
+          filtered = filtered.filter(annotator => annotator.taxa_desacordo_percent > 10)
+        } else if (this.filters.estado_desacordo === 'resolvido') {
+          filtered = filtered.filter(annotator => annotator.taxa_desacordo_percent <= 10)
+        }
+        console.log('DEBUG: Após filtro de estado:', filtered.length, 'anotadores')
+      }
+      
+      // Aplicar ordenação
+      const sortBy = this.filters.sort_by || 'total_anotacoes'
+      const order = this.filters.order || 'desc'
+      
+      filtered.sort((a, b) => {
+        let valueA = a[sortBy]
+        let valueB = b[sortBy]
         
-        if (format === 'csv') {
-          this.exportToCSV()
-        } else if (format === 'pdf') {
-          this.exportToPDF()
+        // Tratar valores string vs numéricos
+        if (typeof valueA === 'string' && typeof valueB === 'string') {
+          valueA = valueA.toLowerCase()
+          valueB = valueB.toLowerCase()
+        } else if (typeof valueA === 'number' && typeof valueB === 'number') {
+          // Valores numéricos
+        } else {
+          // Converter para string se tipos mistos
+          valueA = String(valueA || 0)
+          valueB = String(valueB || 0)
         }
         
-        this.$toast.success(`Relatório ${format.toUpperCase()} exportado com sucesso`)
-        
-      } catch (error) {
-        console.error('Erro ao exportar:', error)
-        this.$toast.error('Erro ao exportar relatório')
-      } finally {
-        this.loadingExport = false
-      }
-    },
-    
-    exportToCSV() {
-      const csvData = this.reportData.detalhe_anotadores.map(item => ({
-        'ID Anotador': item.annotator_id,
-        'Nome': item.nome_anotador,
-        'Total Anotações': item.total_anotacoes,
-        'Datasets Distintos': item.datasets_distintos,
-        'Tempo Total (min)': item.tempo_total_min.toFixed(1),
-        'Tempo Médio (seg)': item.tempo_medio_por_anotacao_seg.toFixed(1),
-        'Taxa Desacordo (%)': item.taxa_desacordo_percent.toFixed(1),
-        'Desacordos Resolvidos': item.desacordos_resolvidos,
-        'Score Concordância': item.score_concordancia_medio.toFixed(2),
-        'Perspectivas': item.perspectivas_usadas.join(', '),
-        'Categorias Frequentes': item.categorias_mais_frequentes.join(', '),
-        'Primeira Anotação': this.formatDate(item.primeira_anotacao),
-        'Última Anotação': this.formatDate(item.ultima_anotacao)
-      }))
-      
-      const columns = Object.keys(csvData[0])
-      let csvContent = columns.join(',')
-      
-      csvData.forEach(row => {
-        const rowValues = columns.map(col => {
-          const cell = row[col] ? String(row[col]) : ''
-          return cell.includes(',') || cell.includes('"') 
-            ? '"' + cell.replace(/"/g, '""') + '"' 
-            : cell
-        })
-        csvContent += '\n' + rowValues.join(',')
+        if (order === 'desc') {
+          return valueA > valueB ? -1 : valueA < valueB ? 1 : 0
+        } else {
+          return valueA < valueB ? -1 : valueA > valueB ? 1 : 0
+        }
       })
       
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = `relatorio-anotadores-${this.projectId}.csv`
-      link.click()
-    },
-    
-    exportToPDF() {
-      // Simulação da exportação PDF
-      // Na implementação real, o backend geraria o PDF
-      this.$toast.info('Funcionalidade de PDF será implementada no backend')
-    },
-    
-    generateCharts() {
-      if (!this.showCharts || !this.reportData) return
+      console.log('DEBUG: Após ordenação:', filtered.length, 'anotadores')
       
-      // Simular gráficos (na implementação real, usaria Chart.js ou similar)
-      this.$toast.info('Gráficos serão implementados com Chart.js')
+      // Aplicar paginação (simplificada - mostrar todos por enquanto)
+      return filtered
+    },
+    
+    // Atualizar resumo baseado nos dados filtrados
+    filteredSummary() {
+      if (!this.filteredAnnotators.length) {
+        return {
+          total_anotadores: 0,
+          total_anotacoes: 0,
+          taxa_desacordo_global_percent: 0
+        }
+      }
+      
+      const totalAnotacoes = this.filteredAnnotators.reduce((sum, a) => sum + a.total_anotacoes, 0)
+      const taxaDesacordoMedia = this.filteredAnnotators.reduce((sum, a) => 
+        sum + (a.taxa_desacordo_percent * a.total_anotacoes), 0
+      ) / totalAnotacoes
+      
+      return {
+        total_anotadores: this.filteredAnnotators.length,
+        total_anotacoes: totalAnotacoes,
+        taxa_desacordo_global_percent: Math.round(taxaDesacordoMedia * 10) / 10
+      }
+    }
+  },
+  watch: {
+    // Aplicar filtros automaticamente quando mudarem
+    'filters.annotator_id'() {
+      console.log('DEBUG: Filtro de anotador mudou')
+    },
+    'filters.categoria_label'() {
+      console.log('DEBUG: Filtro de categoria mudou')
+    },
+    'filters.estado_desacordo'() {
+      console.log('DEBUG: Filtro de estado mudou')
+    },
+    'filters.sort_by'() {
+      console.log('DEBUG: Ordenação mudou')
+    },
+    'filters.order'() {
+      console.log('DEBUG: Ordem mudou')
+    }
+  },
+  async created() {
+    console.log('DEBUG: Página criada, projectId:', this.projectId)
+    await this.loadInitialData()
+  },
+  methods: {
+    async loadInitialData() {
+      try {
+        this.isLoading = true
+        
+        console.log('DEBUG: Iniciando carregamento de dados...')
+        console.log('DEBUG: Project ID:', this.projectId)
+        
+        // Carregar metadados
+        console.log('DEBUG: Carregando metadados...')
+        this.metadata = await this.$repositories.annotatorReport.fetchMetadata(this.projectId)
+        console.log('DEBUG: Metadados carregados:', this.metadata)
+        
+        // Carregar relatório inicial
+        console.log('DEBUG: Carregando relatório inicial...')
+        await this.loadReport()
+        
+      } catch (error) {
+        console.error('DEBUG: Erro ao carregar dados:', error)
+        console.error('DEBUG: Detalhes do erro:', error.response?.data)
+        this.$toast.error('Erro ao carregar dados do relatório')
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    async loadReport() {
+      try {
+        // Só carrega dados se ainda não foram carregados
+        if (this.report && this.report.detalhe_anotadores && this.report.detalhe_anotadores.length > 0) {
+          console.log('DEBUG: Dados já carregados, usando dados existentes')
+          return
+        }
+        
+        this.isLoading = true
+        console.log('DEBUG: Carregando relatório com filtros básicos (sem filtros aplicados):', { sort_by: 'total_anotacoes', order: 'desc' })
+        
+        // Carregar dados sem filtros aplicados - os filtros serão aplicados localmente
+        const basicFilters = {
+          sort_by: 'total_anotacoes',
+          order: 'desc',
+          page: 1,
+          page_size: 100  // Carregar todos os dados
+        }
+        
+        const reportData = await this.$repositories.annotatorReport.fetchReport(this.projectId, basicFilters)
+        console.log('DEBUG: Dados do relatório carregados:', reportData)
+        
+        this.report = reportData
+        this.totalItems = reportData.detalhe_anotadores.length
+        
+        console.log('DEBUG: Total de itens carregados:', this.totalItems)
+        
+      } catch (error) {
+        console.error('DEBUG: Erro ao carregar relatório:', error)
+        console.error('DEBUG: Detalhes do erro do relatório:', error.response?.data)
+        this.$toast.error('Erro ao carregar relatório')
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    applyFilters() {
+      // Os filtros agora são aplicados localmente via computed property
+      // Não é necessário recarregar dados da API
+      console.log('DEBUG: Filtros aplicados localmente:', this.filters)
+      console.log('DEBUG: Resultados filtrados:', this.filteredAnnotators.length)
     },
     
     clearFilters() {
       this.filters = {
         dataset_id: [],
         annotator_id: [],
-        data_inicial: null,
-        data_final: null,
+        data_inicial: '',
+        data_final: '',
         categoria_label: [],
         perspectiva_id: [],
         estado_desacordo: 'todos',
@@ -678,12 +565,114 @@ export default {
         page: 1,
         page_size: 10
       }
-      this.reportData = null
+      console.log('DEBUG: Filtros limpos')
     },
     
-    updatePage(page) {
+    async updatePage(page) {
+      this.currentPage = page
       this.filters.page = page
-      this.generateReport()
+      await this.loadReport()
+    },
+    
+    async updateItemsPerPage(itemsPerPage) {
+      this.itemsPerPage = itemsPerPage
+      this.filters.page_size = itemsPerPage
+      this.currentPage = 1
+      this.filters.page = 1
+      await this.loadReport()
+    },
+    
+    async exportReport(format) {
+      try {
+        this.isExporting = true
+        
+        // Usar dados filtrados localmente em vez de chamar API
+        if (!this.filteredAnnotators || this.filteredAnnotators.length === 0) {
+          this.$toast.error('Não há dados para exportar com os filtros aplicados')
+          return
+        }
+        
+        console.log('DEBUG: Exportando', this.filteredAnnotators.length, 'registros em formato', format)
+        
+        // Criar dados para exportação baseados nos dados filtrados
+        const exportData = {
+          ...this.report,
+          detalhe_anotadores: this.filteredAnnotators,
+          resumo_global: this.filteredSummary,
+          filtros_aplicados: this.filters
+        }
+        
+        // Simular exportação local para CSV
+        if (format === 'csv') {
+          this.exportToCSVLocal(exportData)
+        } else {
+          // Para PDF, ainda usar a API mas com dados filtrados
+          const blob = await this.$repositories.annotatorReport.exportReport(this.projectId, {
+            ...this.filters,
+            format
+          })
+          
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `relatorio-anotadores-${this.projectId}.${format}`
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+          window.URL.revokeObjectURL(url)
+        }
+        
+        this.$toast.success(`Relatório exportado em ${format.toUpperCase()}`)
+        
+      } catch (error) {
+        console.error('Erro ao exportar:', error)
+        this.$toast.error('Erro ao exportar relatório')
+      } finally {
+        this.isExporting = false
+      }
+    },
+    
+    exportToCSVLocal(data) {
+      // Criar CSV localmente
+      const headers = [
+        'ID Anotador', 'Nome', 'Total Anotações', 'Datasets Distintos',
+        'Tempo Total (min)', 'Tempo Médio por Anotação (seg)',
+        'Taxa Desacordo (%)', 'Desacordos Resolvidos', 'Score Concordância',
+        'Perspectivas Usadas', 'Categorias Mais Frequentes',
+        'Primeira Anotação', 'Última Anotação'
+      ]
+      
+      let csvContent = headers.join(',') + '\n'
+      
+      data.detalhe_anotadores.forEach(annotator => {
+        const row = [
+          annotator.annotator_id,
+          `"${annotator.nome_anotador}"`,
+          annotator.total_anotacoes,
+          annotator.datasets_distintos,
+          annotator.tempo_total_min.toFixed(1),
+          annotator.tempo_medio_por_anotacao_seg.toFixed(1),
+          annotator.taxa_desacordo_percent.toFixed(1),
+          annotator.desacordos_resolvidos,
+          annotator.score_concordancia_medio.toFixed(2),
+          `"${annotator.perspectivas_usadas.join(', ')}"`,
+          `"${annotator.categorias_mais_frequentes.join(', ')}"`,
+          annotator.primeira_anotacao ? new Date(annotator.primeira_anotacao).toLocaleDateString('pt-PT') : '',
+          annotator.ultima_anotacao ? new Date(annotator.ultima_anotacao).toLocaleDateString('pt-PT') : ''
+        ]
+        csvContent += row.join(',') + '\n'
+      })
+      
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `relatorio-anotadores-${this.projectId}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
     },
     
     getInitials(name) {
@@ -695,26 +684,31 @@ export default {
         .join('')
     },
     
-    getDisagreementColor(percentage) {
-      if (percentage < 10) return 'green'
-      if (percentage < 20) return 'orange'
+    getDisagreementColor(percent) {
+      if (percent < 10) return 'green'
+      if (percent < 25) return 'orange'
       return 'red'
     },
     
-    getAgreementColor(score) {
+    getScoreColor(score) {
       if (score > 0.8) return 'green'
       if (score > 0.6) return 'orange'
       return 'red'
     },
     
+    formatTime(minutes) {
+      if (minutes < 60) return `${minutes.toFixed(0)}min`
+      const hours = Math.floor(minutes / 60)
+      const mins = Math.floor(minutes % 60)
+      return `${hours}h ${mins}min`
+    },
+    
     formatDate(dateString) {
-      if (!dateString) return 'N/A'
+      if (!dateString) return '-'
       return new Date(dateString).toLocaleDateString('pt-PT', {
-        year: 'numeric',
-        month: '2-digit',
         day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+        month: '2-digit',
+        year: 'numeric'
       })
     }
   }
@@ -722,15 +716,16 @@ export default {
 </script>
 
 <style scoped>
+.hero-section {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+  color: white;
+}
+
 .v-card {
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease-in-out;
 }
 
-.v-chip {
-  margin: 2px;
-}
-
-.text-h4 {
-  font-weight: bold;
+.v-card:hover {
+  transform: translateY(-2px);
 }
 </style> 

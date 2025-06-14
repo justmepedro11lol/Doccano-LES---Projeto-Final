@@ -216,3 +216,5 @@ frontend/.yarnrc
 backend/pyproject.toml
 frontend/yarn.lock
 backend/poetry.lock
+backend/config/settings/__pycache__/base.cpython-39.pyc
+backend/config/__pycache__/urls.cpython-39.pyc

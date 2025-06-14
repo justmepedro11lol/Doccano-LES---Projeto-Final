@@ -150,6 +150,28 @@ export const actions = {
     }
   },
   
+  // Limpar regras antigas para permitir criar novas regras para nova votação
+  clearAnnotationRules({ commit }, projectId) {
+    try {
+      commit('SET_ANNOTATION_RULES', { projectId, rules: [] })
+      return { success: true }
+    } catch (error) {
+      console.error('Erro ao limpar regras de anotação:', error)
+      return { success: false, error }
+    }
+  },
+  
+  // Obter regras antigas (de votações anteriores) para possível reutilização
+  getOldAnnotationRules(_context, projectId) {
+    try {
+      const savedRules = getStateFromLocalStorage(projectId, 'annotationRules', [])
+      return { success: true, data: savedRules }
+    } catch (error) {
+      console.error('Erro ao obter regras antigas:', error)
+      return { success: false, error, data: [] }
+    }
+  },
+  
   // Finalizar votação antecipadamente
   endVotingEarly({ commit, state }, { projectId }) {
     try {

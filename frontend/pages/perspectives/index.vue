@@ -52,6 +52,7 @@ export default {
       this.isLoading = true
       try {
         const response = await this.$services.perspective.list()
+        console.log('Fetched perspectives for general view:', response)
         this.items = response
       } catch (error) {
         console.error('Error fetching perspectives:', error)
