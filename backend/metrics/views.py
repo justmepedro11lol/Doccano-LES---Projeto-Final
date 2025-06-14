@@ -125,3 +125,70 @@ class DisagreementStatsAPI(APIView):
         }
         
         return Response(data=data, status=status.HTTP_200_OK)
+
+
+class ExampleAnnotatorsAPI(APIView):
+    permission_classes = [IsAuthenticated & (IsProjectAdmin | IsProjectStaffAndReadOnly)]
+
+    def get(self, request, *args, **kwargs):
+        project = get_object_or_404(Project, pk=self.kwargs["project_id"])
+        examples = list(Example.objects.filter(project=project).values_list("id", flat=True))
+        
+        # Obter anotadores por example
+        annotators_by_example = {}
+        
+        # Buscar anotações de categorias (sempre tentar, pois a maioria dos projetos usa)
+        category_annotations = (
+            Category.objects
+            .filter(example_id__in=examples)
+            .values("example_id", "user__username")
+            .distinct()
+        )
+        
+        for annotation in category_annotations:
+            example_id = annotation["example_id"]
+            username = annotation["user__username"]
+            
+            if example_id not in annotators_by_example:
+                annotators_by_example[example_id] = []
+            
+            if username not in annotators_by_example[example_id]:
+                annotators_by_example[example_id].append(username)
+        
+        # Buscar anotações de spans
+        span_annotations = (
+            Span.objects
+            .filter(example_id__in=examples)
+            .values("example_id", "user__username")
+            .distinct()
+        )
+        
+        for annotation in span_annotations:
+            example_id = annotation["example_id"]
+            username = annotation["user__username"]
+            
+            if example_id not in annotators_by_example:
+                annotators_by_example[example_id] = []
+            
+            if username not in annotators_by_example[example_id]:
+                annotators_by_example[example_id].append(username)
+        
+        # Buscar anotações de relações
+        relation_annotations = (
+            Relation.objects
+            .filter(example_id__in=examples)
+            .values("example_id", "user__username")
+            .distinct()
+        )
+        
+        for annotation in relation_annotations:
+            example_id = annotation["example_id"]
+            username = annotation["user__username"]
+            
+            if example_id not in annotators_by_example:
+                annotators_by_example[example_id] = []
+            
+            if username not in annotators_by_example[example_id]:
+                annotators_by_example[example_id].append(username)
+        
+        return Response(data=annotators_by_example, status=status.HTTP_200_OK)

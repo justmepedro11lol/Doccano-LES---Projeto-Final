@@ -65,4 +65,10 @@ export class APIMetricsRepository {
     const response = await this.request.get(url)
     return response.data
   }
+
+  async fetchExampleAnnotators(projectId: string): Promise<Record<string, string[]>> {
+    const url = `/projects/${projectId}/metrics/example-annotators`
+    const response = await this.request.get(url)
+    return response.data
+  }
 }

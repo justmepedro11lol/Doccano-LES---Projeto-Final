@@ -3,16 +3,15 @@
     <!-- Cabeçalho -->
     <v-row>
       <v-col cols="12">
-        <h1 class="text-h4 mb-6">Relatório de Anotações e Desacordos</h1>
         <v-alert
           v-if="!hasDiscrepancies"
           type="info"
           class="mb-4"
         >
-          Não foram encontradas diferentes perspectivas nas anotações.
+          No different perspectives were found in the annotations.
         </v-alert>
         
-        <!-- Mensagem de erro de base de dados -->
+        <!-- Database error message -->
         <v-alert
           v-if="showDatabaseError || !isDatabaseConnected"
           type="error"
@@ -25,7 +24,7 @@
             Database unavailable please try again
           </div>
           <div v-else>
-            Erro de conexão com a base de dados. Alguns dados podem estar indisponíveis.
+            Database connection error. Some data may be unavailable.
           </div>
         </v-alert>
         
@@ -49,13 +48,13 @@
       <v-col cols="12">
         <v-card>
           <v-card-title class="headline primary white--text">
-            Análise Detalhada de Desacordos
+            Annotations and Disagreements Report
             <v-spacer></v-spacer>
             <v-chip color="white" text-color="primary" class="ml-2">
-              Limiar: {{ safeProject.minPercentage }}%
+              Threshold: {{ safeProject.minPercentage }}%
             </v-chip>
             <v-chip color="white" text-color="primary" class="ml-2">
-              Total: {{ totalDiscrepancies }} desacordos
+              Total: {{ totalDiscrepancies }} disagreements
             </v-chip>
           </v-card-title>
 
@@ -65,13 +64,13 @@
             </div>
             
             <div v-else>
-              <!-- Filtros -->
+              <!-- Filters -->
               <v-row>
                 <v-col cols="12" sm="6" md="3">
                   <v-select
                     v-model="filters.label"
                     :items="labels"
-                    label="Filtrar por Label"
+                    label="Filter by Label"
                     clearable
                     outlined
                     dense
@@ -83,7 +82,7 @@
                   <v-select
                     v-model="filters.annotator"
                     :items="annotators"
-                    label="Filtrar por Anotador"
+                    label="Filter by Annotator"
                     clearable
                     outlined
                     dense
@@ -95,7 +94,7 @@
                   <v-select
                     v-model="filters.reportType"
                     :items="['CSV', 'PDF']"
-                    label="Tipo de Relatório"
+                    label="Report Type"
                     clearable
                     outlined
                     dense
@@ -109,7 +108,7 @@
                   <v-select
                     v-model="filters.perspective"
                     :items="perspectives || []"
-                    label="Filtrar por Perspetiva"
+                    label="Filter by Perspective"
                     clearable
                     outlined
                     dense
@@ -119,12 +118,12 @@
                 </v-col>
               </v-row>
 
-              <!-- Barra de pesquisa com botões -->
+              <!-- Search bar with buttons -->
               <v-row class="mb-4">
                 <v-col cols="12" md="6" class="d-flex align-center">
                   <v-text-field
                     v-model="search"
-                    label="Pesquisar"
+                    label="Search"
                     prepend-icon="mdi-magnify"
                     outlined
                     dense
@@ -139,14 +138,14 @@
                     @click="generateAndExportReport"
                   >
                     <v-icon left>mdi-download</v-icon>
-                    Gerar e Exportar
+                    Generate and Export
                   </v-btn>
                   <v-btn
                     color="error"
                     @click="cancelReport"
                   >
                     <v-icon left>mdi-close</v-icon>
-                    Cancelar
+                    Cancel
                   </v-btn>
                 </v-col>
               </v-row>
@@ -158,23 +157,25 @@
                 class="elevation-1"
                 :search="search"
               >
-                <template #[`item.annotator`]>
-                  <span>a1</span>
+                <template #[`item.text`]="{ item }">
+                  <div class="text-truncate" style="max-width: 300px;" :title="item.text">
+                    {{ item.text }}
+                  </div>
                 </template>
-                <template #[`item.percentage`]="{ item }">
-                  <v-chip :color="getPercentageColor(item.percentage)" dark small>
-                    {{ parseFloat(item.percentage).toFixed(2) }}%
+                <template #[`item.agreementRate`]="{ item }">
+                  <v-chip :color="getAgreementColor(item.agreementRate)" dark small>
+                    {{ item.agreementRate.toFixed(2) }}%
                   </v-chip>
                   <v-progress-linear
                     class="mt-1"
-                    :value="item.percentage"
+                    :value="item.agreementRate"
                     height="5"
-                    :color="getPercentageColor(item.percentage)"
+                    :color="getAgreementColor(item.agreementRate)"
                   ></v-progress-linear>
                 </template>
-                <template #[`item.status`]="{ item }">
-                  <v-chip :color="item.percentage < safeProject.minPercentage ? 'error' : 'success'" dark small>
-                    {{ item.status }}
+                <template #[`item.consensus`]="{ item }">
+                  <v-chip :color="item.consensus === 'Yes' ? 'success' : 'error'" dark small>
+                    {{ item.consensus }}
                   </v-chip>
                 </template>
                 <template #[`item.details`]="{ item }">
@@ -184,7 +185,7 @@
                     @click="showDetails(item)"
                   >
                     <v-icon left small>mdi-information</v-icon>
-                    Detalhes
+                    Details
                   </v-btn>
                 </template>
               </v-data-table>
@@ -194,11 +195,11 @@
       </v-col>
     </v-row>
 
-    <!-- Diálogo de Detalhes -->
+    <!-- Details Dialog -->
     <v-dialog v-model="detailsDialog" max-width="600px">
       <v-card>
         <v-card-title class="headline primary white--text">
-          Detalhes do Desacordo
+          Disagreement Details
           <v-spacer></v-spacer>
           <v-btn icon dark @click="detailsDialog = false">
             <v-icon>mdi-close</v-icon>
@@ -250,27 +251,33 @@ export default {
       detailsDialog: false,
       selectedItem: null,
       headers: [
-        { text: 'Label', value: 'label' },
-        { text: 'Anotador', value: 'annotator' },
+        { text: 'Text', value: 'text', width: '30%' },
+        { text: 'Labels', value: 'labels', width: '20%' },
+        { text: 'Annotators', value: 'annotators', width: '20%' },
         { 
-          text: 'Taxa de Concordância', 
-          value: 'percentage',
-          align: 'center' 
+          text: 'Agreement Rate', 
+          value: 'agreementRate',
+          align: 'center',
+          width: '15%'
         },
         { 
-          text: 'Consenso', 
-          value: 'status',
-          align: 'center'
+          text: 'Consensus', 
+          value: 'consensus',
+          align: 'center',
+          width: '10%'
         },
         {
-          text: 'Detalhes',
+          text: 'Details',
           value: 'details',
           align: 'center',
-          sortable: false
+          sortable: false,
+          width: '5%'
         }
       ],
 
-      categoryMap: {}
+      categoryMap: {},
+      exampleNameMap: {},
+      exampleAnnotators: {}
     }
   },
 
@@ -289,8 +296,9 @@ export default {
           });
           
           console.log('CategoryMap criado:', this.categoryMap)
+          console.log('CategoryTypes recebidos:', categoryTypes)
         } catch (error) {
-          console.error('Erro ao carregar tipos de categoria:', error)
+          console.error('Error loading category types:', error)
         }
       }
       if (this.project.canDefineSpan) {
@@ -306,55 +314,31 @@ export default {
         const stats = await this.$repositories.metrics.fetchDisagreementStats(this.projectId)
         console.log('Stats carregadas:', stats)
         
-        // Extrair labels únicos dos dados carregados
-        const uniqueLabels = new Set()
-        Object.entries(this.items).forEach(([_label, percentages]) => {
-          Object.entries(percentages).forEach(([subLabel, _percentage]) => {
-            const [annotator] = subLabel.split(' - ')
-            if (annotator) {
-              uniqueLabels.add(annotator)
-            }
-          })
-        })
-        
-        this.labels = Array.from(uniqueLabels)
-        this.annotators = stats.annotators || []
-        
-        if (!this.annotators.includes('a1')) {
-          this.annotators.push('a1')
-        }
-        
         this.textTypes = stats.textTypes || []
-        if (this.textTypes.length === 0 || !this.textTypes.includes('Não definido')) {
-          this.textTypes.push('Não definido')
+        if (this.textTypes.length === 0 || !this.textTypes.includes('Not defined')) {
+          this.textTypes.push('Not defined')
         }
         
-        this.perspectives = stats.perspectives || []
-        this.perspectives = this.perspectives.filter(p => p !== 'Não definida')
+        this.perspectives = (stats.perspectives || []).filter(p => p !== 'Not defined')
         
-        if (!this.perspectives.includes('p1')) {
-          this.perspectives.push('p1')
-        }
-        if (!this.perspectives.includes('p2')) {
-          this.perspectives.push('p2')
-        }
+        // Carregar anotadores reais do projeto
+        await this.loadProjectAnnotators()
         
-        console.log('Labels finais:', this.labels)
-        console.log('Anotadores finais:', this.annotators)
+        // Carregar anotadores por example
+        await this.loadExampleAnnotators()
+        
+        // Labels serão extraídas após carregar os examples
       } catch (error) {
-        console.error('Erro ao carregar stats:', error)
-        // Fallback para dados básicos
-        this.labels = Object.values(this.categoryMap)
-        this.annotators = ['a1']
-        this.perspectives = ['p1', 'p2']
+        console.error('Error loading stats:', error)
+        this.perspectives = []
       }
     } catch (error) {
-      console.error('Erro ao carregar desacordos:', error)
+      console.error('Error loading disagreements:', error)
       
       if (this.$toast) {
-        this.$toast.error('Erro ao carregar os dados dos desacordos')
+        this.$toast.error('Error loading disagreement data')
       } else {
-        console.error('Erro ao carregar os dados dos desacordos')
+        console.error('Error loading disagreement data')
       }
     } finally {
       this.loading = false
@@ -373,69 +357,75 @@ export default {
       return true;
     },
     totalDiscrepancies() {
-      if (!this.items || Object.keys(this.items).length === 0) {
-        return 0
-      }
-      let count = 0
-      Object.values(this.items).forEach(item => {
-        Object.values(item).forEach(percentage => {
-          if (percentage < this.safeProject.minPercentage) count++
-        })
-      })
-      return count
+      return this.discrepancyItems.filter(item => 
+        item.consensus === 'No'
+      ).length
     },
 
     discrepancyItems() {
       if (!this.items || Object.keys(this.items).length === 0) {
         return []
       }
+      
       const items = []
-      Object.entries(this.items).forEach(([label, percentages]) => {
-        Object.entries(percentages).forEach(([subLabel, percentage]) => {
-          const [annotator, textType, perspective] = subLabel.split(' - ')
-          
-          // Mapear o ID da categoria para o nome da categoria
-          const categoryName = this.categoryMap[label] || label
+      
+      // Processar os dados reais dos items (metrics)
+      Object.entries(this.items).forEach(([exampleId, labelPercentages]) => {
+        // Aguardar o nome do example ser carregado
+        if (!this.exampleNameMap[exampleId]) {
+          return
+        }
+        
+        const exampleText = this.exampleNameMap[exampleId]
+        
+        // Extrair labels (categorias) e seus percentuais - APENAS as que foram realmente anotadas (> 0%)
+        const labelEntries = Object.entries(labelPercentages)
+          .filter(([, percentage]) => percentage > 0) // FILTRAR apenas labels com anotações
+        
+        if (labelEntries.length === 0) return
+        
+
+        
+        // Calcular agreement rate máximo
+        const maxAgreementRate = Math.max(...labelEntries.map(([, percentage]) => percentage))
+        
+        // Extrair nomes das labels usando categoryMap - apenas as que foram realmente anotadas
+        const usedLabelNames = labelEntries
+          .map(([labelId]) => this.categoryMap[labelId] || `Label ${labelId}`)
+          .filter(name => name) // Remove valores vazios
+        
+        // Buscar anotadores reais que anotaram este example específico
+        const annotatorNames = this.exampleAnnotators[exampleId] || ['No annotators']
           
           items.push({
-            label: `${annotator}`,
-            percentage,
-            status: percentage < this.safeProject.minPercentage ? 'Perspectivas Divergentes' : 'Consenso Alcançado',
-            category: categoryName, // Usar o nome da categoria em vez do ID
-            annotator: annotator || 'Não definido',
-            textType: textType || 'Não definido',
-            perspective: perspective || 'Não definida'
-          })
+          exampleId,
+          text: exampleText,
+          labels: usedLabelNames.join(', '), // Apenas labels usadas neste texto
+          annotators: annotatorNames.join(', '),
+          agreementRate: maxAgreementRate,
+          consensus: maxAgreementRate >= this.safeProject.minPercentage ? 'Yes' : 'No',
+          details: labelPercentages
         })
       })
+      
       return items
     },
     filteredDiscrepancyItems() {
       let filtered = this.discrepancyItems
       
-      // Aplicar filtro de label
+      // Apply label filter
       if (this.filters.label) {
-        filtered = filtered.filter(item => item.label === this.filters.label)
+        filtered = filtered.filter(item => item.labels.includes(this.filters.label))
       }
       
-      // Aplicar filtro de anotador
+      // Apply annotator filter
       if (this.filters.annotator) {
-        if (this.filters.annotator === 'a1') {
-          // Lógica especial para 'a1' - mostrar apenas os primeiros 3 itens
-          filtered = filtered.slice(0, Math.min(3, filtered.length))
-        } else {
-          filtered = filtered.filter(item => item.annotator === this.filters.annotator)
-        }
+        filtered = filtered.filter(item => item.annotators.includes(this.filters.annotator))
       }
       
-      // Aplicar filtro de perspectiva
+      // Apply perspective filter (mantido para compatibilidade)
       if (this.filters.perspective) {
-        if (this.filters.perspective === 'p1') {
-          // Lógica especial para 'p1' - mostrar apenas o primeiro item
-          filtered = filtered.slice(0, 1)
-        } else {
-          filtered = filtered.filter(item => (item.perspective || 'Não definida') === this.filters.perspective)
-        }
+        filtered = filtered.filter(item => (item.perspective || 'Not defined') === this.filters.perspective)
       }
       
       return filtered
@@ -451,6 +441,23 @@ export default {
     }
   },
 
+  watch: {
+    items: {
+      immediate: true,
+      async handler(newItems) {
+        if (newItems && Object.keys(newItems).length > 0) {
+          // Carregar nomes dos examples
+          for (const exampleId of Object.keys(newItems)) {
+            await this.resolveExampleName(exampleId)
+          }
+          
+          // Após carregar os examples, extrair labels e anotadores únicos
+          this.extractUniqueLabelsAndAnnotators()
+        }
+      }
+    }
+  },
+
   mounted() {
     // Iniciar verificação de conectividade quando o componente for montado
     this.startDatabaseConnectionCheck()
@@ -462,9 +469,62 @@ export default {
   },
 
   methods: {
-    getPercentageColor(percentage) {
-      if (percentage < this.safeProject.minPercentage) return 'error'
-      if (percentage < 80) return 'warning'
+    async resolveExampleName(id) {
+      if (!this.exampleNameMap[id]) {
+        try {
+          const example = await this.$repositories.example.findById(
+            this.projectId, Number(id)
+          )
+          this.$set(this.exampleNameMap, id, example.text || 'Texto não disponível')
+        } catch (error) {
+          console.error('Erro ao buscar example:', id, error)
+          this.$set(this.exampleNameMap, id, `Example ${id} - Erro ao carregar`)
+        }
+      }
+      return this.exampleNameMap[id]
+    },
+
+    async loadProjectAnnotators() {
+      try {
+        const members = await this.$repositories.member.list(this.projectId)
+        this.annotators = members.map((member) => member.username || `User ${member.user}`)
+        console.log('Anotadores reais carregados:', this.annotators)
+      } catch (error) {
+        console.error('Erro ao carregar anotadores:', error)
+        this.annotators = ['Unknown Annotator']
+      }
+    },
+
+    async loadExampleAnnotators() {
+      try {
+        this.exampleAnnotators = await this.$repositories.metrics.fetchExampleAnnotators(this.projectId)
+        console.log('Anotadores por example carregados:', this.exampleAnnotators)
+      } catch (error) {
+        console.error('Erro ao carregar anotadores por example:', error)
+        this.exampleAnnotators = {}
+      }
+    },
+
+    extractUniqueLabelsAndAnnotators() {
+      // Extract unique labels from the processed data
+      const uniqueLabels = new Set()
+      
+      this.discrepancyItems.forEach(item => {
+        // Extract labels - apenas as que foram usadas neste texto
+        item.labels.split(', ').forEach(label => {
+          if (label.trim()) uniqueLabels.add(label.trim())
+        })
+      })
+      
+      this.labels = Array.from(uniqueLabels)
+      
+      console.log('Labels extraídas (apenas as usadas):', this.labels)
+      console.log('Anotadores reais do projeto:', this.annotators)
+    },
+
+    getAgreementColor(agreementRate) {
+      if (agreementRate < this.safeProject.minPercentage) return 'error'
+      if (agreementRate < 80) return 'warning'
       return 'success'
     },
 
@@ -481,30 +541,31 @@ export default {
     },
     formatKey(key) {
       const keyMap = {
-        label: 'Elemento Anotado',
-        percentage: 'Taxa de Concordância',
-        status: 'Status',
-        annotator: 'Anotador',
-        perspective: 'Perspetiva'
+        text: 'Dataset Text',
+        labels: 'Annotated Labels',
+        annotators: 'Annotators',
+        agreementRate: 'Agreement Rate',
+        consensus: 'Consensus',
+        perspective: 'Perspective'
       }
       return keyMap[key] || key
     },
     async generateAndExportReport() {
       this.generatingReport = true
       try {
-        console.log('Gerando e exportando relatório...');
+        console.log('Generating and exporting report...');
         
-        // Verificar se há dados para exportar
+        // Check if there's data to export
         if (!this.filteredDiscrepancyItems || this.filteredDiscrepancyItems.length === 0) {
-          throw new Error('Não há dados para exportar. Verifique os filtros aplicados.');
+          throw new Error('No data to export. Please check the applied filters.');
         }
         
-        // Gerar nome do arquivo
-        const projectName = this.safeProject.name || 'projeto';
+        // Generate filename
+        const projectName = this.safeProject.name || 'project';
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `relatorio-desacordos-${projectName}-${timestamp}`;
+        const filename = `disagreements-report-${projectName}-${timestamp}`;
         
-        // Exportar baseado no tipo selecionado no filtro
+        // Export based on selected filter type
         const exportType = this.filters.reportType?.toLowerCase() || 'pdf';
         
         if (exportType === 'pdf') {
@@ -512,24 +573,24 @@ export default {
         } else if (exportType === 'csv') {
           this.exportToCSV(filename);
         } else {
-          // Default para PDF se não especificado
+          // Default to PDF if not specified
           await this.exportToPDF(filename);
         }
         
         this.reportGenerated = true
         
         if (this.$toast) {
-          this.$toast.success(`Relatório ${exportType.toUpperCase()} exportado com sucesso`);
+          this.$toast.success(`${exportType.toUpperCase()} report exported successfully`);
         } else {
-          console.log(`Relatório ${exportType.toUpperCase()} exportado com sucesso`);
+          console.log(`${exportType.toUpperCase()} report exported successfully`);
         }
       } catch (error) {
-        console.error('Erro ao gerar e exportar relatório:', error);
+        console.error('Error generating and exporting report:', error);
         
         if (this.$toast) {
-          this.$toast.error(`Erro ao exportar: ${error.message}`);
+          this.$toast.error(`Export error: ${error.message}`);
         } else {
-          alert('Erro ao gerar o relatório: ' + error.message);
+          alert('Error generating report: ' + error.message);
         }
       } finally {
         this.generatingReport = false
@@ -551,13 +612,13 @@ export default {
         await this.$repositories.user.checkHealth()
         this.isDatabaseConnected = true
       } catch (error) {
-        console.error('Erro de conectividade da base de dados:', error)
+        console.error('Database connectivity error:', error)
         this.isDatabaseConnected = false
       }
     },
     
     startDatabaseConnectionCheck() {
-      // Verificar conectividade de 2 em 2 segundos
+      // Check connectivity every 2 seconds
       this.databaseCheckInterval = setInterval(() => {
         this.checkDatabaseConnection()
       }, 2000)
@@ -574,22 +635,20 @@ export default {
       if (this.isDatabaseConnected) {
         this.showDatabaseError = false
       }
-      // Se não há conexão, não permitir fechar o alerta
+      // If no connection, don't allow closing the alert
     },
     exportToCSV(filename) {
       try {
         if (!this.filteredDiscrepancyItems || this.filteredDiscrepancyItems.length === 0) {
-          throw new Error('Não há dados para exportar.');
+          throw new Error('No data to export.');
         }
         
         const csvData = this.filteredDiscrepancyItems.map(item => ({
-          Elemento: item.label,
-          Categoria: item.category,
-          Anotador: item.annotator,
-          'Tipo de Texto': item.textType,
-          Perspetiva: item.perspective || 'Não definida',
-          'Taxa de Concordância': parseFloat(item.percentage).toFixed(2) + '%',
-          Status: item.status
+          Text: item.text,
+          Labels: item.labels,
+          Annotators: item.annotators,
+          'Agreement Rate': item.agreementRate.toFixed(2) + '%',
+          Consensus: item.consensus
         }));
         
         const columns = Object.keys(csvData[0]);
@@ -625,59 +684,67 @@ export default {
           URL.revokeObjectURL(url);
         }, 100);
              } catch (error) {
-         console.error('Erro ao gerar CSV:', error);
-         throw new Error('Não foi possível gerar o CSV: ' + error.message);
+         console.error('Error generating CSV:', error);
+         throw new Error('Could not generate CSV: ' + error.message);
        }
      },
      
      async exportToPDF(filename) {
        try {
-         // Carregar jsPDF dinamicamente (para não incluir no bundle inicial)
+         // Load jsPDF dynamically (to not include in initial bundle)
          const { jsPDF } = await import('jspdf');
          const { default: autoTable } = await import('jspdf-autotable');
          
          // eslint-disable-next-line new-cap
          const doc = new jsPDF();
          
-         // Título
+         // Title
          doc.setFontSize(20);
-         doc.text('Relatório de Anotações e Desacordos', 14, 20);
+         doc.text('Annotations and Disagreements Report', 14, 20);
          
-         // Informações do projeto
+         // Project information
          doc.setFontSize(12);
-         doc.text(`Projeto: ${this.safeProject.name || 'Sem nome'}`, 14, 30);
-         doc.text(`Limiar de concordância: ${this.safeProject.minPercentage}%`, 14, 38);
-         doc.text(`Total de desacordos: ${this.totalDiscrepancies}`, 14, 46);
-         doc.text(`Data do relatório: ${new Date().toLocaleDateString()}`, 14, 54);
+         doc.text(`Project: ${this.safeProject.name || 'No name'}`, 14, 30);
+         doc.text(`Agreement threshold: ${this.safeProject.minPercentage}%`, 14, 38);
+         doc.text(`Total disagreements: ${this.totalDiscrepancies}`, 14, 46);
+         doc.text(`Report date: ${new Date().toLocaleDateString()}`, 14, 54);
          
-         // Detalhes dos desacordos
+         // Disagreement details
          doc.setFontSize(16);
-         doc.text('Detalhes dos Desacordos', 14, 70);
+         doc.text('Disagreement Details', 14, 70);
          
          const detailsData = this.filteredDiscrepancyItems
-           .filter(item => item.percentage < this.safeProject.minPercentage)
+           .filter(item => item.consensus === 'No')
            .map(item => [
-             item.label, // Use o mesmo campo que a tabela usa para Label
-             'a1', // Use o mesmo valor fixo que a tabela usa para Anotador
-             `${parseFloat(item.percentage).toFixed(2)}%`,
-             item.status
+             item.text.substring(0, 50) + (item.text.length > 50 ? '...' : ''), // Truncate text
+             item.labels,
+             item.annotators,
+             `${item.agreementRate.toFixed(2)}%`,
+             item.consensus
            ]);
          
                    autoTable(doc, {
             startY: 75,
-            head: [['Label', 'Anotador', 'Taxa de Concordância', 'Status']],
-            body: detailsData
+            head: [['Text', 'Labels', 'Annotators', 'Agreement Rate', 'Consensus']],
+            body: detailsData,
+            columnStyles: {
+              0: { cellWidth: 60 }, // Text column
+              1: { cellWidth: 40 }, // Labels column
+              2: { cellWidth: 40 }, // Annotators column
+              3: { cellWidth: 30 }, // Agreement Rate column
+              4: { cellWidth: 20 }  // Consensus column
+            }
           });
          
          // Salvar o PDF usando output com método compatível com navegadores
          const pdfOutput = doc.output('blob');
          const url = URL.createObjectURL(pdfOutput);
          
-         // Para browsers antigos como o IE
+         // For old browsers like IE
          if (window.navigator && window.navigator.msSaveOrOpenBlob) {
            window.navigator.msSaveOrOpenBlob(pdfOutput, `${filename}.pdf`);
            
-           // Redirecionar após o download
+           // Redirect after download
            setTimeout(() => {
              window.location.href = `/projects/${this.projectId}/reports`;
            }, 500);
@@ -685,7 +752,7 @@ export default {
            return;
          }
          
-         // Para browsers modernos
+         // For modern browsers
          const link = document.createElement('a');
          link.href = url;
          link.download = `${filename}.pdf`;
@@ -693,17 +760,17 @@ export default {
          document.body.appendChild(link);
          link.click();
          
-         // Limpar URL após download e redirecionar
+         // Clean URL after download and redirect
          setTimeout(() => {
            URL.revokeObjectURL(url);
            document.body.removeChild(link);
            
-           // Redirecionar para a página de relatórios
+           // Redirect to reports page
            this.$router.push(`/projects/${this.projectId}/reports`);
          }, 500);
        } catch (error) {
-         console.error('Erro ao gerar PDF:', error);
-         throw new Error('Não foi possível gerar o PDF. Verifique se todas as bibliotecas necessárias estão disponíveis.');
+         console.error('Error generating PDF:', error);
+         throw new Error('Could not generate PDF. Please check that all required libraries are available.');
        }
      }
    }
