@@ -34,6 +34,7 @@ urlpatterns = [
     path(route="projects/<int:project_id>/clone", view=CloneProject.as_view(), name="clone_project"),
     path(route="projects/<int:project_id>/members/<int:member_id>", view=MemberDetail.as_view(), name="member_detail"),
     path(route="projects/<int:project_id>/perspectives", view=Perspectives.as_view(), name="perspectives_list"),
+    path(route="perspectives", view=Perspectives.as_view(), name="all_perspectives_list"),
     path(
         route="projects/<int:project_id>/perspectives/create",
         view=PerspectiveCreation.as_view(),

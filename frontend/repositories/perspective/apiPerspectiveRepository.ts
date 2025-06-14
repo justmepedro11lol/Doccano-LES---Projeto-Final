@@ -18,8 +18,8 @@ function toPayload(item: PerspectiveItem): { [key: string]: any } {
 export class APIPerspectiveRepository {
   constructor(private readonly baseUrl = 'perspective', private readonly request = ApiService) {}
 
-  async list(projectId: string): Promise<PerspectiveItem[]> {
-    const url = `/projects/${projectId}/${this.baseUrl}s`;
+  async list(projectId?: string): Promise<PerspectiveItem[]> {
+    const url = projectId ? `/projects/${projectId}/${this.baseUrl}s` : `/${this.baseUrl}s`;
     const response = await this.request.get(url);
     return response.data.map((item: any) => toModel(item));
   }

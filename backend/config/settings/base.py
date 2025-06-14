@@ -11,6 +11,7 @@ Any setting that is configured via an environment variable may
 also be set in a `.env` file in the project base directory.
 """
 from os import path
+import os
 
 import dj_database_url
 from environs import Env, EnvError
@@ -199,6 +200,7 @@ DATABASES = {
         "NAME": "doccano",
         "USER": "doccano",
         "PASSWORD": "doccano",
+        "HOST": "localhost",
         "PORT": "5433",
     }
 }
@@ -273,15 +275,16 @@ CELERY_RESULT_BACKEND = "django-db"
 try:
     CELERY_BROKER_URL = env("CELERY_BROKER_URL")
 except EnvError:
-    try:
-        # quickfix for Heroku.
-        # See https://github.com/doccano/doccano/issues/1327.
-        uri = env("DATABASE_URL")
-        if uri.startswith("postgres://"):
-            uri = uri.replace("postgres://", "postgresql://", 1)
+    uri = os.getenv("DATABASE_URL") or ""
+    print(uri)
+    if uri.startswith("postgres://"):
+        uri = uri.replace("postgres://", "postgresql://", 1)
+    if uri:
         CELERY_BROKER_URL = "sqla+{}".format(uri)
-    except EnvError:
+    else:
         CELERY_BROKER_URL = "sqla+sqlite:///{}".format(DATABASES["default"]["NAME"])
+
+
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"

@@ -333,18 +333,12 @@ def annotator_report_metadata(request, project_id):
     try:
         project = get_object_or_404(Project, pk=project_id)
         
-        print(f"DEBUG: Buscando metadados para projeto {project.name}")
+        print(f"DEBUG: Buscando metadados para projeto {project.name} (ID: {project.id})")
         
-        # Versão simplificada - garantir que sempre retorna dados
+        # Inicializar metadados com valores padrão
         metadata = {
-            'annotators': [
-                {
-                    'id': '1',
-                    'name': 'Anotador Teste',
-                    'username': 'teste'
-                }
-            ],
-            'categories': ['LOC', 'ORG', 'PER'],
+            'annotators': [],
+            'categories': [],
             'perspectives': [],
             'datasets': [],
             'sort_options': [
@@ -362,40 +356,128 @@ def annotator_report_metadata(request, project_id):
             ]
         }
         
-        # Tentar obter dados reais mas não falhar se não conseguir
+        # Obter anotadores reais do projeto
         try:
-            # Obter anotadores reais do projeto
             members = project.members.select_related('user').all()
+            print(f"DEBUG: Procurando membros do projeto... encontrados: {members.count()}")
+            
             if members.exists():
-                real_annotators = [
-                    {
+                real_annotators = []
+                for member in members:
+                    annotator_data = {
                         'id': str(member.user.id),
                         'name': member.user.get_full_name() or member.user.username,
                         'username': member.user.username
                     }
-                    for member in members
-                ]
+                    real_annotators.append(annotator_data)
+                    print(f"DEBUG: Anotador encontrado: {annotator_data['name']} (ID: {annotator_data['id']})")
+                
                 metadata['annotators'] = real_annotators
-                print(f"DEBUG: Encontrados {len(real_annotators)} anotadores reais")
-            
-            # Obter categorias reais do projeto
+                print(f"DEBUG: Total de anotadores reais: {len(real_annotators)}")
+            else:
+                print("DEBUG: Nenhum membro encontrado no projeto")
+                
+        except Exception as e:
+            print(f"DEBUG: Erro ao obter membros: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        # Obter categorias reais do projeto (CategoryType e SpanType)
+        try:
             from label_types.models import CategoryType, SpanType
-            categories = list(CategoryType.objects.filter(project=project).values_list('text', flat=True))
-            categories.extend(list(SpanType.objects.filter(project=project).values_list('text', flat=True)))
+            
+            categories = []
+            
+            # Buscar CategoryType
+            category_types = CategoryType.objects.filter(project=project).values_list('text', flat=True)
+            categories.extend(list(category_types))
+            print(f"DEBUG: CategoryTypes encontrados: {list(category_types)}")
+            
+            # Buscar SpanType  
+            span_types = SpanType.objects.filter(project=project).values_list('text', flat=True)
+            categories.extend(list(span_types))
+            print(f"DEBUG: SpanTypes encontrados: {list(span_types)}")
             
             if categories:
-                metadata['categories'] = list(set(categories))
-                print(f"DEBUG: Encontradas {len(categories)} categorias reais")
-            
+                # Remover duplicatas e ordenar
+                unique_categories = sorted(list(set(categories)))
+                metadata['categories'] = unique_categories
+                print(f"DEBUG: Total de categorias únicas: {len(unique_categories)}")
+            else:
+                print("DEBUG: Nenhuma categoria encontrada no projeto")
+                
         except Exception as e:
-            print(f"DEBUG: Erro ao obter dados reais, usando dados básicos: {e}")
+            print(f"DEBUG: Erro ao obter categorias: {e}")
+            import traceback
+            traceback.print_exc()
         
-        print(f"DEBUG: Metadados retornados: {len(metadata['annotators'])} anotadores, {len(metadata['categories'])} categorias")
+        # Obter datasets reais do projeto
+        try:
+            from examples.models import Example
+            
+            # Buscar documentos únicos que podem representar datasets
+            dataset_names = (
+                Example.objects
+                .filter(project=project)
+                .values_list('filename', flat=True)
+                .distinct()
+            )
+            
+            if dataset_names:
+                datasets = []
+                for i, name in enumerate(dataset_names):
+                    datasets.append({
+                        'id': str(i + 1),
+                        'name': name or f'Dataset {i + 1}'
+                    })
+                
+                metadata['datasets'] = datasets
+                print(f"DEBUG: Datasets encontrados: {len(datasets)}")
+            else:
+                print("DEBUG: Nenhum dataset encontrado no projeto")
+                
+        except Exception as e:
+            print(f"DEBUG: Erro ao obter datasets: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        # Obter perspectivas reais do projeto
+        try:
+            from perspective.models import Perspective
+            
+            perspectives = Perspective.objects.filter(project=project).values('id', 'name')
+            
+            if perspectives:
+                perspective_list = [
+                    {
+                        'id': str(p['id']),
+                        'name': p['name']
+                    }
+                    for p in perspectives
+                ]
+                metadata['perspectives'] = perspective_list
+                print(f"DEBUG: Perspectivas encontradas: {len(perspective_list)}")
+            else:
+                print("DEBUG: Nenhuma perspectiva encontrada no projeto")
+                
+        except Exception as e:
+            print(f"DEBUG: Erro ao obter perspectivas: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        # Log dos resultados finais
+        print(f"DEBUG: Metadados finais:")
+        print(f"  - Anotadores: {len(metadata['annotators'])}")
+        print(f"  - Categorias: {len(metadata['categories'])}")
+        print(f"  - Datasets: {len(metadata['datasets'])}")
+        print(f"  - Perspectivas: {len(metadata['perspectives'])}")
+        print(f"  - Opções de ordenação: {len(metadata['sort_options'])}")
+        print(f"  - Estados de desacordo: {len(metadata['disagreement_states'])}")
         
         return Response(metadata, status=status.HTTP_200_OK)
         
     except Exception as e:
-        print(f"DEBUG: Erro nos metadados: {str(e)}")
+        print(f"DEBUG: Erro geral nos metadados: {str(e)}")
         import traceback
         traceback.print_exc()
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

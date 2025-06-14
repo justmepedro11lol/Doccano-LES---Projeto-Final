@@ -49,6 +49,15 @@
       {{ $t('Groups') }}
     </v-btn>
 
+    <v-btn
+      v-if="isSuperUser && isAuthenticated"
+      text
+      class="text-capitalize"
+      @click="$router.push(localePath('/perspectives'))"
+    >
+      {{ $t('Perspectives') }}
+    </v-btn>
+
     <v-menu v-if="!isAuthenticated" open-on-hover offset-y>
       <template #activator="{ on }">
         <v-btn text v-on="on">

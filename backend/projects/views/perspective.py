@@ -36,7 +36,9 @@ class Perspectives(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
-        return Perspective.objects.filter(project_id=project_id)
+        if project_id:
+            return Perspective.objects.filter(project_id=project_id)
+        return Perspective.objects.all()
 
 
 class PerspectiveCreation(generics.CreateAPIView):
