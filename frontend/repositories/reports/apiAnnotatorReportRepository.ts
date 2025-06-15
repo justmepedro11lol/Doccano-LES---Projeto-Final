@@ -36,8 +36,15 @@ export interface AnnotatorReport {
     total_anotadores: number
     total_anotacoes: number
     taxa_desacordo_global_percent: number
+    score_concordancia_global?: number
   }
   detalhe_anotadores: AnnotatorDetail[]
+  pagination?: {
+    total: number
+    page: number
+    pages: number
+    per_page: number
+  }
 }
 
 export interface AnnotatorReportMetadata {
@@ -68,19 +75,19 @@ export interface AnnotatorReportMetadata {
 export class APIAnnotatorReportRepository {
   constructor(private readonly request = ApiService) {}
 
-  async fetchReport(projectId: string, filters: AnnotatorReportFilters): Promise<AnnotatorReport> {
+  async getAnnotatorReport(projectId: string, filters: AnnotatorReportFilters): Promise<AnnotatorReport> {
     const url = `/projects/${projectId}/reports/annotators`
     const response = await this.request.get(url, { params: filters })
     return response.data
   }
 
-  async fetchMetadata(projectId: string): Promise<AnnotatorReportMetadata> {
+  async getMetadata(projectId: string): Promise<AnnotatorReportMetadata> {
     const url = `/projects/${projectId}/reports/annotators/metadata`
     const response = await this.request.get(url)
     return response.data
   }
 
-  async exportReport(projectId: string, filters: AnnotatorReportFilters & { format: 'csv' | 'pdf' }): Promise<Blob> {
+  async exportAnnotatorReport(projectId: string, filters: AnnotatorReportFilters & { format: 'csv' | 'pdf' }): Promise<Blob> {
     const url = `/projects/${projectId}/reports/annotators/export`
     const response = await this.request.get(url, { 
       params: filters,
