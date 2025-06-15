@@ -327,14 +327,14 @@ class AnnotatorReportService:
         return []
     
     def _get_top_categories(self, user: User, filters: Dict[str, Any]) -> List[str]:
-        """Obtém as categorias mais frequentemente anotadas pelo usuário"""
+        """Obtém todas as labels utilizadas pelo usuário"""
         # Contar categorias
         category_counts = Category.objects.filter(
             user=user,
             example__project=self.project
         ).values('label__text').annotate(
             count=Count('id')
-        ).order_by('-count')[:5]
+        ).order_by('-count')
         
         # Aplicar filtros de data se especificado
         if filters.get('data_inicial'):
@@ -348,7 +348,7 @@ class AnnotatorReportService:
             example__project=self.project
         ).values('label__text').annotate(
             count=Count('id')
-        ).order_by('-count')[:5]
+        ).order_by('-count')
         
         # Aplicar filtros de data para spans
         if filters.get('data_inicial'):
@@ -369,9 +369,9 @@ class AnnotatorReportService:
             if label_text:
                 all_categories[label_text] = all_categories.get(label_text, 0) + item['count']
         
-        # Retornar top 5
+        # Retornar todas as labels utilizadas, ordenadas por frequência
         sorted_categories = sorted(all_categories.items(), key=lambda x: x[1], reverse=True)
-        return [cat[0] for cat in sorted_categories[:5]]
+        return [cat[0] for cat in sorted_categories]
     
     def _calculate_temporal_metrics(self, user: User, filters: Dict[str, Any]) -> Dict[str, Optional[datetime]]:
         """Calcula métricas temporais (primeira e última anotação)"""

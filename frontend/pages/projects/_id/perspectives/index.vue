@@ -147,11 +147,11 @@ import ActionMenu from '@/components/perspective/ActionMenu.vue'
 import PerspectiveList from '@/components/perspective/PerspectiveList.vue'
 import FormAnswer from '~/components/perspective/FormAnswer.vue'
 import { AnswerItem } from '~/domain/models/perspective/answer/answer'
-import { QuestionItem } from '~/domain/models/perspective/question/question'
+import { QuestionItem , OptionsQuestionItem } from '~/domain/models/perspective/question/question'
 import { PerspectiveDTO } from '~/services/application/perspective/perspectiveData'
 import { CreateAnswerCommand } from '~/services/application/perspective/answer/answerCommand'
 import { MemberItem } from '~/domain/models/member/member'
-import { OptionsQuestionItem } from '~/domain/models/perspective/question/question'
+
 
 export default Vue.extend({
   components: {

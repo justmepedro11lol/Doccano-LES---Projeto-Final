@@ -4,10 +4,19 @@ from .views import (
     AnnotatorReportExportAPIView,
     annotator_report_metadata,
     test_reports_connection,
-    debug_annotator_data
+    debug_annotator_data,
+    test_simple_view,
+    test_export_view
 )
 
 urlpatterns = [
+    # Teste simples
+    path(
+        'test-simple/',
+        test_simple_view,
+        name='test_simple'
+    ),
+    
     # Teste de conexão
     path(
         'test-reports/',
@@ -17,28 +26,35 @@ urlpatterns = [
     
     # Debug de dados de anotadores
     path(
-        'projects/<int:project_id>/reports/annotators/debug',
+        'annotators/debug',
         debug_annotator_data,
         name='debug_annotator_data'
     ),
     
     # Relatório de anotadores
     path(
-        'projects/<int:project_id>/reports/annotators',
+        'annotators',
         AnnotatorReportAPIView.as_view(),
         name='annotator_report'
     ),
     
+    # Teste de exportação
+    path(
+        'annotators/export-test',
+        test_export_view,
+        name='test_export'
+    ),
+    
     # Exportação do relatório
     path(
-        'projects/<int:project_id>/reports/annotators/export',
+        'annotators/export',
         AnnotatorReportExportAPIView.as_view(),
         name='annotator_report_export'
     ),
     
     # Metadados para filtros
     path(
-        'projects/<int:project_id>/reports/annotators/metadata',
+        'annotators/metadata',
         annotator_report_metadata,
         name='annotator_report_metadata'
     ),

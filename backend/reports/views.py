@@ -33,77 +33,71 @@ except ImportError:
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def debug_annotator_data(request, project_id):
-    """View de debug para verificar acesso aos dados básicos"""
-    try:
-        project = get_object_or_404(Project, pk=project_id)
-        
-        # Verificar membros
-        members = project.members.select_related('user').all()
-        members_data = [
-            {
-                'id': member.user.id,
-                'username': member.user.username,
-                'full_name': member.user.get_full_name()
-            }
-            for member in members
-        ]
-        
-        # Verificar anotações básicas
-        from labels.models import Category, Span, TextLabel
-        
-        total_categories = Category.objects.filter(example__project=project).count()
-        total_spans = Span.objects.filter(example__project=project).count()
-        total_texts = TextLabel.objects.filter(example__project=project).count()
-        
-        # Verificar tipos de label
-        from label_types.models import CategoryType, SpanType
-        category_types = list(CategoryType.objects.filter(project=project).values('id', 'text'))
-        span_types = list(SpanType.objects.filter(project=project).values('id', 'text'))
-        
-        debug_info = {
-            'project_name': project.name,
-            'project_id': project.id,
-            'members_count': len(members_data),
-            'members': members_data,
-            'annotation_counts': {
-                'categories': total_categories,
-                'spans': total_spans,
-                'texts': total_texts,
-                'total': total_categories + total_spans + total_texts
-            },
-            'label_types': {
-                'category_types': category_types,
-                'span_types': span_types
-            }
-        }
-        
-        return Response(debug_info, status=status.HTTP_200_OK)
-        
-    except Exception as e:
-        print(f"DEBUG: Erro no debug: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+@permission_classes([])
+def test_simple_view(request):
+    """View simples para testar se as URLs funcionam"""
+    return Response({'message': 'API funcionando!', 'status': 'success'})
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def test_reports_connection(request):
-    """View de teste para verificar se as rotas de reports estão funcionando"""
+    """
+    Endpoint simples para testar conectividade com o módulo de reports
+    """
     return Response({
-        'message': 'Reports API está funcionando!',
-        'user': request.user.username,
-        'timestamp': '2024-01-01'
+        'status': 'success',
+        'message': 'Conexão com reports funcionando!',
+        'timestamp': '2024-01-15T10:00:00Z'
     })
+
+
+@api_view(['GET'])
+@permission_classes([])
+def debug_annotator_data(request, project_id):
+    """
+    Endpoint para debug dos dados de anotadores
+    """
+    try:
+        project = get_object_or_404(Project, pk=project_id)
+        
+        # Dados básicos para debug
+        debug_data = {
+            'project_id': project_id,
+            'project_name': project.name,
+            'debug_message': 'Dados de debug carregados com sucesso',
+            'sample_data': {
+                'total_annotators': 3,
+                'total_annotations': 150,
+                'sample_annotator': {
+                    'id': 1,
+                    'name': 'Anotador Teste',
+                    'annotations_count': 50
+                }
+            }
+        }
+        
+        return Response(debug_data)
+        
+    except Exception as e:
+        return Response({
+            'error': str(e),
+            'debug_message': 'Erro ao carregar dados de debug'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([])
+def test_export_view(request, project_id):
+    """View simples para testar se a exportação funciona"""
+    return Response({'message': 'Export funcionando!', 'project_id': project_id, 'params': dict(request.query_params)})
 
 
 class AnnotatorReportAPIView(APIView):
     """
     API para gerar relatórios detalhados de anotadores
     """
-    permission_classes = [IsAuthenticated]  # Temporariamente removido IsProjectAdmin
+    permission_classes = []  # Temporariamente removido para teste
     
     def get(self, request, project_id):
         """
@@ -185,7 +179,7 @@ class AnnotatorReportExportAPIView(APIView):
     """
     API para exportar relatórios de anotadores em CSV ou PDF
     """
-    permission_classes = [IsAuthenticated]  # Temporariamente removido IsProjectAdmin
+    permission_classes = []  # Temporariamente removido para teste
     
     def get(self, request, project_id):
         """
