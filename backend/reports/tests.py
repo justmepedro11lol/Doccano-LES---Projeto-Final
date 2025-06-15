@@ -1,6 +1,7 @@
 import json
+import io
 from datetime import datetime, timedelta
-from django.test import TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -21,158 +22,350 @@ class AnnotatorReportServiceTestCase(TestCase):
     """Testes para o serviço de relatórios de anotadores"""
     
     def setUp(self):
-        self.project = prepare_project()
-        self.service = AnnotatorReportService(self.project.item)
+        """Configuração inicial para os testes"""
         
-        # Criar usuários e membros adicionais
-        self.user1 = User.objects.create_user('annotator1', 'ann1@test.com', 'pass')
-        self.user2 = User.objects.create_user('annotator2', 'ann2@test.com', 'pass')
+        # Criar usuários
+        self.user1 = User.objects.create_user(
+            username='annotator1',
+            email='annotator1@test.com',
+            first_name='João',
+            last_name='Silva'
+        )
+        self.user2 = User.objects.create_user(
+            username='annotator2',
+            email='annotator2@test.com',
+            first_name='Maria',
+            last_name='Santos'
+        )
+        self.admin_user = User.objects.create_user(
+            username='admin',
+            email='admin@test.com',
+            is_staff=True
+        )
         
+        # Criar projeto
+        self.project = Project.objects.create(
+            name='Test Project',
+            description='Test project for annotator reports',
+            project_type='DocumentClassification'
+        )
+        
+        # Criar membros
         self.member1 = Member.objects.create(
             user=self.user1,
-            project=self.project.item,
-            role=self.project.annotator_role
+            project=self.project,
+            role_id=1
         )
         self.member2 = Member.objects.create(
             user=self.user2,
-            project=self.project.item,
-            role=self.project.annotator_role
+            project=self.project,
+            role_id=1
         )
         
-        # Criar exemplos e anotações para teste
-        self.create_test_data()
-    
-    def create_test_data(self):
-        """Criar dados de teste: examples, labels, etc."""
-        # Criar tipos de categoria
-        self.cat_type1 = CategoryType.objects.create(
-            text='LOC',
-            project=self.project.item
+        # Criar tipos de label
+        self.category_type = CategoryType.objects.create(
+            text='Person',
+            prefix_key='P',
+            suffix_key='1',
+            project=self.project
         )
-        self.cat_type2 = CategoryType.objects.create(
-            text='ORG',
-            project=self.project.item
+        self.span_type = SpanType.objects.create(
+            text='Location',
+            prefix_key='L',
+            suffix_key='2',
+            project=self.project
         )
         
         # Criar exemplos
         self.example1 = Example.objects.create(
-            text='Test text 1',
-            project=self.project.item
+            text='Test example 1',
+            project=self.project,
+            meta={'dataset_id': '1'}
         )
         self.example2 = Example.objects.create(
-            text='Test text 2',
-            project=self.project.item
+            text='Test example 2',
+            project=self.project,
+            meta={'dataset_id': '2'}
         )
         
-        # Criar anotações para user1
-        Category.objects.create(
-            example=self.example1,
-            user=self.user1,
-            label=self.cat_type1,
-            created_at=timezone.now() - timedelta(days=5)
-        )
-        Category.objects.create(
-            example=self.example2,
-            user=self.user1,
-            label=self.cat_type2,
-            created_at=timezone.now() - timedelta(days=3)
-        )
+        # Criar anotações
+        self._create_test_annotations()
         
-        # Criar anotações para user2
-        Category.objects.create(
-            example=self.example1,
-            user=self.user2,
-            label=self.cat_type1,
-            created_at=timezone.now() - timedelta(days=4)
-        )
+        # Inicializar serviço
+        self.service = AnnotatorReportService(self.project)
+    
+    def _create_test_annotations(self):
+        """Cria anotações de teste"""
+        
+        base_time = timezone.now() - timedelta(days=10)
+        
+        # Anotações do usuário 1
+        for i in range(5):
+            Category.objects.create(
+                user=self.user1,
+                example=self.example1,
+                label=self.category_type,
+                created_at=base_time + timedelta(hours=i)
+            )
+        
+        for i in range(3):
+            Span.objects.create(
+                user=self.user1,
+                example=self.example1,
+                label=self.span_type,
+                start_offset=0,
+                end_offset=10,
+                created_at=base_time + timedelta(hours=5 + i)
+            )
+        
+        # Anotações do usuário 2
+        for i in range(2):
+            Category.objects.create(
+                user=self.user2,
+                example=self.example2,
+                label=self.category_type,
+                created_at=base_time + timedelta(hours=10 + i)
+            )
     
     def test_generate_report_basic(self):
-        """Testa geração básica de relatório"""
-        filters = {
-            'sort_by': 'total_anotacoes',
-            'order': 'desc',
-            'page': 1,
-            'page_size': 10
-        }
+        """Testa geração básica do relatório"""
         
-        report = self.service.generate_report(filters)
+        filters = {}
+        result = self.service.generate_report(filters)
         
-        # Verificar estrutura do relatório
-        self.assertIn('filtros_aplicados', report)
-        self.assertIn('resumo_global', report)
-        self.assertIn('detalhe_anotadores', report)
+        # Verificar estrutura do resultado
+        self.assertIn('filtros_aplicados', result)
+        self.assertIn('resumo_global', result)
+        self.assertIn('detalhe_anotadores', result)
+        self.assertIn('pagination', result)
         
         # Verificar resumo global
-        resumo = report['resumo_global']
-        self.assertIn('total_anotadores', resumo)
-        self.assertIn('total_anotacoes', resumo)
-        self.assertIn('taxa_desacordo_global_percent', resumo)
+        resumo = result['resumo_global']
+        self.assertEqual(resumo['total_anotadores'], 2)
+        self.assertEqual(resumo['total_anotacoes'], 10)  # 5+3+2
+        self.assertGreaterEqual(resumo['taxa_desacordo_global_percent'], 0)
         
-        # Verificar que há pelo menos um anotador
-        self.assertGreater(len(report['detalhe_anotadores']), 0)
+        # Verificar detalhes dos anotadores
+        detalhes = result['detalhe_anotadores']
+        self.assertEqual(len(detalhes), 2)
+        
+        # Verificar dados do primeiro anotador
+        annotator1_data = next((a for a in detalhes if a['annotator_id'] == str(self.user1.id)), None)
+        self.assertIsNotNone(annotator1_data)
+        self.assertEqual(annotator1_data['total_anotacoes'], 8)  # 5 categories + 3 spans
+        self.assertEqual(annotator1_data['nome_anotador'], 'João Silva')
     
     def test_filter_by_annotator_id(self):
-        """Testa filtro por ID de anotador"""
-        filters = {
-            'annotator_id': [str(self.user1.id)],
-            'sort_by': 'total_anotacoes',
-            'order': 'desc',
-            'page': 1,
-            'page_size': 10
-        }
+        """Testa filtro por ID do anotador"""
         
-        report = self.service.generate_report(filters)
+        filters = {'annotator_id': [str(self.user1.id)]}
+        result = self.service.generate_report(filters)
         
-        # Deve retornar apenas dados do user1
-        annotators = report['detalhe_anotadores']
-        self.assertEqual(len(annotators), 1)
-        self.assertEqual(annotators[0]['annotator_id'], str(self.user1.id))
+        detalhes = result['detalhe_anotadores']
+        self.assertEqual(len(detalhes), 1)
+        self.assertEqual(detalhes[0]['annotator_id'], str(self.user1.id))
+        self.assertEqual(detalhes[0]['total_anotacoes'], 8)
     
     def test_filter_by_date_range(self):
         """Testa filtro por intervalo de datas"""
-        filters = {
-            'data_inicial': timezone.now() - timedelta(days=4),
-            'data_final': timezone.now() - timedelta(days=2),
-            'sort_by': 'total_anotacoes',
-            'order': 'desc',
-            'page': 1,
-            'page_size': 10
-        }
         
-        report = self.service.generate_report(filters)
+        # Data no meio do período de criação das anotações
+        middle_date = (timezone.now() - timedelta(days=5)).strftime('%Y-%m-%d')
         
-        # Deve incluir apenas anotações no intervalo especificado
-        self.assertIsNotNone(report['detalhe_anotadores'])
+        filters = {'data_inicial': middle_date}
+        result = self.service.generate_report(filters)
+        
+        # Deve retornar apenas anotações criadas depois da data inicial
+        self.assertIsNotNone(result['detalhe_anotadores'])
+    
+    def test_filter_by_dataset_id(self):
+        """Testa filtro por ID do dataset"""
+        
+        filters = {'dataset_id': ['1']}
+        result = self.service.generate_report(filters)
+        
+        # Verificar que apenas anotações do dataset 1 são consideradas
+        detalhes = result['detalhe_anotadores']
+        # Usuário 1 tem anotações no exemplo 1 (dataset 1)
+        user1_data = next((a for a in detalhes if a['annotator_id'] == str(self.user1.id)), None)
+        if user1_data:
+            self.assertGreater(user1_data['total_anotacoes'], 0)
+    
+    def test_filter_by_categoria_label(self):
+        """Testa filtro por categoria"""
+        
+        filters = {'categoria_label': ['Person']}
+        result = self.service.generate_report(filters)
+        
+        # Deve incluir apenas anotações com a categoria especificada
+        self.assertIsNotNone(result['detalhe_anotadores'])
+    
+    def test_filter_by_estado_desacordo(self):
+        """Testa filtro por estado de desacordo"""
+        
+        # Testar cada estado
+        for estado in ['todos', 'em_desacordo', 'resolvido']:
+            filters = {'estado_desacordo': estado}
+            result = self.service.generate_report(filters)
+            
+            self.assertIsNotNone(result['detalhe_anotadores'])
+            
+            # Verificar que o filtro afeta as métricas
+            if len(result['detalhe_anotadores']) > 0:
+                first_annotator = result['detalhe_anotadores'][0]
+                self.assertIn('taxa_desacordo_percent', first_annotator)
+    
+    def test_sorting_by_total_anotacoes(self):
+        """Testa ordenação por total de anotações"""
+        
+        # Ordenação decrescente (padrão)
+        filters = {'sort_by': 'total_anotacoes', 'order': 'desc'}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        if len(detalhes) >= 2:
+            self.assertGreaterEqual(
+                detalhes[0]['total_anotacoes'],
+                detalhes[1]['total_anotacoes']
+            )
+        
+        # Ordenação crescente
+        filters = {'sort_by': 'total_anotacoes', 'order': 'asc'}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        if len(detalhes) >= 2:
+            self.assertLessEqual(
+                detalhes[0]['total_anotacoes'],
+                detalhes[1]['total_anotacoes']
+            )
+    
+    def test_sorting_by_nome_anotador(self):
+        """Testa ordenação por nome do anotador"""
+        
+        filters = {'sort_by': 'nome_anotador', 'order': 'asc'}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        if len(detalhes) >= 2:
+            self.assertLessEqual(
+                detalhes[0]['nome_anotador'],
+                detalhes[1]['nome_anotador']
+            )
+    
+    def test_pagination(self):
+        """Testa paginação dos resultados"""
+        
+        # Página 1 com tamanho 1
+        filters = {'page': 1, 'page_size': 1}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        pagination = result['pagination']
+        
+        self.assertEqual(len(detalhes), 1)
+        self.assertEqual(pagination['page'], 1)
+        self.assertEqual(pagination['per_page'], 1)
+        self.assertGreaterEqual(pagination['total'], 1)
+        
+        # Página 2
+        filters = {'page': 2, 'page_size': 1}
+        result = self.service.generate_report(filters)
+        
+        pagination = result['pagination']
+        self.assertEqual(pagination['page'], 2)
+    
+    def test_temporal_metrics(self):
+        """Testa cálculo de métricas temporais"""
+        
+        filters = {}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        for annotator in detalhes:
+            # Verificar que as datas estão presentes
+            if annotator['total_anotacoes'] > 0:
+                self.assertIsNotNone(annotator['primeira_anotacao'])
+                self.assertIsNotNone(annotator['ultima_anotacao'])
+                
+                # Verificar formato de data ISO
+                try:
+                    datetime.fromisoformat(annotator['primeira_anotacao'].replace('Z', '+00:00'))
+                    datetime.fromisoformat(annotator['ultima_anotacao'].replace('Z', '+00:00'))
+                except ValueError:
+                    self.fail("Datas não estão no formato ISO correto")
+    
+    def test_time_metrics_calculation(self):
+        """Testa cálculo de métricas de tempo"""
+        
+        filters = {}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        for annotator in detalhes:
+            self.assertGreaterEqual(annotator['tempo_total_min'], 0)
+            self.assertGreaterEqual(annotator['tempo_medio_por_anotacao_seg'], 0)
+    
+    def test_quality_metrics_calculation(self):
+        """Testa cálculo de métricas de qualidade"""
+        
+        filters = {}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        for annotator in detalhes:
+            self.assertGreaterEqual(annotator['taxa_desacordo_percent'], 0)
+            self.assertLessEqual(annotator['taxa_desacordo_percent'], 100)
+            self.assertGreaterEqual(annotator['desacordos_resolvidos'], 0)
+            self.assertGreaterEqual(annotator['score_concordancia_medio'], 0)
+            self.assertLessEqual(annotator['score_concordancia_medio'], 1)
+    
+    def test_categories_most_frequent(self):
+        """Testa identificação de categorias mais frequentes"""
+        
+        filters = {}
+        result = self.service.generate_report(filters)
+        
+        detalhes = result['detalhe_anotadores']
+        for annotator in detalhes:
+            categorias = annotator['categorias_mais_frequentes']
+            self.assertIsInstance(categorias, list)
+            # Verificar que não há mais de 5 categorias
+            self.assertLessEqual(len(categorias), 5)
     
     def test_export_to_csv(self):
         """Testa exportação para CSV"""
+        
         filters = {}
-        report_data = self.service.generate_report(filters)
+        data = self.service.generate_report(filters)
         
-        csv_content = self.service.export_to_csv(report_data)
+        csv_content = self.service.export_to_csv(data)
         
-        # Verificar que o CSV contém cabeçalhos
+        self.assertIsInstance(csv_content, str)
         self.assertIn('ID Anotador', csv_content)
-        self.assertIn('Nome', csv_content)
+        self.assertIn('Nome Anotador', csv_content)
         self.assertIn('Total Anotações', csv_content)
         
-        # Verificar que há pelo menos uma linha de dados
-        lines = csv_content.split('\n')
+        # Verificar que há dados além do cabeçalho
+        lines = csv_content.strip().split('\n')
         self.assertGreater(len(lines), 1)
     
-    def test_calculate_annotator_metrics(self):
-        """Testa cálculo de métricas individuais do anotador"""
+    def test_export_to_pdf_data(self):
+        """Testa preparação de dados para PDF"""
+        
         filters = {}
+        data = self.service.generate_report(filters)
         
-        # Testar métricas para user1
-        metrics = self.service._calculate_annotator_metrics(self.member1, filters)
+        pdf_data = self.service.export_to_pdf_data(data)
         
-        self.assertIsNotNone(metrics)
-        self.assertEqual(metrics['annotator_id'], str(self.user1.id))
-        self.assertGreater(metrics['total_anotacoes'], 0)
-        self.assertGreaterEqual(metrics['datasets_distintos'], 1)
-        self.assertGreaterEqual(metrics['tempo_total_min'], 0)
-        self.assertGreaterEqual(metrics['score_concordancia_medio'], 0)
+        self.assertIn('title', pdf_data)
+        self.assertIn('project_name', pdf_data)
+        self.assertIn('generated_at', pdf_data)
+        self.assertIn('filters', pdf_data)
+        self.assertIn('summary', pdf_data)
+        self.assertIn('annotators', pdf_data)
+        
+        self.assertEqual(pdf_data['project_name'], self.project.name)
 
 
 class AnnotatorReportAPITestCase(APITestCase):
