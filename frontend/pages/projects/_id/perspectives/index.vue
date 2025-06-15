@@ -36,16 +36,12 @@
     <v-slide-y-transition>
       <v-alert
         v-if="databaseError"
-        type="warning"
-        dismissible
-        border="left"
-        colored-border
-        elevation="2"
+        type="error"
+        persistent
         class="ma-4"
-        @click="databaseError = ''"
       >
-        <v-icon slot="prepend" color="warning">mdi-database-alert</v-icon>
-        {{ databaseError }}
+        <v-icon left>mdi-database-alert</v-icon>
+        Database is currently unavailable. Please try again later.
       </v-alert>
     </v-slide-y-transition>
 

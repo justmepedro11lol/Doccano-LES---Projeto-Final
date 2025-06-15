@@ -8,7 +8,7 @@
         dense
         class="ma-4 mb-0"
       >
-        Base de dados indisponível. Por favor, tente novamente mais tarde.
+       Database is currently unavailable. Please try again later.
       </v-alert>
       <v-card-title class="headline primary white--text">
         <v-icon color="white" left>mdi-flag</v-icon>
