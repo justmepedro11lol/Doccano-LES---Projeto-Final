@@ -1,5 +1,11 @@
 <template>
   <div class="statistics-container">
+    <!-- Database Error Alert -->
+    <v-alert v-if="databaseError" type="error" persistent class="mb-4">
+      <v-icon left>mdi-database-alert</v-icon>
+      Database is currently unavailable, please try again later.
+    </v-alert>
+
     <v-card class="main-card" elevation="3">
       <v-card-title class="primary white--text d-flex align-center">
         <v-icon left color="white" size="28">mdi-chart-line</v-icon>
@@ -28,7 +34,7 @@
                 outlined
                 dense
                 prepend-inner-icon="mdi-help-circle"
-                :disabled="isLoading"
+                :disabled="isLoading || databaseError"
               >
                 <template #selection="{ item, index }">
                   <v-chip
@@ -60,7 +66,7 @@
                 outlined
                 dense
                 prepend-inner-icon="mdi-database"
-                :disabled="isLoading"
+                :disabled="isLoading || databaseError"
               >
                 <template #selection="{ item, index }">
                   <v-chip
@@ -111,7 +117,7 @@
                     large
                     block
                     :loading="isLoading"
-                    :disabled="!canGenerateStatistics"
+                    :disabled="!canGenerateStatistics || databaseError"
                     @click="generateStatistics"
                   >
                     <v-icon left>mdi-chart-bar</v-icon>
@@ -124,7 +130,7 @@
                     color="orange"
                     large
                     block
-                    :disabled="isLoading"
+                    :disabled="isLoading || databaseError"
                     @click="clearAllFilters"
                   >
                     <v-icon left>mdi-filter-remove</v-icon>
@@ -137,7 +143,7 @@
                     color="info"
                     large
                     block
-                    :disabled="isLoading"
+                    :disabled="isLoading || databaseError"
                     @click="goToHome"
                   >
                     <v-icon left>mdi-home</v-icon>
@@ -247,7 +253,7 @@
               <v-card elevation="2" class="statistics-summary-card">
                 <v-card-title class="text-h6 statistics-summary-header">
                   <v-icon left color="white">mdi-chart-line</v-icon>
-                  <span class="white--text">Discrepancy Statistics Summary</span>
+                  <span class="white--text">Discrepancy Statistics</span>
                 </v-card-title>
                 <v-card-text class="pa-4">
                   <v-row>
@@ -454,6 +460,10 @@ export default Vue.extend({
         detailedData: [] as any[]
       },
       statisticsGenerated: false,
+      
+      // Database connection handling
+      databaseError: false,
+      connectionCheckInterval: null as any,
 
       // Instâncias dos gráficos
       questionChartInstances: [] as Chart[],
@@ -481,8 +491,8 @@ export default Vue.extend({
     },
     
     canGenerateStatistics(): boolean {
-      // Permite gerar estatísticas se houver perguntas disponíveis (para perspectiva) ou exemplos selecionados (para discrepância)
-      const hasPerspectiveData = this.availableQuestions.length > 0
+      // Permite gerar estatísticas se houver perguntas selecionadas (para perspectiva) ou exemplos selecionados (para discrepância)
+      const hasPerspectiveData = this.selectedQuestions.length > 0
       const hasDiscrepancyData = this.selectedExamples.length > 0
       
       return hasPerspectiveData || hasDiscrepancyData
@@ -674,10 +684,15 @@ export default Vue.extend({
   },
 
   async mounted() {
+    // Iniciar verificação da conexão quando o componente for montado
+    this.startConnectionCheck()
     await this.loadInitialData()
   },
 
   beforeDestroy() {
+    // Parar verificação quando o componente for destruído
+    this.stopConnectionCheck()
+    
     // Limpar os gráficos ao destruir o componente
     this.questionChartInstances.forEach(chart => {
       if (chart) chart.destroy()
@@ -739,9 +754,15 @@ export default Vue.extend({
     },
 
     async generateStatistics() {
-      // Permitir gerar estatísticas de perspectiva mesmo sem filtros específicos (usar todas as perguntas disponíveis)
-      // Permitir gerar estatísticas de discrepância apenas se exemplos forem selecionados
-      const hasPerspectiveFilters = this.selectedQuestions.length > 0 || this.availableQuestions.length > 0
+      // Verificar se a base de dados está disponível antes de tentar gerar estatísticas
+      if (this.databaseError) {
+        alert('Database is currently unavailable, please try again later.')
+        return
+      }
+
+      // Carregar estatísticas de perspectiva apenas se perguntas forem selecionadas
+      // Carregar estatísticas de discrepância apenas se exemplos forem selecionados
+      const hasPerspectiveFilters = this.selectedQuestions.length > 0
       const hasDiscrepancyFilters = this.selectedExamples.length > 0
       
       if (!hasPerspectiveFilters && !hasDiscrepancyFilters) {
@@ -815,7 +836,18 @@ export default Vue.extend({
         })
       } catch (error) {
         console.error('❌ Erro ao gerar estatísticas:', error)
-        alert('Error generating statistics. Check console for more details.')
+        
+        // Detectar erros de conexão com a base de dados
+        const err = error as any
+        if (err.response && err.response.status === 503) {
+          this.databaseError = true
+          alert('Database is currently unavailable, please try again later.')
+        } else if (err.code === 'NETWORK_ERROR' || err.message.includes('Network Error')) {
+          this.databaseError = true
+          alert('Database is currently unavailable, please try again later.')
+        } else {
+          alert('Error generating statistics. Check console for more details.')
+        }
       } finally {
         this.isLoading = false
       }
@@ -841,15 +873,15 @@ export default Vue.extend({
         // Carregar todas as respostas
         const allAnswers = await this.$services.answer.list()
         
-        // Lógica de filtros para perspectiva - independente dos exemplos selecionados
+        // Lógica de filtros para perspectiva - usar apenas perguntas selecionadas
         let questionsToProcess = []
         
         if (this.selectedQuestions.length > 0) {
-          // Se há perguntas selecionadas, usar apenas essas
+          // Usar apenas as perguntas selecionadas
           questionsToProcess = questions.filter(q => this.selectedQuestions.includes(q.id))
         } else {
-          // Se não há perguntas selecionadas, usar todas as perguntas para permitir estatísticas de perspectiva
-          questionsToProcess = questions
+          // Se não há perguntas selecionadas, não processar nenhuma
+          return []
         }
           
         // Processar cada pergunta
@@ -1651,6 +1683,37 @@ export default Vue.extend({
     goToHome() {
       console.log('🏠 Redirecionando para a página inicial...')
       this.$router.push(`/projects/${this.projectId}`)
+    },
+
+    // Verifica a conexão com a base de dados
+    async checkDatabaseConnection() {
+      try {
+        // Faz uma chamada simples para testar a conexão
+        await this.$repositories.member.fetchMyRole(this.projectId)
+        this.databaseError = false
+      } catch (error) {
+        console.error('Erro de conexão com a base de dados:', error)
+        this.databaseError = true
+      }
+    },
+
+    // Inicia a verificação periódica da conexão
+    startConnectionCheck() {
+      // Verificação inicial
+      this.checkDatabaseConnection()
+      
+      // Configurar verificação a cada 5 segundos (menos frequente que outras páginas)
+      this.connectionCheckInterval = setInterval(() => {
+        this.checkDatabaseConnection()
+      }, 5000)
+    },
+
+    // Para a verificação periódica
+    stopConnectionCheck() {
+      if (this.connectionCheckInterval) {
+        clearInterval(this.connectionCheckInterval)
+        this.connectionCheckInterval = null
+      }
     }
   }
 })
