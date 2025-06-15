@@ -131,36 +131,18 @@ export default Vue.extend({
   },
 
   methods: {
-    async deleteUser(userId: number) {
-      this.isLoading = true
-      try {
-        await this.$services.user.delete(userId)
-        this.items = this.items.filter((user) => user.id !== userId)
-        this.databaseError = false
-      } catch (error) {
-        console.error('Erro ao excluir utilizador:', error)
-        this.handleError(error, 'Erro ao eliminar utilizador')
-      } finally {
-        this.isLoading = false
-      }
-    },
+
     async handleDelete() {
       this.isLoading = true
       this.clearMessages()
       
-      console.log('=== INÍCIO DA ELIMINAÇÃO ===')
-      console.log('Utilizadores selecionados:', this.selected.map(u => u.username))
-      
       try {
-        // Tries to delete each selected user
+        // Elimina cada utilizador selecionado
         for (const user of this.selected) {
-          console.log(`Eliminando utilizador: ${user.username} (ID: ${user.id})`)
           await this.$services.user.delete(user.id)
         }
         
-        console.log('✅ Todos os utilizadores eliminados com sucesso')
-        
-        // Updates the list by removing the deleted users
+        // Atualiza a lista removendo os utilizadores eliminados
         this.items = this.items.filter(
           (user) => !this.selected.some((selectedUser) => selectedUser.id === user.id)
         )
@@ -168,100 +150,33 @@ export default Vue.extend({
         const deletedCount = this.selected.length
         this.selected = []
         this.dialogDelete = false
-        this.databaseError = false
 
-        // Show success message
+        // Mostra mensagem de sucesso
         this.successMessage = deletedCount > 1 
           ? `${deletedCount} utilizadores eliminados com sucesso!`
-          : 'Utilizador eliminado com sucesso!'
+          : 'User deleted successfully!'
         
         this.hideMessageAfterDelay('successMessage')
         
-      } catch (error) {
+      } catch (error: any) {
         this.dialogDelete = false
-        console.error('❌ ERRO NA ELIMINAÇÃO')
-        console.error('Erro:', error)
+        console.error('Erro ao eliminar utilizador:', error)
         
-        const err = error as any
-        
-        if (err.response) {
-          console.log(`Resposta HTTP: ${err.response.status} - ${err.response.statusText}`)
-          
-          // Check if the error is about deleting the own account
-          if (err.response.status === 403) {
-            console.log('Erro 403: Tentativa de eliminar própria conta')
-            this.errorMessage = 'Não pode eliminar a sua própria conta.'
+        // Tratar mensagens de erro específicas
+        if (error.response && error.response.status === 403) {
+          const errorDetail = error.response.data?.detail || ''
+          if (errorDetail.includes('cannot delete your own user')) {
+            this.errorMessage = 'You cannot delete your own user.'
+          } else if (errorDetail.includes('cannot delete an admin user')) {
+            this.errorMessage = 'You cannot delete an admin.'
+          } else {
+            this.errorMessage = 'Sem permissões para eliminar este utilizador.'
           }
-          // Check for authentication issues
-          else if (err.response.status === 401) {
-            console.log('Erro de autenticação')
-            this.errorMessage = 'Sem permissões para eliminar utilizadores. Verifique se está autenticado como administrador.'
-          }
-          // Check SPECIFICALLY for database connection issues (503 Service Unavailable)
-          else if (err.response.status === 503) {
-            console.log('Erro 503: Serviço indisponível - Base de dados')
-            this.databaseError = true
-            this.errorMessage = ''
-          }
-          // 500 Internal Server Error - could be database or other server issues
-          else if (err.response.status === 500) {
-            console.log('Erro 500: Erro interno do servidor')
-            // Only consider it a database error if the error message specifically mentions database
-            if (err.response.data && typeof err.response.data === 'string' && 
-                err.response.data.toLowerCase().includes('database')) {
-              this.databaseError = true
-              this.errorMessage = ''
-            } else {
-              this.errorMessage = 'Erro interno do servidor. Por favor, tente novamente.'
-            }
-          }
-          // 404 Not Found - endpoint doesn't exist
-          else if (err.response.status === 404) {
-            console.log('Erro 404: Endpoint não encontrado')
-            this.errorMessage = 'Funcionalidade não disponível. Contacte o administrador.'
-          }
-          // 502 Bad Gateway - usually proxy/connectivity issues, not database
-          else if (err.response.status === 502) {
-            console.log('Erro 502: Bad Gateway - Problema de conectividade')
-            // Check if it's actually a successful delete that returned 204 but got converted to 502
-            if (err.response.statusText === 'No Content') {
-              console.log('502 com No Content - provavelmente um 204 bem-sucedido convertido pelo proxy')
-              // Treat as success since the operation was likely successful
-              const deletedCount = this.selected.length
-              this.items = this.items.filter(
-                (user) => !this.selected.some((selectedUser) => selectedUser.id === user.id)
-              )
-              this.selected = []
-              this.dialogDelete = false
-              this.databaseError = false
-              this.successMessage = deletedCount > 1 
-                ? `${deletedCount} utilizadores eliminados com sucesso!`
-                : 'Utilizador eliminado com sucesso!'
-              this.hideMessageAfterDelay('successMessage')
-              return // Exit early, don't show error
-            } else {
-              this.errorMessage = 'Erro de conectividade com o servidor. Verifique se o backend está a funcionar.'
-            }
-          }
-          // Other HTTP errors
-          else {
-            console.log('Outro erro HTTP')
-            this.errorMessage = `Erro ${err.response.status}: ${err.response.data?.detail || 'Erro ao eliminar utilizador'}`
-          }
-        } 
-        // Network or connection error (no response)
-        else if (err.request) {
-          console.log('Erro de rede - sem resposta do servidor')
-          this.errorMessage = 'Erro de conectividade. Verifique a ligação à internet.'
-        }
-        // Error in request configuration
-        else {
-          console.log('Erro na configuração da requisição')
-          this.errorMessage = 'Erro interno. Por favor, tente novamente.'
+        } else {
+          this.errorMessage = 'Erro ao eliminar utilizador. Tente novamente.'
         }
         
         this.hideMessageAfterDelay('errorMessage', 5000)
-        
       } finally {
         this.isLoading = false
       }
@@ -271,33 +186,9 @@ export default Vue.extend({
       this.$router.push(`/users/edit/${user.id}`)
     },
     handleError(error: any, defaultMessage: string) {
-      const err = error as any
-      
-      // Check for database/server errors
-      if (err.response && err.response.status === 503) {
-        console.log('handleError: Erro 503 - Base de dados indisponível')
-        this.databaseError = true
-        this.errorMessage = ''
-      }
-      // Network or connection error (no response)
-      else if (!err.response) {
-        console.log('handleError: Sem resposta do servidor - assumindo problema de conectividade')
-        this.errorMessage = 'Erro de conectividade. Verifique a ligação à internet.'
-      }
-      // 500 with database mention
-      else if (err.response && err.response.status === 500 && 
-               err.response.data && typeof err.response.data === 'string' && 
-               err.response.data.toLowerCase().includes('database')) {
-        console.log('handleError: Erro 500 com menção à base de dados')
-        this.databaseError = true
-        this.errorMessage = ''
-      }
-      // Other errors
-      else {
-        console.log('handleError: Outro tipo de erro')
-        this.errorMessage = defaultMessage
-        this.hideMessageAfterDelay('errorMessage', 5000)
-      }
+      console.error('Erro:', error)
+      this.errorMessage = defaultMessage
+      this.hideMessageAfterDelay('errorMessage', 5000)
     },
     clearMessages() {
       this.successMessage = ''

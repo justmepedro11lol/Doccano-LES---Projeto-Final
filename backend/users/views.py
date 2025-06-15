@@ -135,13 +135,24 @@ class UserDeletion(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated & IsAdminUser]
 
     def delete(self, request, *args, **kwargs):
-        # Obtém os usuários a partir dos IDs passados na requisição
-
-        # Se apenas um usuário for excluído, obtém o usuário
-        user = self.get_object()
-
-        if request.user == user:
-            return Response({"detail": "You cannot delete your own account."}, status=status.HTTP_403_FORBIDDEN)
-
-        user.delete()  # Exclui o usuário
+        instance = self.get_object()
+        
+        # Verificar se o utilizador está a tentar eliminar a si próprio
+        if instance.id == request.user.id:
+            return Response(
+                {"detail": "You cannot delete your own user"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Verificar se um utilizador normal está a tentar eliminar um admin
+        if instance.is_superuser and not request.user.is_superuser:
+            return Response(
+                {"detail": "You cannot delete an admin user"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
