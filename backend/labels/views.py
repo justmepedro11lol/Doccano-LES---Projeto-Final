@@ -6,8 +6,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import DiscrepancyMessage
-from .serializers import DiscrepancyMessageSerializer
+from .models import DiscrepancyMessage, AnnotationDiscrepancy, DiscrepancyType, DiscrepancyComment
+from .serializers import DiscrepancyMessageSerializer, AnnotationDiscrepancySerializer, DiscrepancyTypeSerializer, DiscrepancyCommentSerializer
 from projects.permissions import IsProjectMember
 from projects.models import Project
 from examples.models import Example
@@ -30,6 +30,15 @@ from labels.models import (
     Span,
     TextLabel,
 )
+
+from django.utils import timezone
+from rest_framework import filters
+from rest_framework.decorators import action
+from rest_framework.viewsets import ModelViewSet
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Count, Avg
+
+from .services import DiscrepancyDetectionService, DiscrepancyResolutionService
 
 
 class BaseListAPI(generics.ListCreateAPIView):
@@ -183,3 +192,101 @@ class SegmentationListAPI(BaseListAPI):
 class SegmentationDetailAPI(BaseDetailAPI):
     queryset = Segmentation.objects.all()
     serializer_class = SegmentationSerializer
+
+
+class DiscrepancyViewSet(ModelViewSet):
+    """ViewSet para gerenciar discrepâncias de anotação"""
+    
+    queryset = AnnotationDiscrepancy.objects.all()
+    serializer_class = AnnotationDiscrepancySerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'discrepancy_type', 'priority', 'example']
+    search_fields = ['description', 'users_involved__username']
+    ordering_fields = ['priority', 'flagged_at', 'agreement_score']
+    ordering = ['priority', '-flagged_at']
+    
+    def get_queryset(self):
+        """Filtra discrepâncias por projeto"""
+        project_id = self.kwargs.get('project_id')
+        if project_id:
+            return self.queryset.filter(project_id=project_id)
+        return self.queryset.none()
+    
+    @action(detail=False, methods=['post'])
+    def detect_discrepancies(self, request, project_id=None):
+        """Detecta automaticamente discrepâncias em um projeto"""
+        try:
+            project = Project.objects.get(id=project_id)
+            
+            detection_service = DiscrepancyDetectionService(project)
+            discrepancies = detection_service.detect_all_discrepancies()
+            
+            return Response({
+                'message': f'{len(discrepancies)} discrepâncias detectadas',
+                'discrepancies': self.get_serializer(discrepancies, many=True).data
+            })
+        except Exception as e:
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'])
+    def resolve(self, request, pk=None, project_id=None):
+        """Marca uma discrepância como resolvida"""
+        discrepancy = self.get_object()
+        resolution_notes = request.data.get('resolution_notes', '')
+        
+        discrepancy.status = 'resolved'
+        discrepancy.resolved_by = request.user
+        discrepancy.resolved_at = timezone.now()
+        discrepancy.resolution_notes = resolution_notes
+        discrepancy.save()
+        
+        return Response({'message': 'Discrepância resolvida com sucesso'})
+    
+    @action(detail=True, methods=['get'])
+    def suggest_resolution(self, request, pk=None, project_id=None):
+        """Obtém sugestões para resolver uma discrepância"""
+        discrepancy = self.get_object()
+        resolution_service = DiscrepancyResolutionService()
+        suggestion = resolution_service.suggest_resolution(discrepancy)
+        
+        return Response(suggestion)
+    
+    @action(detail=True, methods=['post'])
+    def add_comment(self, request, pk=None, project_id=None):
+        """Adiciona comentário a uma discrepância"""
+        discrepancy = self.get_object()
+        comment_text = request.data.get('comment', '')
+        
+        if not comment_text:
+            return Response(
+                {'error': 'Comentário não pode estar vazio'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        comment = DiscrepancyComment.objects.create(
+            discrepancy=discrepancy,
+            user=request.user,
+            comment=comment_text
+        )
+        
+        serializer = DiscrepancyCommentSerializer(comment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['get'])
+    def statistics(self, request, project_id=None):
+        """Retorna estatísticas das discrepâncias do projeto"""
+        queryset = self.get_queryset()
+        
+        stats = {
+            'total': queryset.count(),
+            'by_status': dict(queryset.values_list('status').annotate(count=Count('id'))),
+            'by_type': dict(queryset.values_list('discrepancy_type__name').annotate(count=Count('id'))),
+            'by_priority': dict(queryset.values_list('priority').annotate(count=Count('id'))),
+            'avg_agreement_score': queryset.aggregate(avg=Avg('agreement_score'))['avg'],
+            'pending_high_priority': queryset.filter(status='pending', priority__lte=2).count()
+        }
+        
+        return Response(stats)

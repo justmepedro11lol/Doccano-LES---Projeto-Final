@@ -70,6 +70,10 @@
       <v-btn class="me-1" small color="primary text-capitalize" @click="$emit('edit', item)"
         >Edit</v-btn
       >
+      <v-btn class="me-1" small color="warning text-capitalize" @click="$emit('flag', item)">
+        <v-icon left small>mdi-flag</v-icon>
+        Sinalizar
+      </v-btn>
       <v-btn small color="primary text-capitalize" @click="toLabeling(item)">
         {{ $t('dataset.annotate') }}
       </v-btn>

@@ -9,6 +9,7 @@ from .views import (
     TextLabelListAPI, TextLabelDetailAPI,
     BoundingBoxListAPI, BoundingBoxDetailAPI,
     SegmentationListAPI, SegmentationDetailAPI,
+    DiscrepancyViewSet,
 )
 
 urlpatterns = [
@@ -83,5 +84,46 @@ urlpatterns = [
         "examples/<int:example_id>/segments/<int:annotation_id>",
         SegmentationDetailAPI.as_view(),
         name="segmentation_detail",
+    ),
+
+    path(
+        "projects/<int:project_id>/discrepancies/",
+        DiscrepancyViewSet.as_view({"get": "list", "post": "create"}),
+        name="discrepancy_list",
+    ),
+    path(
+        "projects/<int:project_id>/discrepancies/<int:pk>/",
+        DiscrepancyViewSet.as_view({
+            "get": "retrieve", 
+            "put": "update", 
+            "patch": "partial_update", 
+            "delete": "destroy"
+        }),
+        name="discrepancy_detail",
+    ),
+    path(
+        "projects/<int:project_id>/discrepancies/detect/",
+        DiscrepancyViewSet.as_view({"post": "detect_discrepancies"}),
+        name="detect_discrepancies",
+    ),
+    path(
+        "projects/<int:project_id>/discrepancies/statistics/",
+        DiscrepancyViewSet.as_view({"get": "statistics"}),
+        name="discrepancy_statistics",
+    ),
+    path(
+        "projects/<int:project_id>/discrepancies/<int:pk>/resolve/",
+        DiscrepancyViewSet.as_view({"post": "resolve"}),
+        name="resolve_discrepancy",
+    ),
+    path(
+        "projects/<int:project_id>/discrepancies/<int:pk>/suggest-resolution/",
+        DiscrepancyViewSet.as_view({"get": "suggest_resolution"}),
+        name="suggest_resolution",
+    ),
+    path(
+        "projects/<int:project_id>/discrepancies/<int:pk>/comments/",
+        DiscrepancyViewSet.as_view({"post": "add_comment"}),
+        name="add_discrepancy_comment",
     ),
 ]

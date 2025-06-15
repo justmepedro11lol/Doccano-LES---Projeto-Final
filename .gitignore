@@ -31,6 +31,7 @@ Temporary Items
 # Byte-compiled / optimized / DLL files
 _pycache_/
 *.py[cod]
+*.pyc
 *$py.class
 
 # C extensions
@@ -199,6 +200,11 @@ pip-selfcheck.json
 node_modules/
 bundle/
 webpack-stats.json
+
+# Cache directories
+cache/
+**/cache/
+.cache/
 
 .vscode
 backend/filepond-temp-uploads

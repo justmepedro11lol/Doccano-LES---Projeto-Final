@@ -4,6 +4,11 @@ from .models import BoundingBox, Category, Relation, Segmentation, Span, TextLab
 from examples.models import Example
 from label_types.models import CategoryType, RelationType, SpanType
 from .models import DiscrepancyMessage
+from .models import (
+    AnnotationDiscrepancy,
+    DiscrepancyType,
+    DiscrepancyComment,
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -120,3 +125,81 @@ class SegmentationSerializer(serializers.ModelSerializer):
             "points",
         )
         read_only_fields = ("user",)
+
+
+class DiscrepancyTypeSerializer(serializers.ModelSerializer):
+    """Serializer para tipos de discrepância"""
+    
+    class Meta:
+        model = DiscrepancyType
+        fields = ['id', 'name', 'description', 'severity']
+
+
+class DiscrepancyCommentSerializer(serializers.ModelSerializer):
+    """Serializer para comentários de discrepância"""
+    
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = DiscrepancyComment
+        fields = ['id', 'user', 'user_name', 'comment', 'created_at']
+        read_only_fields = ['user', 'created_at']
+
+
+class AnnotationDiscrepancySerializer(serializers.ModelSerializer):
+    """Serializer para discrepâncias de anotação"""
+    
+    discrepancy_type = DiscrepancyTypeSerializer(read_only=True)
+    discrepancy_type_id = serializers.IntegerField(write_only=True, required=False)
+    
+    users_involved_names = serializers.SerializerMethodField()
+    flagged_by_name = serializers.CharField(source='flagged_by.username', read_only=True)
+    resolved_by_name = serializers.CharField(source='resolved_by.username', read_only=True)
+    
+    comments = DiscrepancyCommentSerializer(many=True, read_only=True)
+    comments_count = serializers.SerializerMethodField()
+    
+    example_text = serializers.CharField(source='example.text', read_only=True)
+    example_id = serializers.IntegerField(source='example.id', read_only=True)
+    
+    class Meta:
+        model = AnnotationDiscrepancy
+        fields = [
+            'id', 'project', 'example', 'example_id', 'example_text',
+            'discrepancy_type', 'discrepancy_type_id',
+            'users_involved', 'users_involved_names', 
+            'description', 'agreement_score', 'conflicting_annotations',
+            'status', 'flagged_by', 'flagged_by_name', 'flagged_at',
+            'resolved_by', 'resolved_by_name', 'resolved_at', 'resolution_notes',
+            'priority', 'comments', 'comments_count'
+        ]
+        read_only_fields = [
+            'flagged_by', 'flagged_at', 'resolved_by', 'resolved_at', 'priority'
+        ]
+    
+    def get_users_involved_names(self, obj):
+        """Retorna os nomes dos usuários envolvidos"""
+        return [user.username for user in obj.users_involved.all()]
+    
+    def get_comments_count(self, obj):
+        """Retorna a quantidade de comentários"""
+        return obj.comments.count()
+    
+    def create(self, validated_data):
+        """Cria uma nova discrepância"""
+        # Remove users_involved do validated_data se presente
+        users_involved = validated_data.pop('users_involved', [])
+        
+        # Define flagged_by como o usuário atual
+        validated_data['flagged_by'] = self.context['request'].user
+        
+        # Calcula prioridade automaticamente
+        discrepancy = AnnotationDiscrepancy(**validated_data)
+        discrepancy.priority = discrepancy.calculate_priority()
+        discrepancy.save()
+        
+        # Adiciona usuários envolvidos
+        if users_involved:
+            discrepancy.users_involved.set(users_involved)
+        
+        return discrepancy

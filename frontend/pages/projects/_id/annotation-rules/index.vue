@@ -515,16 +515,72 @@
               
               <v-expansion-panel-content>
                 <div class="mt-4">
-                  <h4 class="text-subtitle-1 font-weight-bold mb-4">Resultados da Votação</h4>
+                  <h4 class="text-subtitle-1 font-weight-bold mb-4">Resultados finais da Votação</h4>
                   <div class="mb-4">
-                    <v-chip 
+                    <v-card
                       v-for="ruleId in voting.rules"
                       :key="ruleId"
-                      :color="isRuleApproved(ruleId) ? 'success' : 'error'"
-                      class="mr-2 mb-2 white--text"
+                      class="mb-3 rule-result-card"
+                      outlined
                     >
-                      {{ getRuleName(ruleId) }}: {{ isRuleApproved(ruleId) ? 'Aprovada' : 'Rejeitada' }}
-                    </v-chip>
+                      <v-card-text class="pa-3">
+                        <div class="d-flex align-center justify-space-between">
+                          <div class="d-flex align-center">
+                            <v-chip 
+                              :color="isRuleApproved(ruleId) ? 'success' : 'error'"
+                              class="mr-3 white--text"
+                              small
+                            >
+                              <v-icon left small>
+                                {{ isRuleApproved(ruleId) ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                              </v-icon>
+                              {{ isRuleApproved(ruleId) ? 'Aprovada' : 'Rejeitada' }}
+                            </v-chip>
+                            <span class="text-subtitle-2 font-weight-medium">
+                              {{ getRuleName(ruleId) }}
+                            </span>
+                          </div>
+                          
+                          <div class="d-flex align-center">
+                            <div class="text-center mr-4">
+                              <div class="text-caption grey--text">A Favor</div>
+                              <v-chip color="success" text-color="white" x-small>
+                                <v-icon left x-small>mdi-thumb-up</v-icon>
+                                {{ ruleVotes(ruleId).aprovar }}
+                              </v-chip>
+                            </div>
+                            
+                            <div class="text-center">
+                              <div class="text-caption grey--text">Contra</div>
+                              <v-chip color="error" text-color="white" x-small>
+                                <v-icon left x-small>mdi-thumb-down</v-icon>
+                                {{ ruleVotes(ruleId).rejeitar }}
+                              </v-chip>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Barra de progresso visual -->
+                        <div class="mt-3">
+                          <div class="d-flex align-center">
+                            <span class="text-caption mr-2">{{ ruleVotes(ruleId).aprovar }}</span>
+                            <v-progress-linear
+                              :value="getVotePercentage(ruleId, 'aprovar')"
+                              color="success"
+                              background-color="error"
+                              background-opacity="0.3"
+                              height="8"
+                              rounded
+                              class="flex-grow-1"
+                            ></v-progress-linear>
+                            <span class="text-caption ml-2">{{ ruleVotes(ruleId).rejeitar }}</span>
+                          </div>
+                          <div class="text-center text-caption grey--text mt-1">
+                            {{ Math.round(getVotePercentage(ruleId, 'aprovar')) }}% a favor
+                          </div>
+                        </div>
+                      </v-card-text>
+                    </v-card>
                   </div>
                 </div>
               </v-expansion-panel-content>
@@ -1078,6 +1134,21 @@ export default {
       } else {
         return 'Empate'
       }
+    },
+
+    getVotePercentage(ruleId, voteType) {
+      const votes = this.ruleVotes(ruleId)
+      const total = votes.aprovar + votes.rejeitar
+      
+      if (total === 0) {
+        return 0
+      }
+      
+      if (voteType === 'aprovar') {
+        return (votes.aprovar / total) * 100
+      } else {
+        return (votes.rejeitar / total) * 100
+      }
     }
   }
 }
@@ -1156,6 +1227,37 @@ export default {
 .voting-main-card {
   border-radius: 16px !important;
   overflow: hidden;
+}
+
+/* Cards de resultado das votações */
+.rule-result-card {
+  border-radius: 8px !important;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0 !important;
+}
+
+.rule-result-card:hover {
+  border-color: #1976d2 !important;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1) !important;
+}
+
+/* Customização das barras de progresso */
+::v-deep .v-progress-linear {
+  border-radius: 4px !important;
+}
+
+/* Responsividade para resultados das votações */
+@media (max-width: 768px) {
+  .rule-result-card .d-flex.justify-space-between {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  
+  .rule-result-card .d-flex.align-center:last-child {
+    margin-top: 12px !important;
+    width: 100% !important;
+    justify-content: space-around !important;
+  }
 }
 
 /* Painel de administração melhorado */

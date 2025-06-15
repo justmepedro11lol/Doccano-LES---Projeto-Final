@@ -42,7 +42,6 @@ class Category(Label):
         unique_together = ("example", "user", "label")
 
 
-
 class DiscrepancyMessage(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="discrepancy_messages")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -54,6 +53,101 @@ class DiscrepancyMessage(models.Model):
 
     def __str__(self):
         return f"[{self.created_at:%Y-%m-%d %H:%M}] {self.user.username}: {self.text[:20]}"
+
+
+class DiscrepancyType(models.Model):
+    MISSING_ANNOTATION = 'missing'
+    CONFLICTING_LABELS = 'conflicting'
+    OVERLAPPING_SPANS = 'overlapping'
+    INCONSISTENT_RELATIONS = 'relations'
+    LOW_AGREEMENT = 'low_agreement'
+    
+    TYPE_CHOICES = [
+        (MISSING_ANNOTATION, 'Anotação Ausente'),
+        (CONFLICTING_LABELS, 'Rótulos Conflitantes'),
+        (OVERLAPPING_SPANS, 'Spans Sobrepostos'),
+        (INCONSISTENT_RELATIONS, 'Relações Inconsistentes'),
+        (LOW_AGREEMENT, 'Baixa Concordância'),
+    ]
+    
+    name = models.CharField(max_length=50, choices=TYPE_CHOICES, unique=True)
+    description = models.TextField()
+    severity = models.CharField(max_length=20, choices=[
+        ('low', 'Baixa'),
+        ('medium', 'Média'),
+        ('high', 'Alta'),
+        ('critical', 'Crítica')
+    ], default='medium')
+    
+    def __str__(self):
+        return self.get_name_display()
+
+
+class AnnotationDiscrepancy(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pendente'),
+        ('reviewing', 'Em Revisão'),
+        ('resolved', 'Resolvida'),
+        ('ignored', 'Ignorada'),
+    ]
+    
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="discrepancies")
+    example = models.ForeignKey(Example, on_delete=models.CASCADE, related_name="discrepancies")
+    discrepancy_type = models.ForeignKey(DiscrepancyType, on_delete=models.CASCADE)
+    
+    # Usuários envolvidos na discrepância
+    users_involved = models.ManyToManyField(User, related_name="discrepancies_involved")
+    
+    # Detalhes da discrepância
+    description = models.TextField()
+    agreement_score = models.FloatField(null=True, blank=True, help_text="Score de concordância entre 0 e 1")
+    
+    # IDs das anotações conflitantes (JSON para flexibilidade)
+    conflicting_annotations = models.JSONField(default=dict, help_text="IDs e tipos das anotações em conflito")
+    
+    # Status e resolução
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    flagged_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="flagged_discrepancies")
+    flagged_at = models.DateTimeField(auto_now_add=True)
+    
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="resolved_discrepancies")
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolution_notes = models.TextField(blank=True)
+    
+    # Prioridade automática baseada na severidade e score
+    priority = models.IntegerField(default=5, help_text="1=Muito Alta, 5=Muito Baixa")
+    
+    class Meta:
+        ordering = ['priority', '-flagged_at']
+        indexes = [
+            models.Index(fields=['project', 'status']),
+            models.Index(fields=['example', 'discrepancy_type']),
+            models.Index(fields=['priority', 'flagged_at']),
+        ]
+    
+    def __str__(self):
+        return f"Discrepância {self.discrepancy_type} - Exemplo {self.example.id}"
+    
+    def calculate_priority(self):
+        """Calcula prioridade baseada na severidade e score de concordância"""
+        severity_weights = {'low': 4, 'medium': 3, 'high': 2, 'critical': 1}
+        base_priority = severity_weights.get(self.discrepancy_type.severity, 3)
+        
+        if self.agreement_score is not None and self.agreement_score < 0.3:
+            base_priority = max(1, base_priority - 1)  # Aumenta prioridade para baixa concordância
+            
+        return base_priority
+
+
+class DiscrepancyComment(models.Model):
+    discrepancy = models.ForeignKey(AnnotationDiscrepancy, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['created_at']
+
 
 class Span(Label):
     objects = SpanManager()

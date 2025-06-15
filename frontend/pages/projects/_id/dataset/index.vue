@@ -79,8 +79,16 @@
       @update:query="updateQuery"
       @click:labeling="movePage"
       @edit="editItem"
+      @flag="flagItem"
       @assign="assign"
       @unassign="unassign"
+    />
+
+    <!-- Modal de sinalização de discrepância -->
+    <percentage-modal
+      v-model="showPercentageModal"
+      :example="selectedExample"
+      @decision-saved="onDecisionSaved"
     />
   </v-card>
 </template>
@@ -98,6 +106,7 @@ import FormResetAssignment from '~/components/example/FormResetAssignment.vue'
 import ActionMenu from '~/components/example/ActionMenu.vue'
 import AudioList from '~/components/example/AudioList.vue'
 import ImageList from '~/components/example/ImageList.vue'
+import PercentageModal from '~/components/example/PercentageModal.vue'
 import { getLinkToAnnotationPage } from '~/presenter/linkToAnnotationPage'
 import { ExampleDTO, ExampleListDTO } from '~/services/application/example/exampleData'
 import { MemberItem } from '~/domain/models/member/member'
@@ -111,7 +120,8 @@ export default Vue.extend({
     FormAssignment,
     FormDelete,
     FormDeleteBulk,
-    FormResetAssignment
+    FormResetAssignment,
+    PercentageModal
   },
 
   layout: 'project',
@@ -128,6 +138,8 @@ export default Vue.extend({
       dialogDeleteAll: false,
       dialogAssignment: false,
       dialogReset: false,
+      showPercentageModal: false,
+      selectedExample: null as ExampleDTO | null,
       item: {} as ExampleListDTO,
       selected: [] as ExampleDTO[],
       members: [] as MemberItem[],
@@ -229,6 +241,17 @@ export default Vue.extend({
       this.dialogReset = false
       await this.$repositories.assignment.reset(this.projectId)
       this.item = await this.$services.example.list(this.projectId, this.$route.query)
+    },
+
+    flagItem(item: ExampleDTO) {
+      this.selectedExample = item
+      this.showPercentageModal = true
+    },
+
+    onDecisionSaved(data: any) {
+      console.log('Decisão salvada:', data)
+      // Aqui pode adicionar lógica adicional, como atualizar a lista
+      // ou marcar visualmente o item como sinalizado
     }
   }
 })
