@@ -325,12 +325,6 @@ export default defineComponent({
     }
   },
   
-  mounted() {
-    if (this.projectId) {
-      this.$store.dispatch('voting/initVotingState', this.projectId)
-    }
-  },
-  
   watch: {
     async value(newValue) {
       // Quando o modal abre, verificar se existem regras antigas
@@ -345,6 +339,12 @@ export default defineComponent({
           this.$store.dispatch('voting/clearAnnotationRules', this.projectId)
         }
       }
+    }
+  },
+  
+  mounted() {
+    if (this.projectId) {
+      this.$store.dispatch('voting/initVotingState', this.projectId)
     }
   },
   

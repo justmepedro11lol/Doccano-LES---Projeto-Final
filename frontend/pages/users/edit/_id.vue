@@ -59,9 +59,9 @@
         <form-create 
           v-if="editedItem && !isLoading"
           v-bind.sync="editedItem" 
+          :id="userId"
           :items="items"
           :is-edit-mode="true"
-          :id="userId"
         >
           <template #default="{ valid }">
             <!-- Botões de ação com design melhorado -->

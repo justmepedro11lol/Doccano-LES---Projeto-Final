@@ -89,7 +89,7 @@ export interface Repositories {
   discrepancy: APIDiscrepancyRepository
 
   // Reports
-  annotatorReport: APIAnnotatorReportRepository
+  reports: APIAnnotatorReportRepository
 }
 
 declare module 'vue/types/vue' {
@@ -152,7 +152,7 @@ const repositories: Repositories = {
   discrepancy: new APIDiscrepancyRepository(),
 
   // Reports
-  annotatorReport: new APIAnnotatorReportRepository(),
+  reports: new APIAnnotatorReportRepository(),
 }
 
 const plugin: Plugin = (_, inject) => {

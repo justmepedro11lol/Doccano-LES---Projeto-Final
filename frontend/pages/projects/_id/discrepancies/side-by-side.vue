@@ -327,13 +327,13 @@ export default Vue.extend({
         if (stats.textTypes && stats.textTypes.length > 0) {
           this.datasets = stats.textTypes
         } else {
-          // Fallback para datasets simulados
-          this.datasets = ['Dataset Principal', 'Dataset Teste', 'Dataset Validação']
+          // Não usar datasets simulados - apenas deixar vazio se não há dados reais
+          this.datasets = []
         }
       } catch (error) {
         console.warn('Não foi possível carregar dados reais dos anotadores:', error)
-        // Fallback para datasets simulados
-        this.datasets = ['Dataset Principal', 'Dataset Teste', 'Dataset Validação']
+        // Não usar datasets simulados - apenas deixar vazio se não há dados reais
+        this.datasets = []
       }
 
       // Processar dados para comparações
@@ -353,7 +353,7 @@ export default Vue.extend({
     },
 
     hasDiscrepancies(): boolean {
-      return this.comparisons.some(comp => comp.hasDiscrepancy)
+      return this.filteredComparisons.length > 0
     },
 
     globalDiscrepancyPercentage(): number {
@@ -414,6 +414,11 @@ export default Vue.extend({
 
     filteredComparisons(): AnnotationComparison[] {
       return this.comparisons.filter(comp => {
+        // Só mostrar comparações que têm anotações reais
+        if (comp.annotations.length === 0) {
+          return false
+        }
+        
         // Filtro por exemplo
         if (this.selectedExample && comp.exampleId !== this.selectedExample) {
           return false
@@ -457,6 +462,9 @@ export default Vue.extend({
         }
         
         return comp
+      }).filter(comp => {
+        // Filtrar novamente para garantir que ainda há anotações após os filtros
+        return comp.annotations.length > 0
       })
     }
   },
@@ -492,33 +500,51 @@ export default Vue.extend({
           // Buscar dados de anotações reais
           const annotations = await this.generateAnnotationData(exampleId, labels)
           
-          // Só incluir comparações se há anotações reais E há discrepância
+          // Incluir TODAS as comparações que têm anotações (mesmo sem discrepâncias)
           if (annotations.length > 0) {
             // Calcular concordância geral baseado nas anotações reais
             const percentages = Object.values(labels)
             const maxAgreement = percentages.length > 0 ? Math.max(...percentages) : 0
-            const hasDiscrepancy = maxAgreement < this.project.minPercentage && maxAgreement > 0
-
-                         // Incluir TODAS as anotações que existem (mesmo de um só anotador)
-             const uniqueAnnotators = new Set(annotations.map(ann => ann.annotator))
+            
+            // Determinar se há discrepância real (mesmo que não atinja o threshold)
+            const uniqueAnnotators = new Set(annotations.map(ann => ann.annotator))
+            const hasMultipleAnnotators = uniqueAnnotators.size > 1
+            
+            // Verificar se há diferenças reais nas anotações
+            const hasRealDiscrepancy = hasMultipleAnnotators && (
+              maxAgreement < this.project.minPercentage || 
+              annotations.some(ann => ann.labels.length !== annotations[0].labels.length) ||
+              this.hasLabelDifferences(annotations)
+            )
              
              // Identificar diferenças
              const differences = this.identifyDifferences(labels)
 
-             // Atribuir dataset (simulado baseado no ID do exemplo ou usar dados reais)
-             const datasetName = this.datasets[parseInt(exampleId) % this.datasets.length] || 'Dataset Principal'
+             // Tentar obter dataset real do exemplo
+             let datasetName = 'Dataset Principal'
+             try {
+               if (example.upload_name) {
+                 datasetName = example.upload_name
+               } else if (example.filename) {
+                 datasetName = example.filename
+               } else if (example.meta && example.meta.dataset) {
+                 datasetName = example.meta.dataset
+               }
+             } catch (e) {
+               console.warn('Erro ao obter dataset do exemplo:', e)
+             }
 
              comparisons.push({
                exampleId,
                exampleText: this.exampleNames[exampleId],
                dataset: datasetName,
-               hasDiscrepancy,
+               hasDiscrepancy: hasRealDiscrepancy,
                overallAgreement: Math.round(maxAgreement),
                annotations,
                differences
              })
              
-             console.log(`Exemplo ${exampleId}: incluído - ${uniqueAnnotators.size} anotador(es), ${annotations.length} anotações`)
+             console.log(`Exemplo ${exampleId}: incluído - ${uniqueAnnotators.size} anotador(es), ${annotations.length} anotações, discrepância: ${hasRealDiscrepancy}`)
           } else {
             console.log(`Exemplo ${exampleId} ignorado - sem anotações`)
           }
@@ -602,7 +628,13 @@ export default Vue.extend({
           }
         }
         
-        console.log(`Exemplo ${exampleId}: encontradas ${realAnnotations.length} anotações`)
+        console.log(`Exemplo ${exampleId}: encontradas ${realAnnotations.length} anotações reais`)
+        
+        // Apenas processar se existem anotações reais - não criar dados simulados
+        if (realAnnotations.length === 0) {
+          console.log(`Exemplo ${exampleId}: sem anotações reais encontradas - ignorando`)
+          return []
+        }
         
         if (realAnnotations && realAnnotations.length > 0) {
           // Processar anotações reais
@@ -715,6 +747,31 @@ export default Vue.extend({
       }
       
       return differences
+    },
+    
+    hasLabelDifferences(annotations: Array<any>): boolean {
+      if (annotations.length < 2) return false
+      
+      // Comparar as labels entre anotações diferentes
+      const firstAnnotationLabels = new Set(annotations[0].labels.map(l => l.name))
+      
+      for (let i = 1; i < annotations.length; i++) {
+        const currentLabels = new Set(annotations[i].labels.map(l => l.name))
+        
+        // Se os tamanhos são diferentes, há discrepância
+        if (firstAnnotationLabels.size !== currentLabels.size) {
+          return true
+        }
+        
+        // Se alguma label é diferente, há discrepância
+        for (const label of firstAnnotationLabels) {
+          if (!currentLabels.has(label)) {
+            return true
+          }
+        }
+      }
+      
+      return false
     },
 
     getAnnotationBackgroundClass(index: number): string {
