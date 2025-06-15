@@ -21,7 +21,7 @@
       
       <v-card-text class="pt-0">
         <v-row>
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-select
               v-model="selectedQuestion"
               :items="availableQuestions"
@@ -33,7 +33,7 @@
               class="filter-select"
             />
           </v-col>
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
             <v-select
               v-model="selectedUser"
               :items="availableUsers"
@@ -45,7 +45,19 @@
               class="filter-select"
             />
           </v-col>
-          <v-col cols="12" md="4">
+          <v-col cols="12" md="3">
+            <v-select
+              v-model="selectedProject"
+              :items="availableProjects"
+              label="Selecione o projeto"
+              clearable
+              outlined
+              dense
+              prepend-icon="mdi-folder-outline"
+              class="filter-select"
+            />
+          </v-col>
+          <v-col cols="12" md="3">
             <v-select
               v-model="selectedAnswer"
               :items="availableAnswers"
@@ -95,8 +107,8 @@
         <v-data-table
           :items="processedItems"
           :headers="headers"
-          :loading="isLoading"
-          :loading-text="$t('generic.loading')"
+          :loading="isLoading || loadingNames"
+          :loading-text="loadingNames ? 'Carregando nomes...' : $t('generic.loading')"
           :no-data-text="$t('vuetify.noDataAvailable')"
           :footer-props="{
             showFirstLastPage: true,
@@ -104,21 +116,24 @@
             'page-text': $t('dataset.pageText')
           }"
           item-key="id"
-          show-select
           class="elevation-1 data-table"
           @input="$emit('input', $event)"
         >
-          <!-- Oculta o checkbox do header -->
-          <template #[`header.data-table-select`]>
-            <!-- slot vazio -->
-          </template>
-          
           <template #[`item.memberName`]="{ item }">
             <div class="d-flex align-center">
               <v-avatar size="32" color="primary" class="mr-3">
                 <v-icon color="white" size="16">mdi-account</v-icon>
               </v-avatar>
               <span class="font-weight-medium">{{ item.memberName }}</span>
+            </div>
+          </template>
+          
+          <template #[`item.projectName`]="{ item }">
+            <div class="d-flex align-center">
+              <v-avatar size="32" color="info" class="mr-3">
+                <v-icon color="white" size="16">mdi-folder</v-icon>
+              </v-avatar>
+              <span class="font-weight-medium">{{ item.projectName }}</span>
             </div>
           </template>
           
@@ -194,21 +209,27 @@ export default Vue.extend({
     return {
       search: '',
       mdiMagnify,
-      // Selecção dos filtros: pergunta, utilizador e resposta
+      // Selecção dos filtros: pergunta, utilizador, projeto e resposta
       selectedQuestion: null as string | null,
       selectedUser: null as string | null,
+      selectedProject: null as string | null,
       selectedAnswer: null as string | null,
       // Armazena os nomes carregados para os IDs de 0 a 100
-      memberNames: {} as { [key: number]: string }
+      memberNames: {} as { [key: number]: string },
+      // Armazena os nomes dos projetos
+      projectNames: {} as { [key: number]: string },
+      // Indica se os nomes estão sendo carregados
+      loadingNames: false
     }
   },
 
   computed: {
-    // Header com três colunas: Criador, Pergunta e Resposta
+    // Header com quatro colunas: Criador, Projeto, Pergunta e Resposta
     headers() {
       return [
         { text: this.$t('Created by'), value: 'memberName', sortable: true, width: '200px' },
-        { text: this.$t('Question'), value: 'question', sortable: true, width: '40%' },
+        { text: 'Projeto', value: 'projectName', sortable: true, width: '200px' },
+        { text: this.$t('Question'), value: 'question', sortable: true, width: '35%' },
         { text: this.$t('Answer'), value: 'answer', sortable: true, width: '200px' }
       ]
     },
@@ -286,9 +307,22 @@ export default Vue.extend({
       })
       return Array.from(answersSet)
     },
+    // Extrai os projetos disponíveis
+    availableProjects() {
+      const projectsSet = new Set<string>()
+      const itemsToProcess = this.projectId ? 
+        this.items.filter(item => Number(item.project_id) === Number(this.projectId)) :
+        this.items;
+
+      itemsToProcess.forEach(item => {
+        const projectName = this.projectNames[item.project_id] || `Projeto ${item.project_id}`
+        projectsSet.add(projectName)
+      })
+      return Array.from(projectsSet)
+    },
     // Processa os itens gerando uma linha para cada resposta e aplicando os filtros selecionados
     processedItems() {
-      const result: Array<{ id: number; memberName: string; question: string; answer: string }> = []
+      const result: Array<{ id: number; memberName: string; projectName: string; question: string; answer: string }> = []
       const itemsToProcess = this.projectId ? 
         this.items.filter(item => Number(item.project_id) === Number(this.projectId)) :
         this.items;
@@ -316,17 +350,19 @@ export default Vue.extend({
                   }
                 }
                 const answerText = a.answer_text || a.answer_option || ''
+                const projectName = this.projectNames[item.project_id] || `Projeto ${item.project_id}`
                 // Cria um registro para cada resposta
                 const row = {
                   id: counter++,
                   memberName,
+                  projectName,
                   question: q.question,
                   answer: answerText
                 }
                 // Filtro de busca (buscando em todas as colunas)
                 if (this.search) {
                   const searchLower = this.search.toLowerCase()
-                  const combinedText = `${row.memberName} ${row.question} ${row.answer}`.toLowerCase()
+                  const combinedText = `${row.memberName} ${row.projectName} ${row.question} ${row.answer}`.toLowerCase()
                   if (!combinedText.includes(searchLower)) {
                     return
                   }
@@ -334,6 +370,11 @@ export default Vue.extend({
                 // Filtro por utilizador, se selecionado
                 if (this.selectedUser &&
                     row.memberName.toLowerCase() !== this.selectedUser.toLowerCase()) {
+                  return
+                }
+                // Filtro por projeto, se selecionado
+                if (this.selectedProject &&
+                    row.projectName.toLowerCase() !== this.selectedProject.toLowerCase()) {
                   return
                 }
                 // Filtro por resposta, se selecionada
@@ -350,7 +391,7 @@ export default Vue.extend({
       return result
     },
     hasActiveFilters() {
-      return this.selectedQuestion !== null || this.selectedUser !== null || this.selectedAnswer !== null || this.search !== ''
+      return this.selectedQuestion !== null || this.selectedUser !== null || this.selectedProject !== null || this.selectedAnswer !== null || this.search !== ''
     }
   },
 
@@ -361,44 +402,115 @@ export default Vue.extend({
     selectedUser(newVal) {
       console.log('selectedUser changed:', newVal)
     },
+    selectedProject(newVal) {
+      console.log('selectedProject changed:', newVal)
+    },
     selectedAnswer(newVal) {
       console.log('selectedAnswer changed:', newVal)
     },
-    // Quando os itens mudam, recarrega os nomes dos membros
+    // Quando os itens mudam, recarrega os nomes dos membros e projetos
     items: {
-      handler() {
-        this.$nextTick(() => {
-          this.loadMemberNames()
-        })
+      async handler() {
+        if (this.items.length > 0) {
+          await this.$nextTick()
+          await this.loadMemberNames()
+          await this.loadProjectNames()
+        }
       },
       deep: true,
       immediate: true
     }
   },
 
-  mounted() {
-    this.$nextTick(() => {
-      this.loadMemberNames()
-    })
+  async mounted() {
+    if (this.items.length > 0) {
+      await this.$nextTick()
+      await this.loadMemberNames()
+      await this.loadProjectNames()
+    }
   },
 
   methods: {
-    // Exemplo de método para carregar os nomes dos membros (supondo um repositório para membros)
-    loadMemberNames() {
-      for (let memberId = 0; memberId <= 100; memberId++) {
-        this.$repositories.member.findById(this.projectId, memberId)
-          .then((response: any) => {
-            this.$set(this.memberNames, memberId, response.username)
-            console.log(`Fetched member ${memberId}:`, response.username)
+    // Método para carregar os nomes dos membros de forma eficiente
+    async loadMemberNames() {
+      if (this.loadingNames) return
+      this.loadingNames = true
+      
+      try {
+        // Primeiro, obtém os IDs únicos dos membros a partir dos itens
+        const memberIds = new Set<number>()
+        
+        this.items.forEach(item => {
+          if (Array.isArray(item.questions)) {
+            item.questions.forEach(q => {
+              if (Array.isArray(q.answers)) {
+                q.answers.forEach((a: any) => {
+                  if (a.member) {
+                    if (typeof a.member === 'object' && a.member.id != null) {
+                      memberIds.add(a.member.id)
+                    } else if (typeof a.member === 'number') {
+                      memberIds.add(a.member)
+                    }
+                  }
+                })
+              }
+            })
+          }
+        })
+
+        // Se há membros para carregar, obtém a lista de membros do projeto
+        if (memberIds.size > 0) {
+          // Tenta buscar todos os membros de todos os projetos únicos
+          const projectIds = [...new Set(this.items.map(item => item.project_id))]
+          
+          for (const projectId of projectIds) {
+            try {
+              const members = await this.$repositories.member.list(projectId.toString())
+              members.forEach(member => {
+                if (memberIds.has(member.id)) {
+                  this.$set(this.memberNames, member.id, member.username)
+                  console.log(`Fetched member ${member.id}:`, member.username)
+                }
+              })
+            } catch (error) {
+              console.log(`Error fetching members for project ${projectId}:`, error)
+            }
+          }
+          
+          // Para membros que não foram encontrados, define um nome padrão
+          Array.from(memberIds).forEach(memberId => {
+            if (!this.memberNames[memberId]) {
+              this.$set(this.memberNames, memberId, `Usuário ${memberId}`)
+            }
           })
-          .catch(() => {
-            console.log(`Member not found for ID ${memberId}`)
-          })
+        }
+      } finally {
+        this.loadingNames = false
       }
+    },
+    
+    // Método para carregar os nomes dos projetos de forma eficiente
+    async loadProjectNames() {
+      // Obtém os IDs únicos dos projetos a partir dos itens
+      const projectIds = [...new Set(this.items.map(item => item.project_id))]
+      
+      const loadPromises = projectIds.map(async (projectId) => {
+        try {
+          const project = await this.$services.project.findById(projectId.toString())
+          this.$set(this.projectNames, projectId, project.name)
+          console.log(`Fetched project ${projectId}:`, project.name)
+        } catch (error) {
+          console.log(`Project not found for ID ${projectId}:`, error)
+          this.$set(this.projectNames, projectId, `Projeto ${projectId}`)
+        }
+      })
+
+      await Promise.all(loadPromises)
     },
     clearAllFilters() {
       this.selectedQuestion = null
       this.selectedUser = null
+      this.selectedProject = null
       this.selectedAnswer = null
       this.search = ''
     },
