@@ -102,7 +102,7 @@
 
               <!-- Labels -->
               <v-col cols="12" sm="6" md="4" class="px-3">
-                <v-select
+                  <v-select
                   v-model="filters.labels"
                   :items="availableLabels"
                   item-text="text"
@@ -111,10 +111,10 @@
                   hint="If blank, all label categories will be included"
                   persistent-hint
                   multiple
-                  clearable
-                  outlined
-                  dense
-                  prepend-icon="mdi-label"
+                    clearable
+                    outlined
+                    dense
+                    prepend-icon="mdi-label"
                   :loading="loadingLabels"
                 >
                   <template #selection="{ item, index }">
@@ -135,11 +135,11 @@
                     </span>
                   </template>
                 </v-select>
-              </v-col>
+                </v-col>
 
               <!-- Datasets -->
               <v-col cols="12" sm="6" md="4" class="px-3">
-                <v-select
+                  <v-select
                   v-model="filters.datasets"
                   :items="availableDatasets"
                   item-text="name"
@@ -148,9 +148,9 @@
                   hint="If blank, all datasets will be included"
                   persistent-hint
                   multiple
-                  clearable
-                  outlined
-                  dense
+                    clearable
+                    outlined
+                    dense
                   prepend-icon="mdi-database"
                   :loading="loadingDatasets"
                 >
@@ -171,7 +171,7 @@
                     </span>
                   </template>
                 </v-select>
-              </v-col>
+                </v-col>
             </v-row>
 
             <!-- Segunda linha: Filtros de data, perspectivas e exportação -->
@@ -186,7 +186,7 @@
                   outlined
                   dense
                   prepend-icon="mdi-calendar-start"
-                  clearable
+                    clearable
                 ></v-text-field>
               </v-col>
               
@@ -197,16 +197,16 @@
                   hint="If blank, no end date limit"
                   persistent-hint
                   type="date"
-                  outlined
-                  dense
+                    outlined
+                    dense
                   prepend-icon="mdi-calendar-end"
                   clearable
                 ></v-text-field>
-              </v-col>
+                </v-col>
 
               <!-- Perspectivas -->
               <v-col cols="12" sm="6" md="3" class="px-3">
-                <v-select
+                  <v-select
                   v-model="filters.perspectives"
                   :items="availablePerspectives"
                   item-text="name"
@@ -215,10 +215,10 @@
                   hint="If blank, all perspectives will be included"
                   persistent-hint
                   multiple
-                  clearable
-                  outlined
-                  dense
-                  prepend-icon="mdi-eye"
+                    clearable
+                    outlined
+                    dense
+                    prepend-icon="mdi-eye"
                   :loading="loadingPerspectives"
                 >
                   <template #selection="{ item, index }">
@@ -264,23 +264,23 @@
                     </v-chip>
                   </template>
                 </v-select>
-              </v-col>
-            </v-row>
+                </v-col>
+              </v-row>
 
             <!-- Terceira linha: Barra de pesquisa -->
             <v-row class="mx-0">
               <v-col cols="12" class="px-3">
-                <v-text-field
-                  v-model="search"
+                  <v-text-field
+                    v-model="search"
                   label="Search in results"
                   hint="Search by annotator name, labels, or any field"
                   persistent-hint
                   prepend-inner-icon="mdi-magnify"
-                  outlined
-                  dense
-                  clearable
-                ></v-text-field>
-              </v-col>
+                    outlined
+                    dense
+                    clearable
+                  ></v-text-field>
+                </v-col>
             </v-row>
 
             <!-- Botões de ação -->
@@ -319,9 +319,9 @@
             </v-row>
           </v-card-text>
         </v-card>
-      </v-col>
-    </v-row>
-
+                </v-col>
+              </v-row>
+                
     <!-- PARTE 2: TABELA DE RESULTADOS -->
     <v-row v-if="hasDiscrepancies">
       <v-col cols="12">
@@ -913,7 +913,7 @@ export default {
           this.reportData = []
         }
       } catch (error) {
-        console.error('[LOAD ALL] Erro ao carregar dados:', error)
+        console.error('[LOAD ALL] Error loading data:', error)
         this.reportData = []
         throw error
       }
@@ -992,7 +992,7 @@ export default {
           
           console.log('availablePerspectives final:', this.availablePerspectives)
         } catch (error) {
-          console.error('Erro ao carregar perspectivas:', error)
+          console.error('Error loading perspectives:', error)
           this.availablePerspectives = []
         }
         this.loadingPerspectives = false
@@ -1049,12 +1049,12 @@ export default {
 
           console.log('[DEBUG] Datasets finais:', this.availableDatasets)
         } catch (error) {
-          console.error('Erro ao carregar datasets:', error)
+          console.error('Error loading datasets:', error)
         }
         this.loadingDatasets = false
       } catch (error) {
-        console.error('Erro ao carregar opções de filtro:', error)
-        this.showError('Erro ao carregar opções de filtro')
+        console.error('Error loading filter options:', error)
+        this.showError('Error loading filter options')
       }
     },
 
@@ -1066,8 +1066,8 @@ export default {
           )
           this.$set(this.exampleNameMap, id, example.text || 'Texto não disponível')
         } catch (error) {
-          console.error('Erro ao buscar example:', id, error)
-          this.$set(this.exampleNameMap, id, `Example ${id} - Erro ao carregar`)
+          console.error('Error fetching example:', id, error)
+          this.$set(this.exampleNameMap, id, `Example ${id} - Error loading`)
         }
       }
       return this.exampleNameMap[id]
@@ -1079,7 +1079,7 @@ export default {
         this.annotators = members.map((member) => member.username || `User ${member.user}`)
         console.log('Anotadores reais carregados:', this.annotators)
       } catch (error) {
-        console.error('Erro ao carregar anotadores:', error)
+        console.error('Error loading annotators:', error)
         this.annotators = ['Unknown Annotator']
       }
     },
@@ -1089,7 +1089,7 @@ export default {
         this.exampleAnnotators = await this.$repositories.metrics.fetchExampleAnnotators(this.projectId)
         console.log('Anotadores por example carregados:', this.exampleAnnotators)
       } catch (error) {
-        console.error('Erro ao carregar anotadores por example:', error)
+        console.error('Error loading example annotators:', error)
         this.exampleAnnotators = {}
       }
     },
@@ -1143,8 +1143,8 @@ export default {
           await this.exportReport()
         }
       } catch (error) {
-        console.error('Erro ao gerar e exportar relatório:', error)
-        this.showError('Erro ao gerar e exportar relatório')
+        console.error('Error generating and exporting report:', error)
+        this.showError('Error generating and exporting report')
       } finally {
         this.isGenerating = false
       }
@@ -1211,14 +1211,14 @@ export default {
           )
         }
       } catch (error) {
-        console.error('[FRONTEND DEBUG] Erro completo:', error)
-        console.error('[FRONTEND DEBUG] Erro response:', error.response)
-        console.error('[FRONTEND DEBUG] Erro message:', error.message)
+        console.error('[FRONTEND DEBUG] Complete error:', error)
+        console.error('[FRONTEND DEBUG] Error response:', error.response)
+        console.error('[FRONTEND DEBUG] Error message:', error.message)
 
-        let errorMessage = 'Erro ao gerar relatório'
+        let errorMessage = 'Error generating report'
         if (error.response) {
-          console.error('[FRONTEND DEBUG] Status do erro:', error.response.status)
-          console.error('[FRONTEND DEBUG] Data do erro:', error.response.data)
+          console.error('[FRONTEND DEBUG] Error status:', error.response.status)
+          console.error('[FRONTEND DEBUG] Error data:', error.response.data)
 
           if (error.response.data) {
             if (error.response.data.detail) {
@@ -1229,7 +1229,7 @@ export default {
           }
         } else if (error.request) {
           errorMessage = 'Erro de rede - servidor não respondeu'
-          console.error('[FRONTEND DEBUG] Erro de request:', error.request)
+          console.error('[FRONTEND DEBUG] Request error:', error.request)
         }
 
         throw new Error(errorMessage)
@@ -1265,7 +1265,7 @@ export default {
               this.exportReportToCSV()
               exportedFormats.push('CSV')
             } catch (error) {
-              console.error('Erro ao exportar CSV:', error)
+              console.error('Error exporting CSV:', error)
               failedFormats.push('CSV')
             }
           } else if (format === 'pdf') {

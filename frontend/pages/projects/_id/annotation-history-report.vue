@@ -7,10 +7,10 @@
           <v-col cols="12" class="text-center">
             <v-icon size="64" color="white" class="mb-4">mdi-history</v-icon>
             <h1 class="display-1 font-weight-bold white--text mb-2">
-              Relatório de Histórico de Anotações
+              Annotation History Report
             </h1>
             <p class="subtitle-1 white--text">
-              Análise detalhada do histórico e evolução das anotações do projeto
+              Detailed analysis of project annotation history and evolution
             </p>
           </v-col>
         </v-row>
@@ -20,54 +20,76 @@
     <!-- Main Content -->
     <v-container class="py-8">
       <!-- Summary Cards -->
-      <v-row v-if="historyData.length > 0">
+      <v-row v-if="!isLoading && historyData.length > 0">
         <v-col cols="12" md="3">
           <v-card class="text-center pa-4" elevation="2">
             <v-icon size="48" color="primary" class="mb-3">mdi-file-document-multiple</v-icon>
             <h3 class="headline font-weight-bold">{{ summaryStats.totalAnnotations }}</h3>
-            <p class="body-2 grey--text">Total de Anotações</p>
+            <p class="body-2 grey--text">Total of Annotations</p>
           </v-card>
         </v-col>
         <v-col cols="12" md="3">
           <v-card class="text-center pa-4" elevation="2">
             <v-icon size="48" color="success" class="mb-3">mdi-account-multiple</v-icon>
             <h3 class="headline font-weight-bold">{{ summaryStats.uniqueAnnotators }}</h3>
-            <p class="body-2 grey--text">Anotadores Ativos</p>
+            <p class="body-2 grey--text">Active Annotators</p>
           </v-card>
         </v-col>
         <v-col cols="12" md="3">
           <v-card class="text-center pa-4" elevation="2">
             <v-icon size="48" color="warning" class="mb-3">mdi-pencil-plus</v-icon>
             <h3 class="headline font-weight-bold">{{ summaryStats.totalCreated }}</h3>
-            <p class="body-2 grey--text">Anotações Criadas</p>
+            <p class="body-2 grey--text">Annotations Created</p>
           </v-card>
         </v-col>
         <v-col cols="12" md="3">
           <v-card class="text-center pa-4" elevation="2">
             <v-icon size="48" color="error" class="mb-3">mdi-pencil-remove</v-icon>
             <h3 class="headline font-weight-bold">{{ summaryStats.totalDeleted }}</h3>
-            <p class="body-2 grey--text">Anotações Excluídas</p>
+            <p class="body-2 grey--text">Annotations Deleted</p>
           </v-card>
         </v-col>
       </v-row>
 
-      <v-row class="mt-6">
+      <!-- Loading State -->
+      <v-row v-if="isLoading">
+        <v-col cols="12">
+          <v-card class="text-center pa-8" elevation="2">
+            <v-progress-circular indeterminate color="primary" size="64" class="mb-4"></v-progress-circular>
+            <h3 class="headline">Loading annotation history...</h3>
+            <p class="body-2 grey--text">Please wait while we fetch the data</p>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- No Data State -->
+      <v-row v-if="!isLoading && historyData.length === 0">
+        <v-col cols="12">
+          <v-card class="text-center pa-8" elevation="2">
+            <v-icon size="64" color="grey lighten-2" class="mb-4">mdi-history</v-icon>
+            <h3 class="headline">No annotation history found</h3>
+            <p class="body-2 grey--text">This project doesn't have any annotations yet, or they couldn't be loaded.</p>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <v-row v-if="!isLoading && historyData.length > 0" class="mt-6">
         <!-- Filters Panel -->
         <v-col cols="12" lg="3">
           <v-card elevation="2">
             <v-card-title class="primary white--text">
               <v-icon left color="white">mdi-filter</v-icon>
-              Filtros
+              Filters
             </v-card-title>
             <v-card-text class="pa-4">
               <v-form @submit.prevent="applyFilters">
-                <!-- Anotadores -->
+                <!-- Anotators -->
                 <v-select
                   v-model="filters.annotator_ids"
                   :items="availableAnnotators"
                   item-text="username"
                   item-value="id"
-                  label="Anotadores"
+                  label="Annotators"
                   multiple
                   chips
                   small-chips
@@ -75,11 +97,11 @@
                   class="mb-3"
                 ></v-select>
 
-                <!-- Tipo de Ação -->
+                <!-- Action Type -->
                 <v-select
                   v-model="filters.action_type"
                   :items="actionTypes"
-                  label="Tipo de Ação"
+                  label="Action Type"
                   multiple
                   chips
                   small-chips
@@ -87,26 +109,26 @@
                   class="mb-3"
                 ></v-select>
 
-                <!-- Período -->
+                <!-- Period -->
                 <v-text-field
                   v-model="filters.start_date"
-                  label="Data Inicial"
+                  label="Start Date"
                   type="date"
                   class="mb-3"
                 ></v-text-field>
 
                 <v-text-field
                   v-model="filters.end_date"
-                  label="Data Final"
+                  label="End Date"
                   type="date"
                   class="mb-3"
                 ></v-text-field>
 
-                <!-- Categorias de Label -->
+                <!-- Label Categories -->
                 <v-select
                   v-model="filters.label_categories"
                   :items="availableLabels"
-                  label="Categorias de Labels"
+                  label="Label Categories"
                   multiple
                   chips
                   small-chips
@@ -114,11 +136,11 @@
                   class="mb-3"
                 ></v-select>
 
-                <!-- Status da Anotação -->
+                <!-- Annotation Status -->
                 <v-select
                   v-model="filters.annotation_status"
                   :items="statusOptions"
-                  label="Status da Anotação"
+                  label="Annotation Status"
                   multiple
                   chips
                   small-chips
@@ -126,34 +148,34 @@
                   class="mb-3"
                 ></v-select>
 
-                <!-- Ordenação -->
+                <!-- Sorting -->
                 <v-select
                   v-model="filters.sort_by"
                   :items="sortOptions"
                   item-text="label"
                   item-value="value"
-                  label="Ordenar por"
+                  label="Sort By"
                   class="mb-3"
                 ></v-select>
 
                 <v-select
                   v-model="filters.order"
                   :items="[
-                    { text: 'Mais Recente', value: 'desc' },
-                    { text: 'Mais Antigo', value: 'asc' }
+                    { text: 'Most Recent', value: 'desc' },
+                    { text: 'Most Old', value: 'asc' }
                   ]"
-                  label="Ordem"
+                  label="Order"
                   class="mb-4"
                 ></v-select>
 
                 <v-btn color="primary" type="submit" block class="mb-2" :loading="isLoading">
                   <v-icon left>mdi-magnify</v-icon>
-                  Aplicar Filtros
+                  Apply Filters
                 </v-btn>
 
                 <v-btn color="grey" block @click="clearFilters">
                   <v-icon left>mdi-filter-off</v-icon>
-                  Limpar Filtros
+                  Clear Filters
                 </v-btn>
               </v-form>
             </v-card-text>
@@ -163,16 +185,16 @@
           <v-card elevation="2" class="mt-4">
             <v-card-title class="success white--text">
               <v-icon left color="white">mdi-download</v-icon>
-              Exportar
+              Export
             </v-card-title>
             <v-card-text class="pa-4">
               <v-btn color="success" block class="mb-2" :loading="isExporting" @click="exportReport('csv')">
                 <v-icon left>mdi-file-delimited</v-icon>
-                Exportar CSV
+                Export CSV
               </v-btn>
               <v-btn color="red" block :loading="isExporting" @click="exportReport('pdf')">
                 <v-icon left>mdi-file-pdf-box</v-icon>
-                Exportar PDF
+                Export PDF
               </v-btn>
             </v-card-text>
           </v-card>
@@ -188,7 +210,7 @@
                   <v-btn-toggle v-model="viewMode" mandatory>
                     <v-btn value="table">
                       <v-icon left>mdi-table</v-icon>
-                      Tabela
+                      Table
                     </v-btn>
                     <v-btn value="timeline">
                       <v-icon left>mdi-timeline</v-icon>
@@ -199,8 +221,19 @@
                 <v-spacer></v-spacer>
                 <v-col cols="auto">
                   <v-chip color="info" text-color="white">
-                    {{ filteredData.length }} registros encontrados
+                    {{ filteredData.length }} records found
                   </v-chip>
+                </v-col>
+                <v-col cols="auto">
+                  <v-btn
+                    color="primary"
+                    @click="refreshData"
+                    :loading="isLoading"
+                    small
+                  >
+                    <v-icon left>mdi-refresh</v-icon>
+                    Refresh
+                  </v-btn>
                 </v-col>
               </v-row>
             </v-card-text>
@@ -210,7 +243,7 @@
           <v-card v-if="viewMode === 'table'" elevation="2">
             <v-card-title class="info white--text">
               <v-icon left color="white">mdi-table</v-icon>
-              Histórico de Anotações
+              Annotation History
             </v-card-title>
             
             <v-card-text class="pa-0">
@@ -228,43 +261,23 @@
                 :items-per-page="15"
                 class="elevation-0"
               >
-                <template #[`item.annotator`]="{ item }">
-                  <div class="d-flex align-center">
-                    <v-avatar size="32" color="primary" class="mr-3">
-                      <v-icon color="white" size="16">mdi-account</v-icon>
-                    </v-avatar>
-                    <span>{{ item.annotator }}</span>
-                  </div>
-                </template>
-
-                <template #[`item.action`]="{ item }">
-                  <v-chip
-                    :color="getActionColor(item.action)"
-                    text-color="white"
-                    small
-                  >
-                    <v-icon left small>{{ getActionIcon(item.action) }}</v-icon>
-                    {{ item.action }}
-                  </v-chip>
-                </template>
-
-                <template #[`item.timestamp`]="{ item }">
+                <template #[`item.action_description`]="{ item }">
                   <div>
-                    <div class="font-weight-medium">{{ formatDate(item.timestamp) }}</div>
-                    <div class="caption grey--text">{{ formatTime(item.timestamp) }}</div>
+                    <div class="font-weight-medium">{{ item.action }} in {{ getShortText(item.text) }}</div>
+                    <div class="caption grey--text">{{ formatDate(item.timestamp) }} {{ formatTime(item.timestamp) }}</div>
                   </div>
                 </template>
 
-                <template #[`item.label`]="{ item }">
-                  <v-chip
-                    v-if="item.label"
-                    color="primary"
-                    outlined
-                    small
-                  >
-                    {{ item.label }}
-                  </v-chip>
-                  <span v-else class="grey--text">N/A</span>
+                <template #[`item.annotation_info`]="{ item }">
+                  <div>
+                    <div class="font-weight-medium">Annotated {{ item.label || 'Unknown' }}</div>
+                    <div class="caption grey--text d-flex align-center">
+                      <v-avatar size="16" color="primary" class="mr-1">
+                        <v-icon color="white" size="10">mdi-account</v-icon>
+                      </v-avatar>
+                      {{ item.annotator }}
+                    </div>
+                  </div>
                 </template>
 
                 <template #[`item.details`]="{ item }">
@@ -284,7 +297,7 @@
           <v-card v-else-if="viewMode === 'timeline'" elevation="2">
             <v-card-title class="info white--text">
               <v-icon left color="white">mdi-timeline</v-icon>
-              Timeline de Anotações
+              Annotation Timeline
             </v-card-title>
             
             <v-card-text class="pa-4">
@@ -311,14 +324,11 @@
                       </div>
                       
                       <div class="mb-2">
-                        <strong>{{ item.action }}</strong>
-                        <span v-if="item.label" class="ml-2">
-                          em <v-chip small color="primary" outlined>{{ item.label }}</v-chip>
-                        </span>
+                        <strong>{{ item.action }} in {{ getShortText(item.text) }}</strong>
                       </div>
                       
-                      <div v-if="item.text" class="caption grey--text">
-                        Texto: "{{ item.text.substring(0, 100) }}{{ item.text.length > 100 ? '...' : '' }}"
+                      <div class="caption grey--text">
+                        Annotated {{ item.label || 'Unknown' }}
                       </div>
                     </v-card-text>
                   </v-card>
@@ -327,8 +337,8 @@
               
               <div v-else-if="!isLoading" class="text-center py-8">
                 <v-icon size="64" color="grey lighten-2">mdi-timeline-outline</v-icon>
-                <div class="headline mt-4 grey--text">Nenhum histórico encontrado</div>
-                <div class="caption grey--text">Ajuste os filtros para ver mais resultados</div>
+                <div class="headline mt-4 grey--text">No history found</div>
+                <div class="caption grey--text">Adjust filters to see more results</div>
               </div>
               
               <v-skeleton-loader
@@ -346,17 +356,17 @@
       <v-card v-if="selectedItem">
         <v-card-title class="primary white--text">
           <v-icon left color="white">mdi-information</v-icon>
-          Detalhes da Anotação
+          Annotation Details
         </v-card-title>
         
         <v-card-text class="pa-4">
           <v-row>
             <v-col cols="6">
-              <strong>Anotador:</strong><br>
+              <strong>Annotator:</strong><br>
               {{ selectedItem.annotator }}
             </v-col>
             <v-col cols="6">
-              <strong>Ação:</strong><br>
+              <strong>Action:</strong><br>
               <v-chip :color="getActionColor(selectedItem.action)" text-color="white" small>
                 {{ selectedItem.action }}
               </v-chip>
@@ -365,7 +375,7 @@
           
           <v-row class="mt-3">
             <v-col cols="6">
-              <strong>Data/Hora:</strong><br>
+              <strong>Date/Time:</strong><br>
               {{ formatDateTime(selectedItem.timestamp) }}
             </v-col>
             <v-col cols="6">
@@ -379,7 +389,7 @@
           
           <v-row v-if="selectedItem.text" class="mt-3">
             <v-col cols="12">
-              <strong>Texto Anotado:</strong><br>
+              <strong>Annotated Text:</strong><br>
               <div class="mt-2 pa-3 grey lighten-4 rounded">
                 {{ selectedItem.text }}
               </div>
@@ -388,7 +398,7 @@
           
           <v-row v-if="selectedItem.confidence" class="mt-3">
             <v-col cols="12">
-              <strong>Confiança:</strong><br>
+              <strong>Confidence:</strong><br>
               <v-progress-linear
                 :value="selectedItem.confidence * 100"
                 color="primary"
@@ -406,7 +416,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn color="primary" text @click="detailsDialog = false">
-            Fechar
+            Close
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -456,35 +466,33 @@ export default Vue.extend({
       },
 
       actionTypes: [
-        'Criar',
-        'Atualizar', 
-        'Excluir',
-        'Revisar',
-        'Aprovar',
-        'Rejeitar'
+        'Create',
+        'Update', 
+        'Delete',
+        'Review',
+        'Approve',
+        'Reject'
       ],
 
       statusOptions: [
-        'Ativo',
-        'Inativo',
-        'Pendente',
-        'Aprovado',
-        'Rejeitado'
+        'Active',
+        'Inactive',
+        'Pending',
+        'Approved',
+        'Rejected'
       ],
 
       sortOptions: [
-        { label: 'Data/Hora', value: 'timestamp' },
-        { label: 'Anotador', value: 'annotator' },
-        { label: 'Ação', value: 'action' },
+        { label: 'Date/Time', value: 'timestamp' },
+        { label: 'Annotator', value: 'annotator' },
+        { label: 'Action', value: 'action' },
         { label: 'Label', value: 'label' }
       ],
 
       tableHeaders: [
-        { text: 'Anotador', value: 'annotator', sortable: true },
-        { text: 'Ação', value: 'action', sortable: true },
-        { text: 'Data/Hora', value: 'timestamp', sortable: true },
-        { text: 'Label', value: 'label', sortable: true },
-        { text: 'Detalhes', value: 'details', sortable: false }
+        { text: 'Action', value: 'action_description', sortable: true },
+        { text: 'Annotation', value: 'annotation_info', sortable: true },
+        { text: 'Details', value: 'details', sortable: false }
       ]
     }
   },
@@ -497,7 +505,7 @@ export default Vue.extend({
     filteredData(): HistoryItem[] {
       let data = [...this.historyData]
 
-      // Aplicar filtros
+      // Apply filters
       if (this.filters.annotator_ids.length > 0) {
         data = data.filter(item => this.filters.annotator_ids.includes(item.annotator_id))
       }
@@ -518,7 +526,7 @@ export default Vue.extend({
         data = data.filter(item => item.label && this.filters.label_categories.includes(item.label))
       }
 
-      // Ordenar
+      // Sort
       data.sort((a, b) => {
         const aVal = a[this.filters.sort_by as keyof HistoryItem] || ''
         const bVal = b[this.filters.sort_by as keyof HistoryItem] || ''
@@ -534,7 +542,7 @@ export default Vue.extend({
     },
 
     timelineData(): HistoryItem[] {
-      return this.filteredData.slice(0, 50) // Limitar timeline para performance
+      return this.filteredData.slice(0, 50) // Limit timeline for performance
     },
 
     summaryStats() {
@@ -542,8 +550,8 @@ export default Vue.extend({
       return {
         totalAnnotations: data.length,
         uniqueAnnotators: new Set(data.map(item => item.annotator_id)).size,
-        totalCreated: data.filter(item => item.action === 'Criar').length,
-        totalDeleted: data.filter(item => item.action === 'Excluir').length
+        totalCreated: data.filter(item => item.action === 'Create').length,
+        totalDeleted: data.filter(item => item.action === 'Delete').length
       }
     }
   },
@@ -556,13 +564,17 @@ export default Vue.extend({
     async loadData() {
       this.isLoading = true
       try {
+        console.log('🔄 Loading annotation history data...')
+        console.log('📋 Project ID:', this.projectId)
+        console.log('👤 Current user:', this.$auth?.user?.username || 'Unknown')
+        
         await Promise.all([
           this.loadHistoryData(),
           this.loadAnnotators(),
           this.loadLabels()
         ])
       } catch (error) {
-        console.error('Erro ao carregar dados:', error)
+        console.error('Error loading data:', error)
       } finally {
         this.isLoading = false
       }
@@ -574,9 +586,13 @@ export default Vue.extend({
           ...this.filters,
           project_id: this.projectId
         }
+        // Adicionar timestamp para evitar cache
+        const timestamp = new Date().getTime()
+        console.log(`🔄 Loading history data at ${timestamp}`)
         this.historyData = await this.$repositories.annotationHistory.list(this.projectId, filters)
+        console.log(`✅ Loaded ${this.historyData.length} history items`)
       } catch (error) {
-        console.error('Erro ao carregar histórico:', error)
+        console.error('Error loading history:', error)
         this.historyData = []
       }
     },
@@ -585,28 +601,61 @@ export default Vue.extend({
       try {
         const members = await this.$repositories.member.list(this.projectId)
         this.availableAnnotators = members.map(member => ({
-          id: member.id,
+          id: member.user,
           username: member.username
         }))
       } catch (error) {
-        console.error('Erro ao carregar anotadores:', error)
+        console.error('Error loading annotators:', error)
       }
     },
 
-    loadLabels() {
-      this.availableLabels = [
-        'Pessoa',
-        'Organização', 
-        'Localização',
-        'Data',
-        'Produto',
-        'Evento'
-      ]
+    async loadLabels() {
+      try {
+        // Carregar tipos de label do projeto
+        const [categoryTypes, spanTypes, relationTypes] = await Promise.all([
+          this.$repositories.categoryType.list(this.projectId).catch(() => []),
+          this.$repositories.spanType.list(this.projectId).catch(() => []),
+          this.$repositories.relationType.list(this.projectId).catch(() => [])
+        ])
+
+        // Combinar todos os tipos de label
+        const allLabels = [
+          ...categoryTypes.map((type: any) => type.text),
+          ...spanTypes.map((type: any) => type.text),
+          ...relationTypes.map((type: any) => type.text)
+        ]
+
+        // Remover duplicatas e ordenar
+        this.availableLabels = [...new Set(allLabels)].sort()
+        
+        // Se não houver labels, usar fallback
+        if (this.availableLabels.length === 0) {
+          this.availableLabels = [
+            'Person',
+            'Organization', 
+            'Location',
+            'Date',
+            'Product',
+            'Event'
+          ]
+        }
+      } catch (error) {
+        console.error('Error loading labels:', error)
+        // Fallback para labels padrão
+        this.availableLabels = [
+          'Person',
+          'Organization', 
+          'Location',
+          'Date',
+          'Product',
+          'Event'
+        ]
+      }
     },
 
     applyFilters() {
-      // Os filtros são aplicados automaticamente via computed property
-      console.log('Filtros aplicados:', this.filters)
+      // Filters are applied automatically via computed property
+      console.log('Filters applied:', this.filters)
     },
 
     clearFilters() {
@@ -631,7 +680,7 @@ export default Vue.extend({
         }
         const blob = await this.$repositories.annotationHistory.export(this.projectId, format, filters)
         
-        // Criar download do arquivo
+        // Create file download
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
@@ -641,9 +690,9 @@ export default Vue.extend({
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
         
-        console.log(`Relatório exportado em formato ${format}`)
+        console.log(`Report exported in ${format} format`)
       } catch (error) {
-        console.error('Erro ao exportar:', error)
+        console.error('Error exporting:', error)
       } finally {
         this.isExporting = false
       }
@@ -656,41 +705,50 @@ export default Vue.extend({
 
     getActionColor(action: string): string {
       const colors: {[key: string]: string} = {
-        'Criar': 'success',
-        'Atualizar': 'primary',
-        'Excluir': 'error',
-        'Revisar': 'warning',
-        'Aprovar': 'success',
-        'Rejeitar': 'error'
+        'Create': 'success',
+        'Update': 'primary',
+        'Delete': 'error',
+        'Review': 'warning',
+        'Approve': 'success',
+        'Reject': 'error'
       }
       return colors[action] || 'grey'
     },
 
     getActionIcon(action: string): string {
       const icons: {[key: string]: string} = {
-        'Criar': 'mdi-plus',
-        'Atualizar': 'mdi-pencil',
-        'Excluir': 'mdi-delete',
-        'Revisar': 'mdi-eye',
-        'Aprovar': 'mdi-check',
-        'Rejeitar': 'mdi-close'
+        'Create': 'mdi-plus',
+        'Update': 'mdi-pencil',
+        'Delete': 'mdi-delete',
+        'Review': 'mdi-eye',
+        'Approve': 'mdi-check',
+        'Reject': 'mdi-close'
       }
       return icons[action] || 'mdi-help'
     },
 
     formatDate(timestamp: string): string {
-      return new Date(timestamp).toLocaleDateString('pt-PT')
+      return new Date(timestamp).toLocaleDateString('en-US')
     },
 
     formatTime(timestamp: string): string {
-      return new Date(timestamp).toLocaleTimeString('pt-PT', { 
+      return new Date(timestamp).toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit' 
       })
     },
 
     formatDateTime(timestamp: string): string {
-      return new Date(timestamp).toLocaleString('pt-PT')
+      return new Date(timestamp).toLocaleString('en-US')
+    },
+
+    getShortText(text: string): string {
+      if (!text) return 'Unknown Text'
+      return text.length > 30 ? text.substring(0, 30) + '...' : text
+    },
+
+    async refreshData() {
+      await this.loadData()
     }
   }
 })
