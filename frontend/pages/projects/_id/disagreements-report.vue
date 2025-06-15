@@ -27,19 +27,7 @@
             Database connection error. Some data may be unavailable.
           </div>
         </v-alert>
-        
-        <!-- Botão quase transparente -->
-        <v-btn
-          absolute
-          top
-          right
-          fab
-          x-small
-          class="debug-button"
-          @click="toggleDatabaseError"
-        >
-          <v-icon small>mdi-database-alert</v-icon>
-        </v-btn>
+
       </v-col>
     </v-row>
 
@@ -1448,9 +1436,7 @@ export default {
       }
     },
 
-    toggleDatabaseError() {
-      this.showDatabaseError = !this.showDatabaseError
-    },
+
     cancelReport() {
       this.$router.push(`/projects/${this.projectId}/reports`);
     },
@@ -1724,17 +1710,7 @@ export default {
   position: relative;
   margin: 20px 0 40px 0;
 }
-.debug-button {
-  opacity: 1;
-  transition: opacity 0.3s;
-  position: fixed;
-  z-index: 999;
-  top: 10px;
-  right: 10px;
-}
-.debug-button:hover {
-  opacity: 1;
-}
+
 .clickable-select {
   cursor: pointer;
 }
