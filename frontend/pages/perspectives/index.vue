@@ -38,13 +38,13 @@ export default {
     }
   },
 
-  computed: {
-    ...mapGetters('auth', ['isStaff', 'isSuperUser'])
-  },
-
   async fetch() {
     await this.fetchPerspectives()
-    await this.fetchMembers()
+    this.fetchMembers()
+  },
+
+  computed: {
+    ...mapGetters('auth', ['isStaff', 'isSuperUser'])
   },
 
   methods: {
@@ -62,14 +62,10 @@ export default {
       }
     },
 
-    async fetchMembers() {
-      try {
-        const response = await this.$services.member.list()
-        this.members = response
-      } catch (error) {
-        console.error('Error fetching members:', error)
-        this.members = []
-      }
+    fetchMembers() {
+      // Como não há um projeto específico aqui, não precisamos buscar membros
+      // Os membros serão carregados pelo componente PerspectiveList conforme necessário
+      this.members = []
     }
   }
 }

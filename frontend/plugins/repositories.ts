@@ -34,6 +34,7 @@ import { APIUserRepository } from '~/repositories/user/apiUserRepository'
 import { APICatalogRepository } from '~/repositories/upload/apiCatalogRepository'
 import { APIParseRepository } from '~/repositories/upload/apiParseRepository'
 import { APIAnnotatorReportRepository } from '~/repositories/reports/apiAnnotatorReportRepository'
+import { APIAnnotationHistoryRepository } from '~/repositories/annotation-history/apiAnnotationHistoryRepository'
 
 export interface Repositories {
   // User
@@ -89,7 +90,8 @@ export interface Repositories {
   discrepancy: APIDiscrepancyRepository
 
   // Reports
-  reports: APIAnnotatorReportRepository
+  annotatorReport: APIAnnotatorReportRepository
+  annotationHistory: APIAnnotationHistoryRepository
 }
 
 declare module 'vue/types/vue' {
@@ -152,7 +154,8 @@ const repositories: Repositories = {
   discrepancy: new APIDiscrepancyRepository(),
 
   // Reports
-  reports: new APIAnnotatorReportRepository(),
+  annotatorReport: new APIAnnotatorReportRepository(),
+  annotationHistory: new APIAnnotationHistoryRepository(),
 }
 
 const plugin: Plugin = (_, inject) => {

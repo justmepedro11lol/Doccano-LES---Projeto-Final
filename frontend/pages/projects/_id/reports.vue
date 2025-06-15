@@ -132,8 +132,7 @@ export default {
       this.$router.push(`/projects/${this.projectId}/disagreements-report`)
     },
     generateHistoryReport() {
-      // TODO: Implement history report generation
-      console.log('Generating history report...')
+      this.$router.push(`/projects/${this.projectId}/annotation-history-report`)
     }
   }
 }

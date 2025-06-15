@@ -4,6 +4,7 @@ from .views import (
     CategoryTypeDistribution,
     CategoryTypePercentage,
     DisagreementStatsAPI,
+    ExampleAnnotatorsAPI,
     MemberProgressAPI,
     ProgressAPI,
     RelationTypeDistribution,
@@ -22,4 +23,5 @@ urlpatterns = [
     path(route="relation-percentage", view=RelationTypePercentage.as_view(), name="relation_percentage"),
     path(route="span-percentage", view=SpanTypePercentage.as_view(), name="span_percentage"),
     path(route="disagreement-stats", view=DisagreementStatsAPI.as_view(), name="disagreement_stats"),
+    path(route="example-annotators", view=ExampleAnnotatorsAPI.as_view(), name="example_annotators"),
 ]

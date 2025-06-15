@@ -43,7 +43,7 @@
           </div>
         </v-list>
       </v-card-text>
-      
+  
       <!-- Mensagem de discussão fechada no chat -->
       <v-alert
         v-if="isDiscussionEnded"
