@@ -411,7 +411,7 @@
     <v-dialog v-model="detailsDialog" max-width="600px">
       <v-card>
         <v-card-title class="headline primary white--text">
-          Disagreement Details
+          Agreement Details
           <v-spacer></v-spacer>
           <v-btn icon dark @click="detailsDialog = false">
             <v-icon>mdi-close</v-icon>
@@ -466,14 +466,14 @@ export default {
       detailsDialog: false,
       selectedItem: null,
       headers: [
-        { text: 'Annotator', value: 'nome_anotador', width: '15%' },
-        { text: 'Total Annotations', value: 'total_anotacoes', align: 'center', width: '12%' },
-        { text: 'Datasets', value: 'datasets_distintos', align: 'center', width: '10%' },
-        { text: 'Average Time (sec)', value: 'tempo_medio_por_anotacao_seg', align: 'center', width: '12%' },
-        { text: 'Disagreement Rate (%)', value: 'taxa_desacordo_percent', align: 'center', width: '12%' },
-        { text: 'Agreement Score (%)', value: 'score_concordancia_medio', align: 'center', width: '14%' },
-        { text: 'Labels Used', value: 'categorias_mais_frequentes', width: '25%' }
-      ],
+          { text: 'Annotator', value: 'nome_anotador', width: '15%' },
+          { text: 'Total Annotations', value: 'total_anotacoes', align: 'center', width: '12%' },
+          { text: 'Datasets', value: 'datasets_distintos', align: 'center', width: '10%' },
+          { text: 'Average Time (sec)', value: 'tempo_medio_por_anotacao_seg', align: 'center', width: '12%' },
+          { text: 'Disagreement Rate (%)', value: 'taxa_desacordo_percent', align: 'center', width: '12%' },
+          { text: 'Agreement Score (%)', value: 'score_concordancia_medio', align: 'center', width: '14%' },
+          { text: 'Labels Used', value: 'categorias_mais_frequentes', width: '25%' }
+        ],
 
       categoryMap: {},
       exampleNameMap: {},
@@ -510,8 +510,8 @@ export default {
             this.categoryMap[category.id] = category.text;
           });
           
-          console.log('CategoryMap created:', this.categoryMap)
-          console.log('CategoryTypes received:', categoryTypes)
+          console.log('CategoryMap criado:', this.categoryMap)
+          console.log('CategoryTypes recebidos:', categoryTypes)
         } catch (error) {
           console.error('Error loading category types:', error)
         }
@@ -523,11 +523,11 @@ export default {
         this.items = await this.$repositories.metrics.fetchRelationPercentage(this.projectId)
       }
       
-      console.log('Items loaded:', this.items)
+      console.log('Items carregados:', this.items)
       
       try {
         const stats = await this.$repositories.metrics.fetchDisagreementStats(this.projectId)
-        console.log('Stats loaded:', stats)
+        console.log('Stats carregadas:', stats)
         
         this.textTypes = stats.textTypes || []
         if (this.textTypes.length === 0 || !this.textTypes.includes('Not defined')) {
@@ -536,7 +536,7 @@ export default {
         
         this.perspectives = (stats.perspectives || []).filter(p => p !== 'Not defined')
         
-        // Load real project annotators
+        // Carregar anotadores reais do projeto
         await this.loadProjectAnnotators()
         
         // Carregar anotadores por example
@@ -593,9 +593,9 @@ export default {
         
         const exampleText = this.exampleNameMap[exampleId]
         
-        // Extract labels (categories) and their percentages - ONLY those that were actually annotated (> 0%)
+        // Extrair labels (categorias) e seus percentuais - APENAS as que foram realmente anotadas (> 0%)
         const labelEntries = Object.entries(labelPercentages)
-          .filter(([, percentage]) => percentage > 0) // FILTER only labels with annotations
+          .filter(([, percentage]) => percentage > 0) // FILTRAR apenas labels com anotações
         
         if (labelEntries.length === 0) return
         
@@ -604,18 +604,18 @@ export default {
         // Calcular agreement rate máximo
         const maxAgreementRate = Math.max(...labelEntries.map(([, percentage]) => percentage))
         
-        // Extract label names using categoryMap - only those that were actually annotated
+        // Extrair nomes das labels usando categoryMap - apenas as que foram realmente anotadas
         const usedLabelNames = labelEntries
           .map(([labelId]) => this.categoryMap[labelId] || `Label ${labelId}`)
           .filter(name => name) // Remove valores vazios
         
-        // Find real annotators who annotated this specific example
+        // Buscar anotadores reais que anotaram este example específico
         const annotatorNames = this.exampleAnnotators[exampleId] || ['No annotators']
           
           items.push({
           exampleId,
           text: exampleText,
-          labels: usedLabelNames.join(', '), // Only labels used in this text
+          labels: usedLabelNames.join(', '), // Apenas labels usadas neste texto
           annotators: annotatorNames.join(', '),
           agreementRate: maxAgreementRate,
           consensus: maxAgreementRate >= this.safeProject.minPercentage ? 'Yes' : 'No',
@@ -899,7 +899,7 @@ export default {
     // Método para carregar todos os dados sem filtros
     async loadAllReportData() {
       try {
-        console.log('[LOAD ALL] Loading all report data...')
+        console.log('[LOAD ALL] Carregando todos os dados do relatório...')
         
         // Fazer chamada para a API sem filtros para obter todos os dados
         const response = await this.$axios.get(`/v1/projects/${this.projectId}/reports/annotators`)
@@ -907,7 +907,7 @@ export default {
 
         if (response.data && response.data.detalhe_anotadores) {
           this.reportData = response.data.detalhe_anotadores
-          console.log('[LOAD ALL] Data loaded:', this.reportData.length, 'annotators')
+          console.log('[LOAD ALL] Dados carregados:', this.reportData.length, 'anotadores')
         } else {
           console.warn('[LOAD ALL] Estrutura de resposta inesperada:', response.data)
           this.reportData = []
@@ -921,48 +921,51 @@ export default {
 
     async loadFilterOptions() {
       try {
-        // Carregar utilizadores disponíveis
+        // Carregar utilizadores do projeto
         this.loadingUsers = true
-        try {
-          const members = await this.$repositories.member.list(this.projectId)
-          this.availableUsers = members.map(member => ({
-            id: member.id,
-            username: member.username || `User ${member.user}`
-          }))
-        } catch (error) {
-          console.error('Error loading users:', error)
-          this.availableUsers = []
-        }
+        const members = await this.$repositories.member.list(this.projectId)
+        this.availableUsers = members.map((member) => ({
+          id: member.user,
+          username: member.username
+        }))
         this.loadingUsers = false
 
-        // Carregar labels disponíveis
+        // Carregar projeto atual para verificar tipos disponíveis
+        const currentProject = await this.$repositories.project.findById(this.projectId)
+
+        // Carregar labels disponíveis baseado no tipo de projeto
         this.loadingLabels = true
-        try {
-          if (this.project.canDefineCategory) {
-            const categoryTypes = await this.$services.categoryType.list(this.projectId)
-            this.availableLabels = categoryTypes.map(category => ({
-              id: category.id,
-              text: category.text,
+        if (currentProject.canDefineCategory) {
+          const categoryTypes = await this.$services.categoryType.list(this.projectId)
+          this.availableLabels.push(
+            ...categoryTypes.map((label) => ({
+              id: label.id,
+              text: label.text,
               type: 'category'
             }))
-          } else if (this.project.canDefineSpan) {
-            const spanTypes = await this.$services.spanType.list(this.projectId)
-            this.availableLabels = spanTypes.map(span => ({
-              id: span.id,
-              text: span.text,
+          )
+        }
+
+        if (currentProject.canDefineSpan) {
+          const spanTypes = await this.$services.spanType.list(this.projectId)
+          this.availableLabels.push(
+            ...spanTypes.map((label) => ({
+              id: label.id,
+              text: label.text,
               type: 'span'
             }))
-          } else if (this.project.canDefineRelation) {
-            const relationTypes = await this.$services.relationType.list(this.projectId)
-            this.availableLabels = relationTypes.map(relation => ({
-              id: relation.id,
-              text: relation.text,
+          )
+        }
+
+        if (currentProject.canDefineRelation) {
+          const relationTypes = await this.$services.relationType.list(this.projectId)
+          this.availableLabels.push(
+            ...relationTypes.map((label) => ({
+              id: label.id,
+              text: label.text,
               type: 'relation'
             }))
-          }
-        } catch (error) {
-          console.error('Error loading labels:', error)
-          this.availableLabels = []
+          )
         }
         this.loadingLabels = false
 
@@ -989,7 +992,7 @@ export default {
           
           console.log('availablePerspectives final:', this.availablePerspectives)
         } catch (error) {
-          console.error('Error loading perspectives:', error)
+          console.error('Erro ao carregar perspectivas:', error)
           this.availablePerspectives = []
         }
         this.loadingPerspectives = false
@@ -1046,12 +1049,12 @@ export default {
 
           console.log('[DEBUG] Datasets finais:', this.availableDatasets)
         } catch (error) {
-          console.error('Error loading datasets:', error)
+          console.error('Erro ao carregar datasets:', error)
         }
         this.loadingDatasets = false
       } catch (error) {
-        console.error('Error loading filter options:', error)
-        this.showError('Error loading filter options')
+        console.error('Erro ao carregar opções de filtro:', error)
+        this.showError('Erro ao carregar opções de filtro')
       }
     },
 
@@ -1061,10 +1064,10 @@ export default {
           const example = await this.$repositories.example.findById(
             this.projectId, Number(id)
           )
-          this.$set(this.exampleNameMap, id, example.text || 'Text not available')
+          this.$set(this.exampleNameMap, id, example.text || 'Texto não disponível')
         } catch (error) {
-          console.error('Error fetching example:', id, error)
-          this.$set(this.exampleNameMap, id, `Example ${id} - Error loading`)
+          console.error('Erro ao buscar example:', id, error)
+          this.$set(this.exampleNameMap, id, `Example ${id} - Erro ao carregar`)
         }
       }
       return this.exampleNameMap[id]
@@ -1074,9 +1077,9 @@ export default {
       try {
         const members = await this.$repositories.member.list(this.projectId)
         this.annotators = members.map((member) => member.username || `User ${member.user}`)
-        console.log('Real project annotators:', this.annotators)
+        console.log('Anotadores reais carregados:', this.annotators)
       } catch (error) {
-        console.error('Error loading annotators:', error)
+        console.error('Erro ao carregar anotadores:', error)
         this.annotators = ['Unknown Annotator']
       }
     },
@@ -1084,9 +1087,9 @@ export default {
     async loadExampleAnnotators() {
       try {
         this.exampleAnnotators = await this.$repositories.metrics.fetchExampleAnnotators(this.projectId)
-        console.log('Example annotators loaded:', this.exampleAnnotators)
+        console.log('Anotadores por example carregados:', this.exampleAnnotators)
       } catch (error) {
-        console.error('Error loading example annotators:', error)
+        console.error('Erro ao carregar anotadores por example:', error)
         this.exampleAnnotators = {}
       }
     },
@@ -1104,7 +1107,7 @@ export default {
       
       this.labels = Array.from(uniqueLabels)
       
-      console.log('Extracted labels (only used ones):', this.labels)
+      console.log('Labels extraídas (apenas as usadas):', this.labels)
       console.log('Anotadores reais do projeto:', this.annotators)
     },
 
@@ -1140,8 +1143,8 @@ export default {
           await this.exportReport()
         }
       } catch (error) {
-        console.error('Error generating and exporting report:', error)
-        this.showError('Error generating and exporting report')
+        console.error('Erro ao gerar e exportar relatório:', error)
+        this.showError('Erro ao gerar e exportar relatório')
       } finally {
         this.isGenerating = false
       }
@@ -1177,7 +1180,7 @@ export default {
           params.append('dataset_id', this.filters.datasets.join(','))
         }
 
-        console.log('[FRONTEND DEBUG] Parameters sent:', params.toString())
+        console.log('[FRONTEND DEBUG] Parâmetros enviados:', params.toString())
         console.log(
           '[FRONTEND DEBUG] URL completa:',
           `/v1/projects/${this.projectId}/reports/annotators?${params.toString()}`
@@ -1212,7 +1215,7 @@ export default {
         console.error('[FRONTEND DEBUG] Erro response:', error.response)
         console.error('[FRONTEND DEBUG] Erro message:', error.message)
 
-        let errorMessage = 'Error generating report'
+        let errorMessage = 'Erro ao gerar relatório'
         if (error.response) {
           console.error('[FRONTEND DEBUG] Status do erro:', error.response.status)
           console.error('[FRONTEND DEBUG] Data do erro:', error.response.data)
@@ -1262,7 +1265,7 @@ export default {
               this.exportReportToCSV()
               exportedFormats.push('CSV')
             } catch (error) {
-              console.error('Error exporting CSV:', error)
+              console.error('Erro ao exportar CSV:', error)
               failedFormats.push('CSV')
             }
           } else if (format === 'pdf') {
@@ -1270,7 +1273,7 @@ export default {
               await this.exportReportToPDF()
               exportedFormats.push('PDF')
             } catch (error) {
-              console.error('Error exporting PDF:', error)
+              console.error('Erro ao exportar PDF:', error)
               failedFormats.push('PDF')
             }
           }
@@ -1291,8 +1294,8 @@ export default {
           this.showError('Nenhum formato válido selecionado para exportação.')
         }
       } catch (error) {
-        console.error('[EXPORT DEBUG] Export error:', error)
-        this.showError('Error exporting report')
+        console.error('[EXPORT DEBUG] Erro ao exportar:', error)
+        this.showError('Erro ao exportar relatório')
       } finally {
         this.isExporting = false
       }
@@ -1611,14 +1614,14 @@ export default {
      },
 
      showSuccess(message) {
-       // Usar console.log apenas
+       // Only log to console, no popup
        console.log('SUCCESS:', message)
      },
 
-           showError(message) {
-        // Usar console.error apenas
-        console.error('ERROR:', message)
-      },
+     showError(message) {
+       // Only log to console, no popup
+       console.error('ERROR:', message)
+     },
 
       getSelectedUserText(user) {
         if (typeof user === 'object') {
