@@ -484,12 +484,22 @@
     <!-- Histórico de votações -->
     <div v-if="pastVotings.length > 0">
       <v-card elevation="2" class="mb-6">
-        <v-card-title class="d-flex align-center">
-          <v-icon left color="primary">mdi-history</v-icon>
-          <span class="text-h6">Histórico de Votações</span>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center">
+            <v-icon left color="primary">mdi-history</v-icon>
+            <span class="text-h6">Histórico de Votações</span>
+          </div>
+          <v-btn
+            color="info"
+            large
+            @click="goToHome"
+          >
+            <v-icon left>mdi-home</v-icon>
+            Página Inicial
+          </v-btn>
         </v-card-title>
         <v-card-text>
-          <v-expansion-panels multiple>
+          <v-expansion-panels v-model="openVotingPanels" multiple>
             <v-expansion-panel
               v-for="voting in pastVotings"
               :key="voting.id"
@@ -581,6 +591,18 @@
                         </div>
                       </v-card-text>
                     </v-card>
+                  </div>
+                  
+                  <!-- Botão para fechar a caixa -->
+                  <div class="mt-4 text-center">
+                    <v-btn
+                      color="grey"
+                      outlined
+                      @click="closeVotingPanel(voting.id)"
+                    >
+                      <v-icon left>mdi-close</v-icon>
+                      Fechar
+                    </v-btn>
                   </div>
                 </div>
               </v-expansion-panel-content>
@@ -706,7 +728,8 @@ export default {
         { text: 'Nome (Z-A)', value: 'name-desc' },
         { text: 'Mais aprovações', value: 'approvals-desc' },
         { text: 'Mais rejeições', value: 'rejections-desc' }
-      ]
+      ],
+      openVotingPanels: [] // Para controlar quais painéis de votação estão abertos
     }
   },
   
@@ -1149,6 +1172,23 @@ export default {
       } else {
         return (votes.rejeitar / total) * 100
       }
+    },
+
+    closeVotingPanel(votingId) {
+      // Encontrar o índice do painel da votação e fechá-lo
+      const panelIndex = this.pastVotings.findIndex(voting => voting.id === votingId)
+      if (panelIndex !== -1) {
+        const currentOpenPanels = [...this.openVotingPanels]
+        const openPanelIndex = currentOpenPanels.indexOf(panelIndex)
+        if (openPanelIndex !== -1) {
+          currentOpenPanels.splice(openPanelIndex, 1)
+          this.openVotingPanels = currentOpenPanels
+        }
+      }
+    },
+
+    goToHome() {
+      this.$router.push(`/projects/${this.projectId}`)
     }
   }
 }

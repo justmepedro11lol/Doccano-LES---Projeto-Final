@@ -3,26 +3,26 @@
     <v-card class="main-card" elevation="3">
       <v-card-title class="primary white--text d-flex align-center">
         <v-icon left color="white" size="28">mdi-chart-line</v-icon>
-        <span class="text-h5">Estatísticas de Anotações</span>
+        <span class="text-h5">Annotation Statistics</span>
       </v-card-title>
 
-      <!-- Filtros -->
+      <!-- Filters -->
       <v-card class="filters-card ma-4" elevation="2">
         <v-card-title class="text-h6 pb-2">
           <v-icon left color="primary">mdi-filter</v-icon>
-          Filtros
+          Filters
         </v-card-title>
         
         <v-card-text>
           <v-row>
-            <!-- Filtro de Perguntas da Perspetiva -->
+            <!-- Perspective Questions Filter -->
             <v-col cols="12" md="6">
               <v-select
                 v-model="selectedQuestions"
                 :items="availableQuestions"
                 item-text="question"
                 item-value="id"
-                label="Perguntas da Perspetiva"
+                label="Perspective Questions"
                 multiple
                 chips
                 outlined
@@ -38,7 +38,7 @@
                     {{ item.question.substring(0, 30) }}{{ item.question.length > 30 ? '...' : '' }}
                   </v-chip>
                   <span v-if="index === 2" class="grey--text text-caption">
-                    (+{{ selectedQuestions.length - 2 }} mais)
+                    (+{{ selectedQuestions.length - 2 }} more)
                   </span>
                 </template>
               </v-select>
@@ -46,14 +46,14 @@
 
 
 
-            <!-- Filtro de Exemplos do Dataset -->
+            <!-- Dataset Examples Filter -->
             <v-col cols="12" md="6">
               <v-select
                 v-model="selectedExamples"
                 :items="availableExamples"
                 item-text="displayText"
                 item-value="id"
-                label="Exemplos do Dataset"
+                label="Dataset Examples"
                 multiple
                 chips
                 deletable-chips
@@ -72,37 +72,37 @@
                     {{ item.displayText }}
                   </v-chip>
                   <span v-if="index === 2" class="grey--text text-caption">
-                    (+{{ selectedExamples.length - 2 }} mais)
+                    (+{{ selectedExamples.length - 2 }} more)
                   </span>
                 </template>
               </v-select>
             </v-col>
 
-            <!-- Filtro de Tipo de Anotações -->
+            <!-- Annotation Type Filter -->
             <v-col cols="12" md="6">
               <v-select
                 v-model="annotationType"
                 :items="annotationTypes"
-                label="Tipo de Anotações"
+                label="Annotation Type"
                 outlined
                 dense
                 prepend-inner-icon="mdi-format-list-checks"
               />
             </v-col>
 
-            <!-- Formato de Exportação -->
+            <!-- Export Format -->
             <v-col cols="12" md="6">
               <v-select
                 v-model="exportFormat"
                 :items="exportFormats"
-                label="Formato de Exportação"
+                label="Export Format"
                 outlined
                 dense
                 prepend-inner-icon="mdi-file-export"
               />
             </v-col>
 
-                        <!-- Botões de Ação -->
+                        <!-- Action Buttons -->
             <v-col cols="12">
               <v-row class="no-gutters">
                 <v-col cols="12" sm="6" md="4" class="pa-1">
@@ -115,7 +115,7 @@
                     @click="generateStatistics"
                   >
                     <v-icon left>mdi-chart-bar</v-icon>
-                    Gerar Estatísticas
+                    Generate Statistics
                   </v-btn>
                 </v-col>
 
@@ -128,7 +128,7 @@
                     @click="clearAllFilters"
                   >
                     <v-icon left>mdi-filter-remove</v-icon>
-                    Limpar Filtros
+                    Clear Filters
                   </v-btn>
                 </v-col>
 
@@ -141,7 +141,7 @@
                     @click="goToHome"
                   >
                     <v-icon left>mdi-home</v-icon>
-                    Página Inicial
+                    Home Page
                   </v-btn>
                 </v-col>
               </v-row>
@@ -150,40 +150,40 @@
         </v-card-text>
       </v-card>
 
-      <!-- Área de Resultados -->
+      <!-- Results Area -->
       <v-card v-if="hasStatistics" class="results-card ma-4" elevation="2">
         <v-card-title class="text-h6">
           <v-icon left color="success">mdi-chart-bar</v-icon>
-          Resultados das Estatísticas
+          Statistics Results
         </v-card-title>
         
         <v-card-text>
-          <!-- Gráficos -->
+          <!-- Charts -->
           <v-row class="mb-4">
-            <!-- Estatísticas de Perspectivas -->
+            <!-- Perspective Statistics -->
             <v-col v-if="hasPerspectiveStatistics" cols="12">
               <v-card elevation="2" class="perspective-summary-card">
                 <v-card-title class="text-h6 perspective-summary-header">
                   <v-icon left color="white">mdi-account-group</v-icon>
-                  <span class="white--text">Estatísticas de Perspectivas</span>
+                  <span class="white--text">Perspective Statistics</span>
                 </v-card-title>
                 <v-card-text class="pa-4">
                   <v-row>
                     <v-col cols="12" md="6">
                       <div class="text-center">
                         <div class="text-h3 primary--text">{{ totalPerspectiveResponses }}</div>
-                        <div class="text-subtitle-1">Total de Respostas</div>
+                        <div class="text-subtitle-1">Total Responses</div>
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
                       <div class="text-center">
                         <div class="text-h3 info--text">{{ selectedQuestionsData.length }}</div>
-                        <div class="text-subtitle-1">Perguntas Analisadas</div>
+                        <div class="text-subtitle-1">Questions Analyzed</div>
                       </div>
                     </v-col>
                   </v-row>
 
-                  <!-- Tabela detalhada das perspectivas -->
+                  <!-- Detailed perspective table -->
                   <v-data-table
                     :headers="perspectiveHeaders"
                     :items="perspectiveItems"
@@ -242,19 +242,19 @@
 
 
 
-            <!-- Gráfico de Estatísticas de Discrepâncias -->
+            <!-- Discrepancy Statistics Chart -->
             <v-col v-if="hasDiscrepancyStatistics" cols="12">
               <v-card elevation="2" class="statistics-summary-card">
                 <v-card-title class="text-h6 statistics-summary-header">
                   <v-icon left color="white">mdi-chart-line</v-icon>
-                  <span class="white--text">Resumo de Estatísticas de Discrepâncias</span>
+                  <span class="white--text">Discrepancy Statistics Summary</span>
                 </v-card-title>
                 <v-card-text class="pa-4">
                   <v-row>
                     <v-col cols="12" md="6">
                       <div class="text-center">
                         <div class="text-h3 error--text">{{ totalDiscrepantLabels }}</div>
-                        <div class="text-subtitle-1">Com Discrepância</div>
+                        <div class="text-subtitle-1">With Discrepancy</div>
                       </div>
                     </v-col>
                     <v-col cols="12" md="6">
@@ -294,7 +294,7 @@
                               {{ example.text }}
                             </div>
                             <div class="text-caption grey--text">
-                              {{ example.labelCount }} anotações
+                              {{ example.labelCount }} annotations
                             </div>
                           </v-card-text>
                         </v-card>
@@ -302,7 +302,7 @@
                     </v-row>
                   </div>
 
-                  <!-- Tabela detalhada das discrepâncias -->
+                  <!-- Detailed discrepancy table -->
                   <v-data-table
                     :headers="dynamicDiscrepancyHeaders"
                     :items="discrepancyItems"
@@ -316,7 +316,7 @@
                         dark
                         x-small
                       >
-                        {{ item.hasExampleDiscrepancy ? 'Discrepante' : 'Consistente' }}
+                        {{ item.hasExampleDiscrepancy ? 'Discrepant' : 'Consistent' }}
                       </v-chip>
                     </template>
                     
@@ -342,7 +342,7 @@
                       </v-tooltip>
                     </template>
 
-                    <!-- Templates dinâmicos para cada label -->
+                    <!-- Dynamic templates for each label -->
                     <template
                       v-for="header in dynamicDiscrepancyHeaders.filter(h => h.value.startsWith('label_'))"
                       #[`item.${header.value}`]="{ item }"
@@ -370,27 +370,27 @@
               </v-card>
             </v-col>
 
-            <!-- Mensagem quando há dados mas nenhum gráfico para mostrar -->
+            <!-- Message when there's data but no charts to show -->
             <v-col v-if="selectedQuestionsData.length === 0 && selectedExamplesData.length === 0 && !hasDiscrepancyStatistics" cols="12">
               <v-alert type="warning" outlined>
                 <template #prepend>
                   <v-icon>mdi-information</v-icon>
                 </template>
-                <strong>Dados carregados mas sem gráficos para exibir.</strong><br>
-                Para ver gráficos de perspetivas, selecione pelo menos uma pergunta.<br>
-                Para ver gráficos de discrepâncias, selecione pelo menos um exemplo.
+                <strong>Data loaded but no charts to display.</strong><br>
+                To view perspective charts, select at least one question.<br>
+                To view discrepancy charts, select at least one example.
               </v-alert>
             </v-col>
           </v-row>
         </v-card-text>
       </v-card>
 
-      <!-- Estado Vazio -->
+      <!-- Empty State -->
       <v-card v-else-if="!isLoading" class="empty-state-card ma-4" elevation="1">
         <v-card-text class="text-center pa-8">
           <v-icon size="80" color="grey lighten-1" class="mb-4">mdi-chart-line</v-icon>
-          <h3 class="text-h5 grey--text text--darken-1 mb-2">Nenhuma Estatística Gerada</h3>
-          <p class="text-body-1 grey--text">Configure os filtros e clique em "Gerar Estatísticas" para ver os resultados.</p>
+          <h3 class="text-h5 grey--text text--darken-1 mb-2">No Statistics Generated</h3>
+          <p class="text-body-1 grey--text">Configure the filters and click "Generate Statistics" to view the results.</p>
         </v-card-text>
       </v-card>
 
@@ -403,8 +403,8 @@
             size="64"
             class="mb-4"
           />
-          <h3 class="text-h6">Gerando Estatísticas...</h3>
-          <p class="text-body-2 grey--text">Por favor, aguarde enquanto processamos os dados.</p>
+          <h3 class="text-h6">Generating Statistics...</h3>
+          <p class="text-body-2 grey--text">Please wait while we process the data.</p>
         </v-card-text>
       </v-card>
     </v-card>
@@ -436,17 +436,17 @@ export default Vue.extend({
       availableQuestions: [] as any[],
       availableExamples: [] as any[],
       
-      // Opções
+      // Options
       annotationTypes: [
-        { text: 'Todas as Anotações', value: 'all' },
-        { text: 'Com Discrepância', value: 'with_discrepancy' },
-        { text: 'Sem Discrepância', value: 'without_discrepancy' }
+        { text: 'All Annotations', value: 'all' },
+        { text: 'With Discrepancy', value: 'with_discrepancy' },
+        { text: 'Without Discrepancy', value: 'without_discrepancy' }
       ],
       exportFormats: [
-        { text: 'Não exportar', value: 'none' },
+        { text: 'Do not export', value: 'none' },
         { text: 'PDF', value: 'pdf' },
         { text: 'CSV', value: 'csv' },
-        { text: 'PDF e CSV', value: 'both' }
+        { text: 'PDF and CSV', value: 'both' }
       ],
       
       // Resultados
@@ -465,12 +465,12 @@ export default Vue.extend({
       // Headers para tabela de discrepâncias (será definido dinamicamente)
       discrepancyHeaders: [] as any[],
       
-      // Headers para tabela de perspectivas
+      // Headers for perspective table
       perspectiveHeaders: [
-        { text: 'Pergunta', value: 'question', sortable: false },
-        { text: 'Resposta', value: 'answer', sortable: false },
-        { text: 'Número de respostas', value: 'count', sortable: true },
-        { text: 'Percentagem', value: 'percentage', sortable: true }
+        { text: 'Question', value: 'question', sortable: false },
+        { text: 'Answer', value: 'answer', sortable: false },
+        { text: 'Number of responses', value: 'count', sortable: true },
+        { text: 'Percentage', value: 'percentage', sortable: true }
       ]
     }
   },
@@ -544,10 +544,10 @@ export default Vue.extend({
         }
       })
       
-      // Criar headers base
+      // Create base headers
       const headers = [
-        { text: 'Exemplo', value: 'example', width: '30%', sortable: false },
-        { text: 'Status Geral', value: 'hasExampleDiscrepancy', width: '15%', sortable: true },
+        { text: 'Example', value: 'example', width: '30%', sortable: false },
+        { text: 'Overall Status', value: 'hasExampleDiscrepancy', width: '15%', sortable: true },
         { text: 'Max %', value: 'maxPercentage', width: '10%', sortable: true }
       ]
       
@@ -622,7 +622,7 @@ export default Vue.extend({
           }
         }
         
-        const answerKey = item.answer || 'Sem resposta'
+        const answerKey = item.answer || 'No response'
         if (!questionGroups[questionKey].answers.has(answerKey)) {
           questionGroups[questionKey].answers.set(answerKey, 0)
         }
@@ -745,7 +745,7 @@ export default Vue.extend({
       const hasDiscrepancyFilters = this.selectedExamples.length > 0
       
       if (!hasPerspectiveFilters && !hasDiscrepancyFilters) {
-        alert('Não há dados disponíveis para gerar estatísticas. Verifique se há perguntas e exemplos no projeto.')
+        alert('No data available to generate statistics. Check if there are questions and examples in the project.')
         return
       }
       
@@ -783,7 +783,7 @@ export default Vue.extend({
         
         // Se não houver dados, mostrar mensagem - mas não retornar erro se apenas um tipo não tem dados
         if (allData.length === 0) {
-          alert('Nenhum dado encontrado com os filtros selecionados.')
+          alert('No data found with selected filters.')
           return
         }
           
@@ -815,7 +815,7 @@ export default Vue.extend({
         })
       } catch (error) {
         console.error('❌ Erro ao gerar estatísticas:', error)
-        alert('Erro ao gerar estatísticas. Verifique o console para mais detalhes.')
+        alert('Error generating statistics. Check console for more details.')
       } finally {
         this.isLoading = false
       }
@@ -871,7 +871,7 @@ export default Vue.extend({
             const dataItem = {
               questionId: question.id,
               question: question.question,
-              answer: answer.text || answer.value || answer.answer_text || answer.answer || 'Sem resposta',
+              answer: answer.text || answer.value || answer.answer_text || answer.answer || 'No response',
               annotator: answer.user_id || answer.user || answer.annotator_id,
               exampleId: answer.example_id || answer.example || answer.exampleId
             }
@@ -974,8 +974,8 @@ export default Vue.extend({
 
           const discrepancyItem = {
             questionId: 'discrepancy',
-            question: 'Análise de Discrepâncias',
-            annotator: 'Sistema',
+            question: 'Discrepancy Analysis',
+            annotator: 'System',
             exampleId: parseInt(exampleId),
             example: example.text,
             maxPercentage,
@@ -1047,7 +1047,7 @@ export default Vue.extend({
         const totalResponses = questionData.length
 
         questionData.forEach((item: any) => {
-          const answer = item.answer || 'Sem resposta'
+          const answer = item.answer || 'No response'
           answerCounts[answer] = (answerCounts[answer] || 0) + 1
         })
 
@@ -1403,7 +1403,7 @@ export default Vue.extend({
         
         // Verificar se há dados para exportar
         if (!this.statistics.detailedData || this.statistics.detailedData.length === 0) {
-          alert('Não há dados para exportar. Gere as estatísticas primeiro.')
+          alert('No data to export. Generate statistics first.')
           return
         }
 
@@ -1414,28 +1414,28 @@ export default Vue.extend({
         // eslint-disable-next-line new-cap
         const doc = new jsPDF()
         
-        // Título
+        // Title
         doc.setFontSize(20)
-        doc.text('Estatisticas de Anotacoes', 14, 20)
+        doc.text('Annotation Statistics', 14, 20)
         
-        // Data
+        // Date
         doc.setFontSize(12)
-        doc.text(`Data: ${new Date().toLocaleDateString('pt-PT')}`, 14, 30)
+        doc.text(`Date: ${new Date().toLocaleDateString('en-US')}`, 14, 30)
         
         let yPosition = 45
         
-        // Resumo dos filtros aplicados
+        // Summary of applied filters
         doc.setFontSize(14)
-        doc.text('Filtros Aplicados:', 14, yPosition)
+        doc.text('Applied Filters:', 14, yPosition)
         yPosition += 10
         
         doc.setFontSize(10)
         if (this.selectedQuestions.length > 0) {
-          doc.text(`Perguntas: ${this.selectedQuestions.length} selecionadas`, 20, yPosition)
+          doc.text(`Questions: ${this.selectedQuestions.length} selected`, 20, yPosition)
           yPosition += 6
         }
         if (this.selectedExamples.length > 0) {
-          doc.text(`Exemplos: ${this.selectedExamples.length} selecionados`, 20, yPosition)
+          doc.text(`Examples: ${this.selectedExamples.length} selected`, 20, yPosition)
           yPosition += 6
         }
         
@@ -1444,14 +1444,14 @@ export default Vue.extend({
         // Adicionar estatísticas de perspectivas (primeiro)
         if (this.hasPerspectiveStatistics) {
           doc.setFontSize(16)
-          doc.text('Estatisticas de Perspectivas', 14, yPosition)
+          doc.text('Perspective Statistics', 14, yPosition)
           yPosition += 15
           
-          // Resumo das perspectivas
+          // Perspective summary
           doc.setFontSize(12)
-          doc.text(`Total de Respostas: ${this.totalPerspectiveResponses}`, 20, yPosition)
+          doc.text(`Total Responses: ${this.totalPerspectiveResponses}`, 20, yPosition)
           yPosition += 8
-          doc.text(`Perguntas Analisadas: ${this.selectedQuestionsData.length}`, 20, yPosition)
+          doc.text(`Questions Analyzed: ${this.selectedQuestionsData.length}`, 20, yPosition)
           yPosition += 15
           
           // Tabela de perspectivas
@@ -1465,7 +1465,7 @@ export default Vue.extend({
           if (perspectiveTableData.length > 0) {
             autoTable(doc, {
               startY: yPosition,
-              head: [['Pergunta', 'Resposta', 'Contagem', 'Percentagem']],
+              head: [['Question', 'Answer', 'Count', 'Percentage']],
               body: perspectiveTableData,
               styles: { fontSize: 8 },
               columnStyles: {
@@ -1488,14 +1488,14 @@ export default Vue.extend({
           }
           
           doc.setFontSize(16)
-          doc.text('Estatisticas de Discrepancias', 14, yPosition)
+          doc.text('Discrepancy Statistics', 14, yPosition)
           yPosition += 15
           
-          // Resumo das discrepâncias
+          // Discrepancy summary
           doc.setFontSize(12)
-          doc.text(`Com Discrepancia: ${this.totalDiscrepantLabels}`, 20, yPosition)
+          doc.text(`With Discrepancy: ${this.totalDiscrepantLabels}`, 20, yPosition)
           yPosition += 8
-          doc.text(`Consistentes: ${this.totalConsistentLabels}`, 20, yPosition)
+          doc.text(`Consistent: ${this.totalConsistentLabels}`, 20, yPosition)
           yPosition += 15
           
           // Tabela de discrepâncias simplificada
@@ -1507,7 +1507,7 @@ export default Vue.extend({
             
             return [
               item.example.length > 30 ? item.example.substring(0, 30) + '...' : item.example,
-              item.hasExampleDiscrepancy ? 'Discrepante' : 'Consistente',
+              item.hasExampleDiscrepancy ? 'Discrepant' : 'Consistent',
               `${item.maxPercentage.toFixed(1)}%`,
               labelsText.length > 50 ? labelsText.substring(0, 50) + '...' : labelsText
             ]
@@ -1516,7 +1516,7 @@ export default Vue.extend({
           if (discrepancyTableData.length > 0) {
             autoTable(doc, {
               startY: yPosition,
-              head: [['Exemplo', 'Status', 'Max %', 'Labels e Percentagens']],
+              head: [['Example', 'Status', 'Max %', 'Labels and Percentages']],
               body: discrepancyTableData,
               styles: { fontSize: 8 },
               columnStyles: {
@@ -1530,7 +1530,7 @@ export default Vue.extend({
         }
         
         // Salvar o PDF usando output com método compatível com navegadores
-        const filename = `estatisticas_${new Date().toISOString().split('T')[0]}.pdf`
+        const filename = `statistics_${new Date().toISOString().split('T')[0]}.pdf`
         const pdfOutput = doc.output('blob')
         const url = URL.createObjectURL(pdfOutput)
         
@@ -1555,24 +1555,24 @@ export default Vue.extend({
         }, 500)
         
         console.log('✅ PDF exportado com sucesso:', filename)
-        alert('PDF exportado com sucesso!')
+        alert('PDF exported successfully!')
         
       } catch (error: any) {
         console.error('❌ Erro ao exportar PDF:', error)
-        alert(`Erro ao exportar PDF: ${error.message || 'Erro desconhecido'}`)
+        alert(`Error exporting PDF: ${error.message || 'Unknown error'}`)
       }
     },
 
     exportToCSV() {
       const csvRows: string[] = []
       
-      // Cabeçalho do CSV
-      csvRows.push('Tipo,Pergunta,Resposta,Contagem,Percentagem,Exemplo,Status,MaxPercentagem,Labels')
+      // CSV header
+      csvRows.push('Type,Question,Answer,Count,Percentage,Example,Status,MaxPercentage,Labels')
       
-      // Dados de perspectivas
-      this.perspectiveItems.forEach((item: any) => {
-        csvRows.push([
-          'Perspectiva',
+              // Perspective data
+        this.perspectiveItems.forEach((item: any) => {
+          csvRows.push([
+            'Perspective',
           `"${item.question}"`,
           `"${item.answer}"`,
           item.count,
@@ -1584,21 +1584,21 @@ export default Vue.extend({
         ].join(','))
       })
       
-      // Dados de discrepâncias
-      this.discrepancyItems.forEach((item: any) => {
+              // Discrepancy data
+        this.discrepancyItems.forEach((item: any) => {
         const labels = Object.values(item.labels || {}) as any[]
         const labelsText = labels.map((label: any) => 
           `${label.name}: ${label.percentage.toFixed(1)}%`
         ).join('; ')
         
-        csvRows.push([
-          'Discrepancia',
+                  csvRows.push([
+            'Discrepancy',
           '',
           '',
           '',
           '',
           `"${item.example}"`,
-          item.hasExampleDiscrepancy ? 'Discrepante' : 'Consistente',
+                      item.hasExampleDiscrepancy ? 'Discrepant' : 'Consistent',
           `${item.maxPercentage.toFixed(1)}%`,
           `"${labelsText}"`
         ].join(','))
@@ -1609,7 +1609,7 @@ export default Vue.extend({
       const link = document.createElement('a')
       const url = URL.createObjectURL(blob)
       link.setAttribute('href', url)
-      link.setAttribute('download', `estatisticas_${new Date().toISOString().split('T')[0]}.csv`)
+      link.setAttribute('download', `statistics_${new Date().toISOString().split('T')[0]}.csv`)
       link.style.visibility = 'hidden'
       document.body.appendChild(link)
       link.click()
