@@ -10,7 +10,22 @@
 doccano is an open-source text annotation tool for humans. It provides annotation features for text classification, sequence labeling, and sequence to sequence tasks. You can create labeled data for sentiment analysis, named entity recognition, text summarization, and so on. Just create a project, upload data, and start annotating. You can build a dataset in hours.
 
 ## Demo
+ERROR in ./pages/projects/_id/discrepancies/side-by-side.vue
+Module Error (from ./node_modules/eslint-loader/dist/cjs.js):
 
+C:\Users\justm\OneDrive\Ambiente de Trabalho\LES\Doccano-LES---Projeto-Final\frontend\pages\projects\_id\discrepancies\side-by-side.vue
+  841:25  error  'annotations1' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  841:39  error  'annotations2' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  846:24  error  'annotations1' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  846:38  error  'annotations2' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  851:22  error  'annotations1' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  851:36  error  'annotations2' is defined but never used. Allowed unused args must match /^_/u            @typescript-eslint/no-unused-vars
+  856:36  error  'annotations' is defined but never used. Allowed unused args must match /^_/u             @typescript-eslint/no-unused-vars
+  856:49  error  'conflictingAnnotations' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  859:9   error  Expected property shorthand                                                               object-shorthand
+
+✖ 9 problems (9 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
 Try the [annotation demo](http://doccano.herokuapp.com).
 
 ![Demo image](https://raw.githubusercontent.com/doccano/doccano/master/docs/images/demo/demo.gif)

@@ -507,7 +507,7 @@ export default Vue.extend({
 
       // Apply filters
       if (this.filters.annotator_ids.length > 0) {
-        data = data.filter(item => this.filters.annotator_ids.includes(item.annotator_id))
+        data = data.filter(item => this.filters.annotator_ids.includes(item.annotator_id)) 
       }
 
       if (this.filters.action_type.length > 0) {

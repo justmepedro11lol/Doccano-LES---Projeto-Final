@@ -10,338 +10,354 @@
           >
             <v-icon>mdi-arrow-left</v-icon>
           </v-btn>
-          <h1 class="text-h4 ml-3">Comparação Lado a Lado das Anotações</h1>
+          <h1 class="text-h4 ml-3">Comparação Lado a Lado com Discrepâncias</h1>
+          <v-spacer />
+          <!-- Botão de Debug -->
+          <v-btn 
+            small 
+            color="info" 
+            outlined 
+            class="ml-2"
+            @click="debugDataStatus"
+          >
+            <v-icon small class="mr-1">mdi-bug</v-icon>
+            Debug
+          </v-btn>
         </div>
-        <v-alert
-          v-if="!hasDiscrepancies"
-          type="info"
-          class="mb-4"
-        >
-          Não foram encontradas discrepâncias neste projeto.
-        </v-alert>
+        <p class="text-subtitle-1 ml-12">
+          Analise e resolva as divergências de anotação entre os membros da equipe.
+        </p>
       </v-col>
     </v-row>
 
-    <!-- Métricas Gerais -->
-    <v-row class="mb-4">
-      <v-col cols="12" md="6" lg="3">
-        <v-card class="text-center pa-4 metric-card">
-          <v-icon size="48" color="primary" class="mb-2">mdi-percent</v-icon>
-          <div class="text-h4 primary--text">{{ globalDiscrepancyPercentage }}%</div>
-          <div class="text-subtitle-1">Taxa de Discrepância Geral</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="6" lg="3">
-        <v-card class="text-center pa-4 metric-card">
-          <v-icon size="48" color="orange" class="mb-2">mdi-account-group</v-icon>
-          <div class="text-h4 orange--text">{{ totalAnnotators }}</div>
-          <div class="text-subtitle-1">Anotadores Envolvidos</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="6" lg="3">
-        <v-card class="text-center pa-4 metric-card">
-          <v-icon size="48" color="error" class="mb-2">mdi-alert-circle</v-icon>
-          <div class="text-h4 error--text">{{ totalDiscrepancies }}</div>
-          <div class="text-subtitle-1">Total de Discrepâncias</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="6" lg="3">
-        <v-card class="text-center pa-4 metric-card">
-          <v-icon size="48" color="success" class="mb-2">mdi-check-circle</v-icon>
-          <div class="text-h4 success--text">{{ consistentExamples }}</div>
-          <div class="text-subtitle-1">Exemplos Consistentes</div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Filtros de Comparação -->
+    <v-card class="mb-4">
+      <v-card-title>
+        <v-icon class="mr-2">mdi-filter-variant</v-icon>
+        Filtros de Comparação
+      </v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="filters.dataset"
+              :items="datasetOptions"
+              label="Filtrar por Dataset"
+              outlined
+              dense
+              prepend-inner-icon="mdi-database"
+              clearable
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="filters.annotators"
+              :items="annotatorOptions"
+              label="Selecionar Anotadores (2 ou mais)"
+              multiple
+              chips
+              deletable-chips
+              outlined
+              dense
+              prepend-inner-icon="mdi-account-multiple"
+              :rules="[v => v.length >= 2 || 'Selecione pelo menos 2 anotadores']"
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="filters.disagreementStatus"
+              :items="disagreementStatusOptions"
+              label="Estado do Desacordo"
+              outlined
+              dense
+              prepend-inner-icon="mdi-alert-circle-check"
+            />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="12" md="8">
+            <v-select
+              v-model="filters.categories"
+              :items="categoryOptions"
+              label="Filtrar por Categorias/Etiquetas"
+              multiple
+              chips
+              deletable-chips
+              outlined
+              dense
+              prepend-inner-icon="mdi-tag-multiple"
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+             <v-text-field
+                v-model="filters.recordRange"
+                label="Intervalo de Registos (ex: 1-100 ou 50)"
+                outlined
+                dense
+                prepend-inner-icon="mdi-numeric"
+                clearable
+                hint="Use '1-100' para intervalo ou '50' para ID específico"
+              />
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
 
-    <!-- Filtros -->
-    <v-row class="mb-4">
-      <v-col cols="12" md="3">
-        <v-select
-          v-model="selectedExample"
-          :items="exampleOptions"
-          label="Filtrar por exemplo"
-          clearable
-          outlined
-          dense
-          prepend-inner-icon="mdi-filter"
-        />
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-select
-          v-model="selectedDataset"
-          :items="datasetOptions"
-          label="Escolher dataset"
-          clearable
-          outlined
-          dense
-          prepend-inner-icon="mdi-database"
-        />
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-select
-          v-model="selectedAnnotator1"
-          :items="nonAdminAnnotatorOptions"
-          label="Primeiro anotador"
-          clearable
-          outlined
-          dense
-          prepend-inner-icon="mdi-account"
-        />
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-select
-          v-model="selectedAnnotator2"
-          :items="nonAdminAnnotatorOptions"  
-          label="Segundo anotador"
-          clearable
-          outlined
-          dense
-          prepend-inner-icon="mdi-account-plus"
-        />
-      </v-col>
-    </v-row>
-
-    <!-- Informação sobre comparação específica -->
-    <v-alert
-      v-if="selectedAnnotator1 && selectedAnnotator2"
-      type="info"
-      outlined
-      class="mb-4"
-    >
-      <v-icon left>mdi-information</v-icon>
-      Comparando anotações entre <strong>{{ selectedAnnotator1 }}</strong> e <strong>{{ selectedAnnotator2 }}</strong>
-      <span v-if="selectedDataset"> no dataset <strong>{{ selectedDataset }}</strong></span>
-    </v-alert>
-
-    <!-- Loading -->
-    <div v-if="loading" class="d-flex justify-center align-center" style="height: 300px">
-      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-    </div>
-
-    <!-- Comparações -->
-    <div v-else>
-      <v-row v-for="comparison in filteredComparisons" :key="comparison.exampleId" class="mb-6">
-        <v-col cols="12">
-          <v-card class="elevation-2">
-            <v-card-title class="primary white--text">
-              <v-icon left color="white">mdi-text-box</v-icon>
-              Exemplo: {{ comparison.exampleText }}
-              <v-spacer></v-spacer>
-              <v-chip
-                color="white"
-                text-color="primary"
-                small
-                class="mr-2"
-              >
-                {{ comparison.dataset }}
+    <!-- Resumo Estatístico e Navegação -->
+    <v-card class="mb-4" color="blue-grey lighten-5">
+      <v-card-text>
+        <v-row align="center">
+          <v-col cols="12" md="4">
+            <div class="d-flex flex-wrap">
+              <v-chip color="error" class="mr-2 mb-1" outlined>
+                <v-icon left>mdi-alert-octagon</v-icon>
+                Total: {{ summary.totalDiscrepancies }}
               </v-chip>
-              <v-chip
-                :color="comparison.hasDiscrepancy ? 'error' : 'success'"
-                dark
-                small
-              >
-                {{ comparison.hasDiscrepancy ? 'Discrepância' : 'Consenso' }}
+              <v-chip color="success" class="mr-2 mb-1" outlined>
+                <v-icon left>mdi-check-circle</v-icon>
+                Resolvidas: {{ summary.resolved }}
+              </v-chip>
+              <v-chip color="warning" class="mb-1" outlined>
+                <v-icon left>mdi-progress-alert</v-icon>
+                Pendentes: {{ summary.pending }}
+              </v-chip>
+            </div>
+          </v-col>
+          <v-col cols="12" md="4" class="text-center">
+                         <v-btn 
+               class="mx-1" 
+               :disabled="navigation.current === 0 || summary.totalDiscrepancies === 0" 
+               color="primary"
+               outlined
+               @click="prevDiscrepancy"
+             >
+              <v-icon>mdi-chevron-left</v-icon>
+              Anterior
+            </v-btn>
+            <span class="mx-4 text-subtitle-1 font-weight-bold">
+              {{ summary.totalDiscrepancies > 0 ? navigation.current + 1 : 0 }} / {{ summary.totalDiscrepancies }}
+            </span>
+                         <v-btn 
+               class="mx-1" 
+               :disabled="navigation.current >= summary.totalDiscrepancies - 1 || summary.totalDiscrepancies === 0" 
+               color="primary"
+               outlined
+               @click="nextDiscrepancy"
+             >
+              Próximo
+              <v-icon>mdi-chevron-right</v-icon>
+            </v-btn>
+          </v-col>
+          <v-col cols="12" md="4" class="text-right">
+            <div class="text-caption mb-1">Progresso de Resolução</div>
+            <v-progress-linear
+              :value="progress"
+              height="20"
+              rounded
+              color="success"
+              background-color="grey lighten-2"
+            >
+              <strong>{{ Math.ceil(progress) }}%</strong>
+            </v-progress-linear>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <!-- Legenda de Cores -->
+         <v-card v-if="selectedAnnotators.length >= 2" class="mb-4">
+      <v-card-title class="py-2">
+        <v-icon class="mr-2" small>mdi-palette</v-icon>
+        Legenda de Discrepâncias
+      </v-card-title>
+      <v-card-text class="py-2">
+        <div class="d-flex flex-wrap">
+          <v-chip class="mr-3 mb-1" small outlined>
+            <span class="legend-color different-label"></span>
+            Etiqueta Diferente
+          </v-chip>
+          <v-chip class="mr-3 mb-1" small outlined>
+            <span class="legend-color different-span"></span>
+            Span Diferente
+          </v-chip>
+          <v-chip class="mr-3 mb-1" small outlined>
+            <span class="legend-color missing-annotation"></span>
+            Etiqueta Ausente
+          </v-chip>
+          <v-chip class="mr-3 mb-1" small outlined>
+            <span class="legend-color no-discrepancy"></span>
+            Sem Discrepância
+          </v-chip>
+        </div>
+      </v-card-text>
+    </v-card>
+
+    <!-- Visualização Lado-a-Lado -->
+    <div v-if="selectedAnnotators.length >= 2 && summary.totalDiscrepancies > 0">
+      <v-row>
+        <v-col
+          v-for="(annotator, index) in selectedAnnotators"
+          :key="annotator.id"
+          :cols="12"
+          :md="Math.floor(12 / selectedAnnotators.length)"
+        >
+          <v-card class="discrepancy-column" :class="`annotator-${index}`">
+            <v-card-title class="py-2">
+              <v-avatar :color="getAnnotatorColor(index)" class="mr-2" size="32">
+                <span class="white--text font-weight-bold">{{ annotator.text[0].toUpperCase() }}</span>
+              </v-avatar>
+              {{ annotator.text }}
+              <v-spacer></v-spacer>
+              <v-chip small :color="getAnnotatorColor(index)" outlined>
+                {{ getAnnotatorStats(annotator.value).total }} anotações
               </v-chip>
             </v-card-title>
-
-            <v-card-text class="pa-0">
-              <!-- Texto do exemplo -->
-              <div class="pa-4 bg-grey-lighten-5">
-                <div class="text-subtitle-2 mb-2">Texto do Exemplo:</div>
-                <div class="text-body-1 example-text">{{ comparison.exampleText }}</div>
-              </div>
-
-              <!-- Comparação das anotações -->
-              <div v-if="comparison.annotations.length === 0" class="pa-4 text-center">
-                <v-icon size="48" color="grey">mdi-clipboard-outline</v-icon>
-                <div class="text-subtitle-1 grey--text mt-2">Nenhuma anotação encontrada</div>
-                <div class="text-caption grey--text">Este exemplo ainda não foi anotado por nenhum utilizador.</div>
-              </div>
-              
-              <v-row v-else no-gutters>
-                <v-col
-                  v-for="(annotation, index) in comparison.annotations"
-                  :key="index"
-                  :cols="getColumnSize(comparison.annotations.length)"
-                  class="annotation-column"
-                >
-                  <div class="pa-4" :class="getAnnotationBackgroundClass(index)">
-                    <div class="d-flex align-center mb-3">
-                      <v-avatar :color="getUserColor(annotation.annotator)" size="32" class="mr-2">
-                        <span class="white--text text-caption">{{ getInitials(annotation.annotator) }}</span>
-                      </v-avatar>
-                      <div>
-                        <div class="font-weight-bold">{{ annotation.annotator }}</div>
-                        <div class="text-caption text--secondary">
-                          {{ new Date(annotation.createdAt).toLocaleDateString('pt-PT') }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Labels da anotação -->
-                    <div class="mb-3">
-                      <div class="text-subtitle-2 mb-2">Etiquetas:</div>
-                      <div v-if="annotation.labels.length === 0" class="text-caption text--secondary">
-                        Nenhuma etiqueta atribuída
-                      </div>
-                      <v-chip
-                        v-for="label in annotation.labels"
-                        :key="label.id"
-                        small
-                        :color="getLabelColor(label.name)"
-                        class="mr-1 mb-1"
-                        dark
-                      >
-                        {{ label.name }}
-                      </v-chip>
-                    </div>
-
-                    <!-- Estatísticas da anotação -->
-                    <div class="annotation-stats">
-                      <div class="d-flex justify-space-between mb-2">
-                        <span class="text-caption">Concordância:</span>
-                        <span class="text-caption font-weight-bold">{{ annotation.agreementPercentage }}%</span>
-                      </div>
-                      <v-progress-linear
-                        :value="annotation.agreementPercentage"
-                        :color="getPercentageColor(annotation.agreementPercentage)"
-                        height="6"
-                        rounded
-                      ></v-progress-linear>
-                    </div>
-                  </div>
-                </v-col>
-              </v-row>
-
-              <!-- Análise detalhada da discrepância -->
-              <div v-if="comparison.hasDiscrepancy" class="pa-4 bg-red-lighten-5">
-                <div class="text-subtitle-2 mb-2 red--text">
-                  <v-icon color="red" class="mr-1">mdi-alert-circle</v-icon>
-                  Análise da Discrepância:
-                </div>
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <div class="text-body-2 mb-1">
-                      <strong>Diferenças principais:</strong>
-                    </div>
-                    <ul class="text-body-2">
-                      <li v-for="diff in comparison.differences" :key="diff">{{ diff }}</li>
-                    </ul>
-                  </v-col>
-                  <v-col cols="12" md="6">
-                    <div class="text-body-2 mb-1">
-                      <strong>Percentagem de concordância:</strong>
-                    </div>
-                    <div class="text-h6 red--text">{{ comparison.overallAgreement }}%</div>
-                    <div class="text-body-2 mb-1 mt-2">
-                      <strong>Limiar do projeto:</strong>
-                    </div>
-                    <div class="text-body-2">{{ project.minPercentage }}%</div>
-                  </v-col>
-                </v-row>
-              </div>
+            <v-divider />
+            <v-card-text class="text-body-1 pa-4" style="line-height: 2.8; min-height: 300px;">
+                             <!-- eslint-disable-next-line vue/no-v-html -->
+               <div class="annotated-text" v-html="getAnnotatedText(annotator.value)" />
             </v-card-text>
           </v-card>
         </v-col>
       </v-row>
     </div>
+    
+    <!-- Estado Vazio -->
+    <v-card v-else-if="selectedAnnotators.length < 2" class="pa-8 text-center">
+        <v-icon size="80" color="grey lighten-1">mdi-account-multiple-outline</v-icon>
+        <h3 class="mt-4 mb-2">Selecione Anotadores</h3>
+        <p class="text-body-1">Selecione 2 ou mais anotadores nos filtros acima para iniciar a comparação lado-a-lado.</p>
+    </v-card>
+    
+    <v-card v-else-if="summary.totalDiscrepancies === 0" class="pa-8 text-center">
+        <v-icon size="80" color="info">mdi-magnify-scan</v-icon>
+        <h3 class="mt-4 mb-2">Nenhuma Discrepância Encontrada</h3>
+        <p class="text-body-1 mb-4">Não há discrepâncias registradas entre os anotadores selecionados com os filtros aplicados.</p>
+        <v-btn 
+          color="primary" 
+          :loading="detectingDiscrepancies"
+          class="mr-2"
+          @click="detectDiscrepancies"
+        >
+          <v-icon left>mdi-auto-fix</v-icon>
+          Detectar Discrepâncias Automaticamente
+        </v-btn>
+        <v-btn 
+          color="info" 
+          outlined 
+          @click="debugDataStatus"
+        >
+          <v-icon left>mdi-bug</v-icon>
+          Diagnosticar Problema
+        </v-btn>
+    </v-card>
 
-    <!-- Sem dados para mostrar -->
-    <div v-if="!loading && filteredComparisons.length === 0" class="text-center py-8">
-      <v-icon size="64" color="grey">mdi-file-search</v-icon>
-      <div class="text-h6 grey--text mt-2">Nenhuma anotação encontrada</div>
-      <div class="text-body-2 grey--text">
-        Os exemplos ainda não foram anotados ou não há discrepâncias com anotações reais no projeto.
-        <br>
-        Ajuste os filtros ou verifique se existem anotações nos exemplos.
-      </div>
-    </div>
+    <!-- Painel de Discussão e Resolução -->
+    <v-navigation-drawer
+      v-model="discussionPanel"
+      app
+      right
+      temporary
+      width="450"
+      class="discussion-panel"
+    >
+      <DiscrepancyDiscussionPanel
+        v-if="selectedDiscrepancy"
+        :discrepancy-context="selectedDiscrepancy"
+        :project-members="projectMembers"
+        @resolved="onDiscrepancyResolved"
+        @vote-submitted="onVoteSubmitted"
+        @consensus-proposed="onConsensusProposed"
+      />
+    </v-navigation-drawer>
+
+    <!-- Atalhos de Teclado -->
+    <v-snackbar
+      v-model="showKeyboardHelp"
+      timeout="3000"
+      color="info"
+      bottom
+      right
+    >
+      <v-icon class="mr-2">mdi-keyboard</v-icon>
+      Use ← → para navegar, ESC para fechar painéis
+    </v-snackbar>
   </v-container>
 </template>
 
 <script lang="ts">
 import Vue from 'vue'
 import { mapGetters } from 'vuex'
-import type { Percentage } from '~/domain/models/metrics/metrics'
+import DiscrepancyDiscussionPanel from '~/components/discrepancy/DiscrepancyDiscussionPanel.vue'
 
-interface AnnotationComparison {
-  exampleId: string
-  exampleText: string
-  dataset: string
-  hasDiscrepancy: boolean
-  overallAgreement: number
-  annotations: Array<{
-    annotator: string
-    labels: Array<{ id: number; name: string }>
-    agreementPercentage: number
-    createdAt: string
-  }>
-  differences: string[]
+// Tipos de Discrepância
+const DISCREPANCY_TYPES = {
+  DIFFERENT_LABEL: 'etiqueta-diferente',
+  DIFFERENT_SPAN: 'span-diferente',
+  MISSING_ANNOTATION: 'etiqueta-ausente'
 }
 
 export default Vue.extend({
   name: 'DiscrepancySideBySide',
+  components: { DiscrepancyDiscussionPanel },
   layout: 'project',
   middleware: ['check-auth', 'auth', 'setCurrentProject'],
 
   data() {
     return {
-      loading: true,
-      items: {} as Percentage,
-      comparisons: [] as AnnotationComparison[],
-      selectedExample: null as string | null,
-      selectedDataset: null as string | null,
-      selectedAnnotator1: null as string | null,
-      selectedAnnotator2: null as string | null,
-      exampleNames: {} as Record<string, string>,
-      annotators: [] as string[],
-      datasets: [] as string[]
-    }
-  },
+      // Filtros
+      filters: {
+        dataset: null,
+        annotators: [],
+        disagreementStatus: 'pending',
+        categories: [],
+        recordRange: ''
+      },
+      datasetOptions: [],
+      annotatorOptions: [],
+      categoryOptions: [],
+      disagreementStatusOptions: [
+        { text: 'Apenas em Desacordo', value: 'pending' },
+        { text: 'Já Resolvidos', value: 'resolved' },
+        { text: 'Todos', value: 'all' }
+      ],
 
-  async fetch() {
-    this.loading = true
-    try {
-      // Buscar dados de percentagens
-      if (this.project.canDefineCategory) {
-        this.items = await this.$repositories.metrics.fetchCategoryPercentage(this.projectId)
-      } else if (this.project.canDefineSpan) {
-        this.items = await this.$repositories.metrics.fetchSpanPercentage(this.projectId)
-      } else if (this.project.canDefineRelation) {
-        this.items = await this.$repositories.metrics.fetchRelationPercentage(this.projectId)
-      }
+      // Resumo e Navegação
+      summary: {
+        totalDiscrepancies: 0,
+        resolved: 0,
+        pending: 0
+      },
+      navigation: {
+        current: 0, // índice da discrepância atual
+        discrepancyDocs: [] // lista de documentos com discrepâncias
+      },
 
-      // Buscar estatísticas de anotadores reais
-      try {
-        const stats = await this.$repositories.metrics.fetchDisagreementStats(this.projectId)
-        if (stats.annotators && stats.annotators.length > 0) {
-          // Filtrar administradores
-          this.annotators = stats.annotators.filter(annotator => 
-            !annotator.toLowerCase().includes('admin') && 
-            !annotator.toLowerCase().includes('administrador')
-          )
-        }
-        
-        // Buscar datasets disponíveis (assumindo que há uma propriedade ou método para isso)
-        if (stats.textTypes && stats.textTypes.length > 0) {
-          this.datasets = stats.textTypes
-        } else {
-          // Não usar datasets simulados - apenas deixar vazio se não há dados reais
-          this.datasets = []
-        }
-      } catch (error) {
-        console.warn('Não foi possível carregar dados reais dos anotadores:', error)
-        // Não usar datasets simulados - apenas deixar vazio se não há dados reais
-        this.datasets = []
-      }
+      // Dados da comparação
+      comparisonData: [], // Array de documentos com texto e anotações por anotador
+      
+      // Painel de Discussão
+      discussionPanel: false,
+      selectedDiscrepancy: null,
 
-      // Processar dados para comparações
-      await this.processDiscrepancyData()
-    } catch (error) {
-      console.error('Erro ao carregar dados de comparação:', error)
-    } finally {
-      this.loading = false
+      // Cache e Performance
+      allExamples: [],
+      allAnnotations: {},
+      
+      // UI States
+      showKeyboardHelp: false,
+      detectingDiscrepancies: false,
+      
+      // Members
+      projectMembers: [],
+      
+      // WebSocket/Polling
+      realtimeUpdates: null,
+      
+      // Cores dos anotadores
+      annotatorColors: [
+        'blue', 'green', 'purple', 'orange', 'red', 'teal', 'pink', 'indigo'
+      ]
     }
   },
 
@@ -352,563 +368,950 @@ export default Vue.extend({
       return this.$route.params.id
     },
 
-    hasDiscrepancies(): boolean {
-      return this.filteredComparisons.length > 0
+    progress(): number {
+      if (this.summary.totalDiscrepancies === 0) {
+        return 100
+      }
+      return (this.summary.resolved / this.summary.totalDiscrepancies) * 100
     },
 
-    globalDiscrepancyPercentage(): number {
-      if (this.comparisons.length === 0) return 0
-      const discrepantCount = this.comparisons.filter(comp => comp.hasDiscrepancy).length
-      return Math.round((discrepantCount / this.comparisons.length) * 100)
-    },
-
-    totalAnnotators(): number {
-      return this.annotators.length
-    },
-
-    totalDiscrepancies(): number {
-      return this.comparisons.filter(comp => comp.hasDiscrepancy).length
-    },
-
-    consistentExamples(): number {
-      return this.comparisons.filter(comp => !comp.hasDiscrepancy).length
-    },
-
-    exampleOptions() {
-      return [
-        { text: 'Todos os exemplos', value: null },
-        ...Object.entries(this.exampleNames).map(([id, name]) => ({
-          text: name,
-          value: id
-        }))
-      ]
-    },
-
-    datasetOptions() {
-      return [
-        { text: 'Todos os datasets', value: null },
-        ...this.datasets.map(dataset => ({
-          text: dataset,
-          value: dataset
-        }))
-      ]
-    },
-
-    nonAdminAnnotators() {
-      // Filtrar admins (assumindo que nomes com 'admin' são administradores)
-      return this.annotators.filter(annotator => 
-        !annotator.toLowerCase().includes('admin') && 
-        !annotator.toLowerCase().includes('administrador')
-      )
-    },
-
-    nonAdminAnnotatorOptions() {
-      return [
-        { text: 'Selecionar anotador', value: null },
-        ...this.nonAdminAnnotators.map(annotator => ({
-          text: annotator,
-          value: annotator
-        }))
-      ]
-    },
-
-    filteredComparisons(): AnnotationComparison[] {
-      return this.comparisons.filter(comp => {
-        // Só mostrar comparações que têm anotações reais
-        if (comp.annotations.length === 0) {
-          return false
+    selectedAnnotators(): any[] {
+        if (this.filters.annotators.length < 2) {
+            return []
         }
-        
-        // Filtro por exemplo
-        if (this.selectedExample && comp.exampleId !== this.selectedExample) {
-          return false
-        }
-        
-        // Filtro por dataset (se implementado)
-        if (this.selectedDataset && comp.dataset !== this.selectedDataset) {
-          return false
-        }
-        
-        // Filtro por anotadores específicos
-        if (this.selectedAnnotator1 || this.selectedAnnotator2) {
-          const hasAnnotator1 = !this.selectedAnnotator1 || comp.annotations.some(ann => ann.annotator === this.selectedAnnotator1)
-          const hasAnnotator2 = !this.selectedAnnotator2 || comp.annotations.some(ann => ann.annotator === this.selectedAnnotator2)
-          
-          // Se ambos os anotadores foram selecionados, ambos devem estar presentes
-          if (this.selectedAnnotator1 && this.selectedAnnotator2) {
-            return hasAnnotator1 && hasAnnotator2
-          }
-          
-          // Se apenas um foi selecionado, deve estar presente
-          return hasAnnotator1 || hasAnnotator2
-        }
-        
-        return true
-      }).map(comp => {
-        // Se anotadores específicos foram selecionados, filtrar apenas suas anotações
-        if (this.selectedAnnotator1 || this.selectedAnnotator2) {
-          const filteredAnnotations = comp.annotations.filter(ann => {
-            if (this.selectedAnnotator1 && this.selectedAnnotator2) {
-              return ann.annotator === this.selectedAnnotator1 || ann.annotator === this.selectedAnnotator2
-            }
-            return !this.selectedAnnotator1 || ann.annotator === this.selectedAnnotator1 ||
-                   !this.selectedAnnotator2 || ann.annotator === this.selectedAnnotator2
-          })
-          
-          return {
-            ...comp,
-            annotations: filteredAnnotations
-          }
-        }
-        
-        return comp
-      }).filter(comp => {
-        // Filtrar novamente para garantir que ainda há anotações após os filtros
-        return comp.annotations.length > 0
-      })
+        return this.annotatorOptions.filter(a => this.filters.annotators.includes(a.value))
     }
   },
 
+  watch: {
+    filters: {
+      handler: 'fetchDiscrepancies',
+      deep: true
+    }
+  },
+
+  async mounted() {
+      await this.loadFilterOptions()
+      await this.fetchDiscrepancies()
+      this.setupKeyboardShortcuts()
+      this.setupRealtimeUpdates()
+      
+      // Mostrar ajuda de teclado brevemente
+      setTimeout(() => {
+        this.showKeyboardHelp = true
+      }, 1000)
+  },
+
+  beforeDestroy() {
+    this.cleanupRealtimeUpdates()
+    this.removeKeyboardShortcuts()
+  },
+
   methods: {
-    async processDiscrepancyData() {
-      const comparisons: AnnotationComparison[] = []
+    async debugDataStatus() {
+      console.log('🔧 === STATUS DE DEBUG ===')
+      console.log('👤 Usuário logado:', this.$auth.user)
+      console.log('📁 Projeto ID:', this.projectId)
+      console.log('🏗️ Projeto:', this.project)
+      console.log('📊 Filtros atuais:', this.filters)
+      console.log('📈 Resumo:', this.summary)
+      console.log('🧭 Navegação:', this.navigation)
+      console.log('📄 Total de exemplos carregados:', this.allExamples.length)
+      console.log('📝 Cache de anotações:', Object.keys(this.allAnnotations).length)
       
-      console.log('Processando dados de discrepância...')
-      console.log('Items encontrados:', Object.keys(this.items).length)
-      console.log('Tipo de projeto:', {
-        canDefineCategory: this.project.canDefineCategory,
-        canDefineSpan: this.project.canDefineSpan,
-        canDefineRelation: this.project.canDefineRelation
-      })
-      console.log('Repositórios disponíveis:', {
-        category: !!this.$repositories.category,
-        span: !!this.$repositories.span,
-        relation: !!this.$repositories.relation,
-        textLabel: !!this.$repositories.textLabel,
-        segmentation: !!this.$repositories.segmentation,
-        boundingBox: !!this.$repositories.boundingBox
-      })
-      
-      for (const [exampleId, labels] of Object.entries(this.items)) {
-        try {
-          console.log(`Processando exemplo ${exampleId} com labels:`, labels)
+      // Testar carregamento de dados específicos
+      try {
+        console.log('🧪 Testando APIs...')
+        
+        // Teste de exemplos
+        const testExamples = await this.$repositories.example.list(this.projectId, { limit: 5 })
+        console.log('✅ Exemplos (teste):', testExamples)
+        
+        // Teste de membros
+        const testMembers = await this.$repositories.member.list(this.projectId)
+        console.log('✅ Membros (teste):', testMembers)
+        
+        // Teste de categorias
+        if (this.project.canDefineCategory) {
+          const testCategories = await this.$repositories.categoryType.list(this.projectId)
+          console.log('✅ Tipos de categoria (teste):', testCategories)
           
-          // Buscar informações do exemplo
-          const example = await this.$repositories.example.findById(this.projectId, parseInt(exampleId))
-          this.exampleNames[exampleId] = example.text || `Exemplo ${exampleId}`
-
-          // Buscar dados de anotações reais
-          const annotations = await this.generateAnnotationData(exampleId, labels)
-          
-          // Incluir TODAS as comparações que têm anotações (mesmo sem discrepâncias)
-          if (annotations.length > 0) {
-            // Calcular concordância geral baseado nas anotações reais
-            const percentages = Object.values(labels)
-            const maxAgreement = percentages.length > 0 ? Math.max(...percentages) : 0
-            
-            // Determinar se há discrepância real (mesmo que não atinja o threshold)
-            const uniqueAnnotators = new Set(annotations.map(ann => ann.annotator))
-            const hasMultipleAnnotators = uniqueAnnotators.size > 1
-            
-            // Verificar se há diferenças reais nas anotações
-            const hasRealDiscrepancy = hasMultipleAnnotators && (
-              maxAgreement < this.project.minPercentage || 
-              annotations.some(ann => ann.labels.length !== annotations[0].labels.length) ||
-              this.hasLabelDifferences(annotations)
-            )
-             
-             // Identificar diferenças
-             const differences = this.identifyDifferences(labels)
-
-             // Tentar obter dataset real do exemplo
-             let datasetName = 'Dataset Principal'
-             try {
-               if (example.upload_name) {
-                 datasetName = example.upload_name
-               } else if (example.filename) {
-                 datasetName = example.filename
-               } else if (example.meta && example.meta.dataset) {
-                 datasetName = example.meta.dataset
-               }
-             } catch (e) {
-               console.warn('Erro ao obter dataset do exemplo:', e)
-             }
-
-             comparisons.push({
-               exampleId,
-               exampleText: this.exampleNames[exampleId],
-               dataset: datasetName,
-               hasDiscrepancy: hasRealDiscrepancy,
-               overallAgreement: Math.round(maxAgreement),
-               annotations,
-               differences
-             })
-             
-             console.log(`Exemplo ${exampleId}: incluído - ${uniqueAnnotators.size} anotador(es), ${annotations.length} anotações, discrepância: ${hasRealDiscrepancy}`)
-          } else {
-            console.log(`Exemplo ${exampleId} ignorado - sem anotações`)
+          // Se houver exemplos, testar anotações
+          if (testExamples.items && testExamples.items.length > 0) {
+            const firstExampleId = testExamples.items[0].id
+            const testAnnotations = await this.$repositories.category.list(this.projectId, firstExampleId)
+            console.log(`✅ Anotações do exemplo ${firstExampleId}:`, testAnnotations)
           }
-
-          // Coletar anotadores únicos das anotações reais
-          annotations.forEach(ann => {
-            // Filtrar administradores
-            if (!ann.annotator.toLowerCase().includes('admin') && 
-                !ann.annotator.toLowerCase().includes('administrador') &&
-                !this.annotators.includes(ann.annotator)) {
-              this.annotators.push(ann.annotator)
-            }
-          })
-
-        } catch (error) {
-          console.error(`Erro ao processar exemplo ${exampleId}:`, error)
         }
+        
+        // Teste de spans
+        if (this.project.canDefineSpan) {
+          const testSpanTypes = await this.$repositories.spanType.list(this.projectId)
+          console.log('✅ Tipos de span (teste):', testSpanTypes)
+          
+          if (testExamples.items && testExamples.items.length > 0) {
+            const firstExampleId = testExamples.items[0].id
+            const testSpans = await this.$repositories.span.list(this.projectId, firstExampleId)
+            console.log(`✅ Spans do exemplo ${firstExampleId}:`, testSpans)
+          }
+        }
+        
+        // Teste de discrepâncias
+        const testDiscrepancies = await this.$repositories.discrepancy.list(this.projectId)
+        console.log('✅ Discrepâncias registradas:', testDiscrepancies)
+        
+        // Teste de estatísticas
+        try {
+          const discrepancyStats = await this.$repositories.discrepancy.getStatistics(this.projectId)
+          console.log('✅ Estatísticas de discrepâncias:', discrepancyStats)
+        } catch (e) {
+          console.log('⚠️ Estatísticas de discrepâncias não disponíveis:', e.message)
+        }
+        
+        // Resumo do diagnóstico
+        const hasExamples = testExamples.items && testExamples.items.length > 0
+        const hasMembers = testMembers.length > 0
+        const hasDiscrepancies = testDiscrepancies.length > 0
+        const hasAnnotations = testExamples.items && testExamples.items.length > 0 && 
+          (this.project.canDefineCategory || this.project.canDefineSpan)
+        
+        let diagnosisMessage = `🔧 Diagnóstico:\n`
+        diagnosisMessage += `• Exemplos: ${hasExamples ? '✅' : '❌'} (${testExamples.items?.length || 0})\n`
+        diagnosisMessage += `• Membros: ${hasMembers ? '✅' : '❌'} (${testMembers.length})\n`
+        diagnosisMessage += `• Discrepâncias: ${hasDiscrepancies ? '✅' : '❌'} (${testDiscrepancies.length})\n`
+        diagnosisMessage += `• Capacidades: ${hasAnnotations ? '✅' : '❌'}`
+        
+        console.log(diagnosisMessage)
+        
+        this.$nuxt.$emit('show-snackbar', {
+          text: hasDiscrepancies ? 
+            'Debug executado! Discrepâncias encontradas.' : 
+            'Debug executado! Nenhuma discrepância registrada.',
+          color: hasDiscrepancies ? 'success' : 'warning'
+        })
+        
+      } catch (error) {
+        console.error('❌ Erro no teste de debug:', error)
+        this.$nuxt.$emit('show-snackbar', {
+          text: 'Erro no debug: ' + error.message,
+          color: 'error'
+        })
       }
-
-      this.comparisons = comparisons.sort((a, b) => {
-        // Ordenar por discrepâncias primeiro, depois por ID
-        if (a.hasDiscrepancy && !b.hasDiscrepancy) return -1
-        if (!a.hasDiscrepancy && b.hasDiscrepancy) return 1
-        return parseInt(a.exampleId) - parseInt(b.exampleId)
-      })
-      
-      console.log(`Processamento concluído: ${this.comparisons.length} comparações criadas`)
-      console.log('Comparações:', this.comparisons)
     },
 
-    async generateAnnotationData(exampleId: string, labels: Record<string, number>) {
-      const annotations = []
-      
-      // Buscar anotações reais baseadas no tipo de projeto
+    async detectDiscrepancies() {
+      this.detectingDiscrepancies = true
       try {
-        let realAnnotations = []
+        console.log('🤖 Iniciando detecção automática de discrepâncias...')
         
-        // Tentar buscar anotações de TODOS os tipos disponíveis
-        const allRepositories = ['category', 'span', 'relation', 'textLabel', 'segmentation', 'boundingBox']
+        // Chamar a API para detectar discrepâncias automaticamente
+        const response = await this.$repositories.discrepancy.detectDiscrepancies(this.projectId)
+        console.log('✅ Resultado da detecção:', response)
         
-        for (const repoType of allRepositories) {
-          if (this.$repositories[repoType] && realAnnotations.length === 0) {
-            try {
-              console.log(`Tentando buscar anotações de ${repoType} para exemplo ${exampleId}`)
-              const annotations = await this.$repositories[repoType].list(this.projectId, parseInt(exampleId))
-              if (annotations && annotations.length > 0) {
-                realAnnotations = annotations
-                console.log(`Encontradas ${annotations.length} anotações de ${repoType}`)
-                break
-              }
-            } catch (e) {
-              console.warn(`Erro ao buscar anotações de ${repoType}:`, e)
-            }
-          }
-        }
+        this.$nuxt.$emit('show-snackbar', {
+          text: `${response.discrepancies?.length || 0} discrepâncias detectadas automaticamente!`,
+          color: 'success'
+        })
         
-        // Fallback: tentar baseado no tipo do projeto
-        if (realAnnotations.length === 0) {
-          if (this.project.canDefineCategory && this.$repositories.category) {
-            try {
-              realAnnotations = await this.$repositories.category.list(this.projectId, parseInt(exampleId))
-            } catch (e) {
-              console.warn('Erro ao buscar anotações de categoria:', e)
-            }
-          }
-          
-          if (this.project.canDefineSpan && this.$repositories.span) {
-            try {
-              realAnnotations = await this.$repositories.span.list(this.projectId, parseInt(exampleId))
-            } catch (e) {
-              console.warn('Erro ao buscar anotações de span:', e)
-            }
-          }
-          
-          if (this.project.canDefineRelation && this.$repositories.relation) {
-            try {
-              realAnnotations = await this.$repositories.relation.list(this.projectId, parseInt(exampleId))
-            } catch (e) {
-              console.warn('Erro ao buscar anotações de relação:', e)
-            }
-          }
-        }
+        // Recarregar as discrepâncias
+        await this.fetchDiscrepancies()
         
-        console.log(`Exemplo ${exampleId}: encontradas ${realAnnotations.length} anotações reais`)
-        
-        // Se não encontramos anotações diretas, mas temos dados de métricas, tentar outras abordagens
-        if (realAnnotations.length === 0 && Object.keys(labels).length > 0) {
-          console.log(`Exemplo ${exampleId}: sem anotações diretas, mas há dados de métricas - tentando buscar por outros meios`)
-          
-          // Tentar buscar todas as anotações do projeto e filtrar por exemplo
-          try {
-            if (this.$repositories.category) {
-              const allAnnotations = await this.$repositories.category.list(this.projectId)
-              realAnnotations = allAnnotations.filter(ann => ann.example === parseInt(exampleId) || ann.exampleId === parseInt(exampleId))
-              console.log(`Encontradas ${realAnnotations.length} anotações de categoria filtradas`)
-            }
-            
-            if (realAnnotations.length === 0 && this.$repositories.span) {
-              const allAnnotations = await this.$repositories.span.list(this.projectId)
-              realAnnotations = allAnnotations.filter(ann => ann.example === parseInt(exampleId) || ann.exampleId === parseInt(exampleId))
-              console.log(`Encontradas ${realAnnotations.length} anotações de span filtradas`)
-            }
-            
-            if (realAnnotations.length === 0 && this.$repositories.relation) {
-              const allAnnotations = await this.$repositories.relation.list(this.projectId)
-              realAnnotations = allAnnotations.filter(ann => ann.example === parseInt(exampleId) || ann.exampleId === parseInt(exampleId))
-              console.log(`Encontradas ${realAnnotations.length} anotações de relação filtradas`)
-            }
-          } catch (e) {
-            console.warn('Erro ao buscar anotações do projeto completo:', e)
-          }
-        }
-        
-        // Se ainda não há anotações, mas temos dados de métricas, criar com base nos dados disponíveis
-        if (realAnnotations.length === 0 && Object.keys(labels).length > 0) {
-          console.log(`Exemplo ${exampleId}: criando anotações baseadas nos dados de métricas disponíveis`)
-          
-          // Criar anotações representativas baseadas nos dados de métricas reais
-          const labelEntries = Object.entries(labels)
-          
-          // Para cada label nas métricas, assumir que há um anotador
-          labelEntries.forEach(([labelName, percentage], index) => {
-            if (percentage > 0) { // Só incluir se há alguma percentagem
-              realAnnotations.push({
-                id: `metric-${index}`,
-                label: { name: labelName, text: labelName },
-                user: `Anotador ${index + 1}`,
-                created_at: new Date().toISOString(),
-                example: parseInt(exampleId),
-                isFromMetrics: true // Flag para indicar que veio das métricas
-              })
-            }
-          })
-          
-          console.log(`Criadas ${realAnnotations.length} anotações baseadas em métricas reais`)
-        }
-        
-        // Apenas ignorar se realmente não há nenhum dado
-        if (realAnnotations.length === 0) {
-          console.log(`Exemplo ${exampleId}: sem anotações ou dados disponíveis - ignorando`)
-          return []
-        }
-        
-        if (realAnnotations && realAnnotations.length > 0) {
-          // Processar anotações reais
-          const annotatorGroups = new Map()
-          
-          realAnnotations.forEach((annotation, index) => {
-            console.log(`Processando anotação ${index}:`, annotation)
-            
-            // Usar ID do usuário ou nome disponível - ser mais flexível
-            let annotatorName = `Usuário ${annotation.user || annotation.userId || annotation.author || annotation.created_by || index + 1}`
-            
-            // Tentar obter nome mais específico se disponível
-            if (annotation.username) {
-              annotatorName = annotation.username
-            } else if (annotation.annotator) {
-              annotatorName = annotation.annotator
-            } else if (annotation.user_name) {
-              annotatorName = annotation.user_name
-            } else if (annotation.author_name) {
-              annotatorName = annotation.author_name
-            } else if (annotation.user && typeof annotation.user === 'object') {
-              // Se user é um objeto, tentar extrair o nome
-              if (annotation.user.username) {
-                annotatorName = annotation.user.username
-              } else if (annotation.user.first_name && annotation.user.last_name) {
-                annotatorName = `${annotation.user.first_name} ${annotation.user.last_name}`
-              } else if (annotation.user.name) {
-                annotatorName = annotation.user.name
-              }
-            } else if (annotation.isFromMetrics) {
-              // Para anotações criadas a partir de métricas, usar um nome mais descritivo
-              annotatorName = `Anotador Real ${index + 1}`
-            }
-            
-            // Não filtrar administradores temporariamente para ver todos os dados
-            // if (annotatorName.toLowerCase().includes('admin') || 
-            //     annotatorName.toLowerCase().includes('administrador')) {
-            //   return
-            // }
-            
-            if (!annotatorGroups.has(annotatorName)) {
-              annotatorGroups.set(annotatorName, {
-                labels: [],
-                createdAt: annotation.created_at || annotation.createdAt || annotation.date || new Date().toISOString()
-              })
-            }
-            
-            // Extrair label real baseado no tipo de projeto e estrutura da anotação - ser mais flexível
-            let labelName = 'Sem etiqueta'
-            
-            if (annotation.label) {
-              labelName = typeof annotation.label === 'object' ? annotation.label.text || annotation.label.name || JSON.stringify(annotation.label) : annotation.label
-            } else if (annotation.text) {
-              labelName = annotation.text
-            } else if (annotation.category) {
-              labelName = typeof annotation.category === 'object' ? annotation.category.text || annotation.category.name || JSON.stringify(annotation.category) : annotation.category
-            } else if (annotation.type) {
-              labelName = annotation.type
-            } else if (annotation.name) {
-              labelName = annotation.name
-            } else if (annotation.value) {
-              labelName = annotation.value
-            } else {
-              // Fallback para mostrar algo útil
-              labelName = `Anotação ${annotation.id || index + 1}`
-            }
-            
-            annotatorGroups.get(annotatorName).labels.push({
-              id: annotation.id || index + 1,
-              name: labelName
-            })
-            
-            console.log(`Adicionada label "${labelName}" para anotador "${annotatorName}"`)
-          })
+      } catch (error) {
+        console.error('❌ Erro ao detectar discrepâncias:', error)
+        this.$nuxt.$emit('show-snackbar', {
+          text: 'Erro ao detectar discrepâncias: ' + error.message,
+          color: 'error'
+        })
+      } finally {
+        this.detectingDiscrepancies = false
+      }
+    },
 
-          // Converter grupos de anotadores em dados de comparação
-          for (const [annotator, data] of annotatorGroups) {
-            // Obter percentagem de concordância dos dados de métricas
-            const labelNames = data.labels.map(l => l.name)
-            let agreementPercentage = 0
+    async loadFilterOptions() {
+        try {
+            console.log('🔧 Carregando opções de filtro...')
             
-            // Tentar encontrar percentagem para qualquer uma das labels
-            for (const labelName of labelNames) {
-              if (labels[labelName]) {
-                agreementPercentage = Math.max(agreementPercentage, labels[labelName])
+            const [stats, categories, members] = await Promise.all([
+                this.$repositories.metrics.fetchDisagreementStats(this.projectId).catch(e => {
+                  console.error('❌ Erro ao carregar stats:', e)
+                  return { textTypes: [] }
+                }),
+                this.$repositories.categoryType.list(this.projectId).catch(e => {
+                  console.error('❌ Erro ao carregar categorias:', e)
+                  return []
+                }),
+                this.$repositories.member.list(this.projectId).catch(e => {
+                  console.error('❌ Erro ao carregar membros:', e)
+                  return []
+                })
+            ])
+
+            console.log('📊 Stats carregadas:', stats)
+            console.log('🏷️ Categorias carregadas:', categories)
+            console.log('👥 Membros carregados:', members)
+
+            this.annotatorOptions = members.map((member: any) => ({
+                text: member.username,
+                value: member.user
+            }))
+            
+            console.log('👤 Opções de anotadores configuradas:', this.annotatorOptions)
+            
+            this.projectMembers = members
+
+            if (stats.textTypes) {
+                this.datasetOptions = stats.textTypes.map((tt: string) => ({ text: tt, value: tt }))
+            }
+            
+            console.log('📁 Opções de dataset configuradas:', this.datasetOptions)
+            
+            this.categoryOptions = categories.map((cat: any) => ({
+                text: cat.text,
+                value: cat.id
+            }))
+
+            console.log('🏷️ Opções de categoria configuradas:', this.categoryOptions)
+
+        } catch(e) {
+            console.error('❌ Erro ao carregar opções de filtro:', e)
+        }
+    },
+
+    async fetchDiscrepancies() {
+      if (this.filters.annotators.length < 2) {
+        this.comparisonData = []
+        this.navigation.discrepancyDocs = []
+        this.summary.totalDiscrepancies = 0
+        this.summary.pending = 0
+        this.summary.resolved = 0
+        return
+      }
+      
+      try {
+        console.log('🔍 Buscando discrepâncias registradas no sistema...')
+        
+        // 1. Buscar discrepâncias já identificadas no sistema usando a API do backend
+        const discrepancyParams: any = {}
+        
+        // Filtrar por status
+        if (this.filters.disagreementStatus === 'pending') {
+          discrepancyParams.status = 'pending'
+        } else if (this.filters.disagreementStatus === 'resolved') {
+          discrepancyParams.status = 'resolved'
+        }
+        
+        // Buscar discrepâncias usando o repositório
+        const discrepancies = await this.$repositories.discrepancy.list(this.projectId, discrepancyParams)
+        console.log('📋 Discrepâncias encontradas no sistema:', discrepancies)
+        
+        // 2. Filtrar discrepâncias pelos anotadores selecionados
+        let filteredDiscrepancies = discrepancies.filter((disc: any) => {
+          const involvedUserIds = disc.users_involved || []
+          // Verificar se pelo menos um dos usuários envolvidos está selecionado
+          return this.filters.annotators.some(annotatorId => 
+            involvedUserIds.includes(annotatorId)
+          )
+        })
+        
+        console.log('👥 Discrepâncias filtradas por anotador:', filteredDiscrepancies)
+        
+        // 3. Aplicar filtros adicionais
+        if (this.filters.recordRange) {
+          try {
+            const rangeInput = this.filters.recordRange.trim()
+            if (rangeInput.includes('-')) {
+              const [start, end] = rangeInput.split('-').map(Number)
+              if (!isNaN(start) && !isNaN(end)) {
+                filteredDiscrepancies = filteredDiscrepancies.filter((disc: any) => 
+                  disc.example_id >= start && disc.example_id <= end
+                )
+              }
+            } else {
+              const singleId = Number(rangeInput)
+              if (!isNaN(singleId)) {
+                filteredDiscrepancies = filteredDiscrepancies.filter((disc: any) => 
+                  disc.example_id === singleId
+                )
               }
             }
-            
-            // Se não encontrou nas métricas, usar uma percentagem baseada no número de labels
-            if (agreementPercentage === 0 && data.labels.length > 0) {
-              agreementPercentage = Math.min(100, data.labels.length * 25)
-            }
-            
-            annotations.push({
-              annotator,
-              labels: data.labels,
-              agreementPercentage: Math.round(agreementPercentage),
-              createdAt: data.createdAt
-            })
+          } catch(e) {
+            console.error("Intervalo de registos inválido:", e)
           }
+        }
+        
+        // 4. Filtrar por categorias se especificado
+        if (this.filters.categories.length > 0) {
+          filteredDiscrepancies = filteredDiscrepancies.filter((disc: any) => {
+            const conflictingAnnotations = disc.conflicting_annotations || {}
+            // Verificar se alguma das anotações conflitantes envolve as categorias selecionadas
+            return Object.values(conflictingAnnotations).some((annData: any) => {
+              if (Array.isArray(annData)) {
+                return annData.some((ann: any) => this.filters.categories.includes(ann.label))
+              }
+              return this.filters.categories.includes(annData.label)
+            })
+          })
+        }
+        
+        console.log('🎯 Discrepâncias após todos os filtros:', filteredDiscrepancies)
+        
+        // 5. Carregar dados completos para cada discrepância
+        const discrepancyDocs = []
+        let resolvedCount = 0
+        
+        for (const discrepancy of filteredDiscrepancies) {
+          console.log('📄 Processando discrepância:', discrepancy)
+          
+          // Buscar dados do exemplo
+          const example = await this.$repositories.example.findById(this.projectId, discrepancy.example_id)
+          console.log('📄 Exemplo carregado:', example)
+          
+          // Buscar anotações para o exemplo
+          const annotations = await this.getAnnotationsForExample(discrepancy.example_id)
+          
+          // Agrupar anotações por usuário
+          const userAnnotations = {}
+          for(const ann of annotations) {
+              if (!userAnnotations[ann.user]) {
+                  userAnnotations[ann.user] = []
+              }
+              userAnnotations[ann.user].push(ann)
+          }
+          
+          discrepancyDocs.push({
+            docId: discrepancy.example_id,
+            text: example.text,
+            annotations: userAnnotations,
+            isResolved: discrepancy.status === 'resolved',
+            discrepancyData: discrepancy, // Dados completos da discrepância
+            discrepancyTypes: [discrepancy.discrepancy_type]
+          })
+          
+          if (discrepancy.status === 'resolved') {
+            resolvedCount++
+          }
+        }
+        
+        console.log(`✅ Total de documentos com discrepâncias: ${discrepancyDocs.length}`)
+        console.log(`✅ Resolvidas: ${resolvedCount}, Pendentes: ${discrepancyDocs.length - resolvedCount}`)
+
+        this.navigation.discrepancyDocs = discrepancyDocs
+        this.summary.totalDiscrepancies = discrepancyDocs.length
+        this.summary.resolved = resolvedCount
+        this.summary.pending = discrepancyDocs.length - resolvedCount
+        
+        // Reset navigation if necessary
+        if (this.navigation.current >= discrepancyDocs.length) {
+          this.navigation.current = Math.max(0, discrepancyDocs.length - 1)
+        }
+        
+        // Se não houver discrepâncias, sugerir detectar automaticamente
+        if (discrepancyDocs.length === 0) {
+          console.log('💡 Nenhuma discrepância encontrada. Considere executar detecção automática.')
+          this.$nuxt.$emit('show-snackbar', {
+            text: 'Nenhuma discrepância encontrada. Use o botão Debug para verificar se há anotações no projeto.',
+            color: 'info'
+          })
         }
         
       } catch (error) {
-        console.error('Erro ao buscar anotações:', error)
+        console.error('❌ Erro ao buscar discrepâncias:', error)
+        this.$nuxt.$emit('show-snackbar', {
+          text: 'Erro ao carregar discrepâncias: ' + error.message,
+          color: 'error'
+        })
       }
-
-      console.log(`Exemplo ${exampleId}: processadas ${annotations.length} anotações de anotadores`)
-      return annotations
     },
 
-    identifyDifferences(labels: Record<string, number>): string[] {
-      const differences = []
-      const entries = Object.entries(labels)
-      
-      if (entries.length > 1) {
-        const [bestLabel, bestPerc] = entries.reduce((a, b) => a[1] > b[1] ? a : b)
-        const [worstLabel, worstPerc] = entries.reduce((a, b) => a[1] < b[1] ? a : b)
-        
-        differences.push(`Maior concordância: ${bestLabel} (${bestPerc.toFixed(1)}%)`)
-        differences.push(`Menor concordância: ${worstLabel} (${worstPerc.toFixed(1)}%)`)
-        differences.push(`Diferença: ${(bestPerc - worstPerc).toFixed(1)} pontos percentuais`)
-      }
-      
-      return differences
+    async getAnnotationsForExample(exampleId: number) {
+        if (this.allAnnotations[exampleId]) {
+            return this.allAnnotations[exampleId]
+        }
+
+        console.log(`🔍 Buscando anotações para exemplo ${exampleId}`)
+        console.log('🎯 Capacidades do projeto:', {
+          canDefineCategory: this.project.canDefineCategory,
+          canDefineSpan: this.project.canDefineSpan,
+          canDefineRelation: this.project.canDefineRelation
+        })
+
+        const annotationPromises = []
+        try {
+          if (this.project.canDefineCategory) {
+              console.log(`📝 Buscando categorias para exemplo ${exampleId}`)
+              annotationPromises.push(
+                this.$repositories.category.list(this.projectId, exampleId)
+                  .then(categories => {
+                    console.log(`📝 Categorias encontradas para exemplo ${exampleId}:`, categories)
+                    return categories || []
+                  })
+                  .catch(error => {
+                    console.error(`❌ Erro ao buscar categorias para exemplo ${exampleId}:`, error)
+                    return []
+                  })
+              )
+          }
+          if (this.project.canDefineSpan) {
+              console.log(`🏷️ Buscando spans para exemplo ${exampleId}`)
+              annotationPromises.push(
+                this.$repositories.span.list(this.projectId, exampleId)
+                  .then(spans => {
+                    console.log(`🏷️ Spans encontrados para exemplo ${exampleId}:`, spans)
+                    return spans || []
+                  })
+                  .catch(error => {
+                    console.error(`❌ Erro ao buscar spans para exemplo ${exampleId}:`, error)
+                    return []
+                  })
+              )
+          }
+          if (this.project.canDefineRelation) {
+              console.log(`🔗 Buscando relações para exemplo ${exampleId}`)
+              annotationPromises.push(
+                this.$repositories.relation.list(this.projectId, exampleId)
+                  .then(relations => {
+                    console.log(`🔗 Relações encontradas para exemplo ${exampleId}:`, relations)
+                    return relations || []
+                  })
+                  .catch(error => {
+                    console.error(`❌ Erro ao buscar relações para exemplo ${exampleId}:`, error)
+                    return []
+                  })
+              )
+          }
+
+          const annotationSets = await Promise.all(annotationPromises)
+          const allAnns = annotationSets.flat()
+          
+          console.log(`✅ Total de anotações para exemplo ${exampleId}:`, allAnns.length)
+          console.log(`📋 Anotações detalhadas:`, allAnns)
+          
+          this.$set(this.allAnnotations, exampleId, allAnns)
+          return allAnns
+          
+        } catch (error) {
+          console.error(`❌ Erro geral ao buscar anotações para exemplo ${exampleId}:`, error)
+          this.$set(this.allAnnotations, exampleId, [])
+          return []
+        }
     },
     
-    hasLabelDifferences(annotations: Array<any>): boolean {
-      if (annotations.length < 2) return false
-      
-      // Comparar as labels entre anotações diferentes
-      const firstAnnotationLabels = new Set(annotations[0].labels.map(l => l.name))
-      
-      for (let i = 1; i < annotations.length; i++) {
-        const currentLabels = new Set(annotations[i].labels.map(l => l.name))
+    getDiscrepancyInfo(userAnnotations: any): { hasDiscrepancy: boolean, involvedLabels: number[] } {
+        const annotatorIds = this.filters.annotators
+        console.log(`🔍 Verificando discrepâncias entre anotadores:`, annotatorIds)
         
-        // Se os tamanhos são diferentes, há discrepância
-        if (firstAnnotationLabels.size !== currentLabels.size) {
-          return true
+        if (annotatorIds.length < 2) {
+            console.log(`❌ Menos de 2 anotadores selecionados (${annotatorIds.length})`)
+            return { hasDiscrepancy: false, involvedLabels: [] }
+        }
+
+        const involvedLabels = new Set<number>()
+        const firstAnnotatorId = annotatorIds[0]
+        const otherAnnotatorIds = annotatorIds.slice(1)
+        const firstUserAnns = userAnnotations[firstAnnotatorId] || []
+
+        console.log(`👤 Primeiro anotador (${firstAnnotatorId}):`, firstUserAnns.length, 'anotações')
+        console.log(`📝 Anotações do primeiro anotador:`, firstUserAnns)
+
+        for (const otherId of otherAnnotatorIds) {
+            const otherUserAnns = userAnnotations[otherId] || []
+            console.log(`👤 Comparando com anotador (${otherId}):`, otherUserAnns.length, 'anotações')
+            console.log(`📝 Anotações do outro anotador:`, otherUserAnns)
+
+            // Quick check: different number of annotations
+            if (firstUserAnns.length !== otherUserAnns.length) {
+                console.log(`⚡ Discrepância detectada: números diferentes de anotações (${firstUserAnns.length} vs ${otherUserAnns.length})`)
+                firstUserAnns.forEach((ann: any) => involvedLabels.add(ann.label))
+                otherUserAnns.forEach((ann: any) => involvedLabels.add(ann.label))
+                return { hasDiscrepancy: true, involvedLabels: Array.from(involvedLabels) }
+            }
+
+            // Detailed comparison
+            for (const ann of firstUserAnns) {
+                console.log(`🔍 Verificando anotação:`, ann)
+                const correspondingAnn = otherUserAnns.find((o: any) => 
+                    (o.start_offset === ann.start_offset && o.end_offset === ann.end_offset) ||
+                    (o.label === ann.label)
+                )
+                console.log(`🔍 Anotação correspondente encontrada:`, correspondingAnn)
+                
+                if (!correspondingAnn) {
+                    console.log(`⚡ Discrepância detectada: anotação sem correspondência`)
+                    involvedLabels.add(ann.label)
+                    return { hasDiscrepancy: true, involvedLabels: Array.from(involvedLabels) }
+                }
+                if (correspondingAnn.label !== ann.label) {
+                    console.log(`⚡ Discrepância detectada: labels diferentes (${ann.label} vs ${correspondingAnn.label})`)
+                    involvedLabels.add(ann.label)
+                    involvedLabels.add(correspondingAnn.label)
+                    return { hasDiscrepancy: true, involvedLabels: Array.from(involvedLabels) }
+                }
+            }
         }
         
-        // Se alguma label é diferente, há discrepância
-        for (const label of firstAnnotationLabels) {
-          if (!currentLabels.has(label)) {
-            return true
+        console.log(`✅ Nenhuma discrepância detectada`)
+        return { hasDiscrepancy: false, involvedLabels: [] }
+    },
+
+    getCurrentDocument() {
+        if (this.navigation.discrepancyDocs.length > 0 && this.navigation.current < this.navigation.discrepancyDocs.length) {
+            return this.navigation.discrepancyDocs[this.navigation.current]
+        }
+        return null
+    },
+
+    getAnnotatedText(annotatorId: number): string {
+      const doc = this.getCurrentDocument()
+      if (!doc) {
+        return '<div class="text-center text-grey">Nenhum documento para exibir.</div>'
+      }
+
+      const annotations = (doc.annotations[annotatorId] || []).map((a: any) => ({
+        ...a, 
+        type: a.start_offset !== undefined ? 'span' : 'category'
+      }))
+      const otherAnnotatorIds = this.selectedAnnotators.map(a => a.value).filter(id => id !== annotatorId)
+
+      let html = doc.text
+      
+      // Process span annotations (reverse order to maintain positions)
+      const spanAnnotations = annotations.filter(a => a.type === 'span').sort((a, b) => b.start_offset - a.start_offset)
+      
+      for (const ann of spanAnnotations) {
+        const discrepancyType = this.findDiscrepancy(ann, doc.annotations, otherAnnotatorIds)
+        const colorClass = this.getDiscrepancyColorClass(discrepancyType)
+        const labelText = this.getCategoryLabel(ann.label)
+        
+        const beforeText = html.substring(0, ann.start_offset)
+        const annotatedText = html.substring(ann.start_offset, ann.end_offset)
+        const afterText = html.substring(ann.end_offset)
+        
+        html = beforeText +
+            `<span class="annotation ${colorClass}" 
+                   onclick="this.dispatchEvent(new CustomEvent('annotation-click', {detail: {id: ${ann.id}, type: '${discrepancyType || 'none'}'}, bubbles: true}))"
+                   title="Clique para discutir esta anotação">` +
+            annotatedText +
+            ` <strong class="annotation-label">${labelText}</strong></span>` +
+            afterText
+      }
+
+      // Handle category-level annotations
+      const categoryAnnotations = annotations.filter(a => a.type === 'category')
+      if (categoryAnnotations.length > 0) {
+        const categoryHtml = categoryAnnotations.map(ann => {
+          const discrepancyType = this.findDiscrepancyForCategory(ann, doc.annotations, otherAnnotatorIds)
+          const colorClass = this.getDiscrepancyColorClass(discrepancyType)
+          const labelText = this.getCategoryLabel(ann.label)
+          
+          return `<div class="category-annotation ${colorClass}" 
+                       onclick="this.dispatchEvent(new CustomEvent('annotation-click', {detail: {id: ${ann.id}, type: '${discrepancyType || 'none'}'}, bubbles: true}))"
+                       title="Clique para discutir esta categoria">
+                    <strong><v-icon small>mdi-tag</v-icon> ${labelText}</strong>
+                  </div>`
+        }).join('')
+        
+        html = categoryHtml + html
+      }
+
+      return html
+    },
+
+    findDiscrepancy(annotation: any, allAnnotations: any, otherAnnotatorIds: number[]) {
+        let hasMissing = false
+        for (const otherId of otherAnnotatorIds) {
+            const otherAnns = allAnnotations[otherId] || []
+            
+            // Exact match: same span, same label
+            const exactMatch = otherAnns.find((a: any) => 
+                a.start_offset === annotation.start_offset && 
+                a.end_offset === annotation.end_offset &&
+                a.label === annotation.label
+            )
+            if (exactMatch) continue // Found a perfect match with this annotator
+
+            // Same span, different label
+            const sameSpan = otherAnns.find((a: any) => 
+                a.start_offset === annotation.start_offset && 
+                a.end_offset === annotation.end_offset
+            )
+            if (sameSpan) return DISCREPANCY_TYPES.DIFFERENT_LABEL
+
+            // Overlapping span
+            const overlappingAnn = otherAnns.find((a: any) => 
+              a.start_offset < annotation.end_offset && a.end_offset > annotation.start_offset
+            )
+            if (overlappingAnn) return DISCREPANCY_TYPES.DIFFERENT_SPAN
+            
+            // If we reach here, no match found for this annotator
+            hasMissing = true
+        }
+        
+        if (hasMissing) {
+            return DISCREPANCY_TYPES.MISSING_ANNOTATION
+        }
+        return null // No discrepancy found
+    },
+
+    findDiscrepancyForCategory(annotation: any, allAnnotations: any, otherAnnotatorIds: number[]) {
+        for (const otherId of otherAnnotatorIds) {
+            const otherAnns = allAnnotations[otherId] || []
+            const hasCategory = otherAnns.some((a: any) => a.label === annotation.label && a.start_offset === undefined)
+            if (!hasCategory) {
+                return DISCREPANCY_TYPES.MISSING_ANNOTATION
+            }
+        }
+        return null
+    },
+
+    getDiscrepancyColorClass(type: string | null): string {
+      if (type === null) {
+          return 'no-discrepancy'
+      }
+      switch (type) {
+        case DISCREPANCY_TYPES.DIFFERENT_LABEL:
+          return 'different-label'
+        case DISCREPANCY_TYPES.DIFFERENT_SPAN:
+          return 'different-span'
+        case DISCREPANCY_TYPES.MISSING_ANNOTATION:
+          return 'missing-annotation'
+        default:
+          return 'no-discrepancy'
+      }
+    },
+
+    getAnnotatorColor(index: number): string {
+      return this.annotatorColors[index % this.annotatorColors.length]
+    },
+
+    getAnnotatorStats(annotatorId: number): any {
+      const doc = this.getCurrentDocument()
+      if (!doc) return { total: 0, spans: 0, categories: 0 }
+      
+      const annotations = doc.annotations[annotatorId] || []
+      const spans = annotations.filter((a: any) => a.start_offset !== undefined).length
+      const categories = annotations.filter((a: any) => a.start_offset === undefined).length
+      
+      return {
+        total: annotations.length,
+        spans,
+        categories
+      }
+    },
+
+    getCategoryLabel(labelId: number): string {
+        const category = this.categoryOptions.find(c => c.value === labelId)
+        return category ? category.text : `Label ${labelId}`
+    },
+
+    prevDiscrepancy() {
+      if (this.navigation.current > 0) {
+        this.navigation.current--
+      }
+    },
+
+    nextDiscrepancy() {
+      if (this.navigation.current < this.summary.totalDiscrepancies - 1) {
+        this.navigation.current++
+      }
+    },
+
+    openDiscussion(annotationData: any) {
+        const doc = this.getCurrentDocument()
+        if (!doc) return
+        
+        this.selectedDiscrepancy = {
+            docId: doc.docId,
+            annotation: annotationData,
+            text: doc.text,
+            involvedAnnotators: this.selectedAnnotators
+        }
+        this.discussionPanel = true
+    },
+
+    onDiscrepancyResolved(context: any) {
+        console.log('Discrepancy resolved:', context)
+        
+        // Update the current document as resolved
+        const currentIndex = this.navigation.current
+        if (this.navigation.discrepancyDocs[currentIndex]) {
+          this.$set(this.navigation.discrepancyDocs[currentIndex], 'isResolved', true)
+        }
+
+        // Update summary
+        this.summary.resolved++
+        this.summary.pending--
+
+        // Close panel and move to next unresolved discrepancy
+        this.discussionPanel = false
+        
+        // Find next unresolved discrepancy
+        let nextIndex = currentIndex
+        for (let i = currentIndex + 1; i < this.navigation.discrepancyDocs.length; i++) {
+          if (!this.navigation.discrepancyDocs[i].isResolved) {
+            nextIndex = i
+            break
           }
+        }
+        
+        if (nextIndex === currentIndex) {
+          // Look backwards
+          for (let i = currentIndex - 1; i >= 0; i--) {
+            if (!this.navigation.discrepancyDocs[i].isResolved) {
+              nextIndex = i
+              break
+            }
+          }
+        }
+        
+        this.navigation.current = nextIndex
+        
+        this.$nuxt.$emit('show-snackbar', {
+          text: 'Discrepância marcada como resolvida!',
+          color: 'success'
+        })
+    },
+
+    onVoteSubmitted(voteData: any) {
+        console.log('Vote submitted:', voteData)
+        this.$nuxt.$emit('show-snackbar', {
+          text: 'Voto registado com sucesso!',
+          color: 'info'
+        })
+    },
+
+    onConsensusProposed(consensusData: any) {
+        console.log('Consensus proposed:', consensusData)
+        this.$nuxt.$emit('show-snackbar', {
+          text: 'Proposta de consenso enviada!',
+          color: 'info'
+        })
+    },
+
+    setupKeyboardShortcuts() {
+      this.keyboardHandler = (event: KeyboardEvent) => {
+        if (event.target && (event.target as HTMLElement).tagName === 'INPUT' || 
+            (event.target as HTMLElement).tagName === 'TEXTAREA') {
+          return // Don't handle shortcuts when typing
+        }
+        
+        switch (event.key) {
+          case 'ArrowLeft':
+            event.preventDefault()
+            this.prevDiscrepancy()
+            break
+          case 'ArrowRight':
+            event.preventDefault()
+            this.nextDiscrepancy()
+            break
+          case 'Escape':
+            event.preventDefault()
+            this.discussionPanel = false
+            break
+          case '?':
+            event.preventDefault()
+            this.showKeyboardHelp = true
+            break
         }
       }
       
-      return false
+      document.addEventListener('keydown', this.keyboardHandler)
+      
+      // Handle annotation clicks
+      this.annotationClickHandler = (event: any) => {
+        if (event.detail && event.detail.id) {
+          this.openDiscussion(event.detail)
+        }
+      }
+      
+      document.addEventListener('annotation-click', this.annotationClickHandler)
     },
 
-    getAnnotationBackgroundClass(index: number): string {
-      const classes = ['bg-blue-lighten-5', 'bg-green-lighten-5', 'bg-orange-lighten-5']
-      return classes[index % classes.length] || 'bg-grey-lighten-5'
+    removeKeyboardShortcuts() {
+      if (this.keyboardHandler) {
+        document.removeEventListener('keydown', this.keyboardHandler)
+      }
+      if (this.annotationClickHandler) {
+        document.removeEventListener('annotation-click', this.annotationClickHandler)
+      }
     },
 
-    getUserColor(annotator: string): string {
-      const colors = ['#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#D32F2F']
-      const index = this.annotators.indexOf(annotator)
-      return colors[index % colors.length] || '#757575'
+    setupRealtimeUpdates() {
+      // Poll for updates every 30 seconds
+      this.realtimeUpdates = setInterval(() => {
+        this.refreshCurrentDiscrepancy()
+      }, 30000)
     },
 
-    getInitials(name: string): string {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+    cleanupRealtimeUpdates() {
+      if (this.realtimeUpdates) {
+        clearInterval(this.realtimeUpdates)
+      }
     },
 
-    getLabelColor(labelName: string): string {
-      const colors = ['primary', 'secondary', 'accent', 'error', 'info', 'success', 'warning']
-      const hash = labelName.split('').reduce((a, b) => a + b.charCodeAt(0), 0)
-      return colors[hash % colors.length]
-    },
-
-    getPercentageColor(percentage: number): string {
-      if (percentage < this.project.minPercentage) return 'error'
-      if (percentage < 70) return 'warning'
-      return 'success'
-    },
-
-    getColumnSize(annotationCount: number): number {
-      // Otimizar layout baseado no número de anotações
-      if (annotationCount === 1) return 12
-      if (annotationCount === 2) return 6  // Comparação lado a lado perfeita
-      if (annotationCount === 3) return 4
-      return Math.floor(12 / Math.min(annotationCount, 4))
+    async refreshCurrentDiscrepancy() {
+      const doc = this.getCurrentDocument()
+      if (!doc) return
+      
+      try {
+        // Refresh annotations for current document
+        delete this.allAnnotations[doc.docId]
+        await this.getAnnotationsForExample(doc.docId)
+        
+        // Check if still has discrepancy
+        const userAnnotations = {}
+        const annotations = this.allAnnotations[doc.docId] || []
+        
+        for(const ann of annotations) {
+            if (!userAnnotations[ann.user]) {
+                userAnnotations[ann.user] = []
+            }
+            userAnnotations[ann.user].push(ann)
+        }
+        
+        const discrepancyInfo = this.getDiscrepancyInfo(userAnnotations)
+        if (!discrepancyInfo.hasDiscrepancy) {
+          // Document no longer has discrepancy, remove it
+          this.navigation.discrepancyDocs.splice(this.navigation.current, 1)
+          this.summary.totalDiscrepancies--
+          
+          if (this.navigation.current >= this.navigation.discrepancyDocs.length) {
+            this.navigation.current = Math.max(0, this.navigation.discrepancyDocs.length - 1)
+          }
+        } else {
+          // Update annotations
+          this.$set(this.navigation.discrepancyDocs[this.navigation.current], 'annotations', userAnnotations)
+        }
+      } catch (error) {
+        console.error('Error refreshing discrepancy:', error)
+      }
     }
   }
 })
 </script>
 
 <style scoped>
-.metric-card {
-  transition: transform 0.2s ease-in-out;
-}
-
-.metric-card:hover {
-  transform: translateY(-2px);
-}
-
-.annotation-column {
-  border-right: 1px solid #e0e0e0;
-}
-
-.annotation-column:last-child {
-  border-right: none;
-}
-
-.example-text {
-  font-family: 'Roboto Mono', monospace;
-  background: white;
-  padding: 12px;
+.annotation {
+  padding: 3px 6px;
+  margin: 0 1px;
   border-radius: 4px;
-  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  display: inline-block;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
 }
 
-.annotation-stats {
-  background: rgba(255, 255, 255, 0.7);
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+.annotation:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-::v-deep .v-progress-linear {
-  border-radius: 3px !important;
+.annotation-label {
+  font-size: 0.75em;
+  font-weight: bold;
+  margin-left: 4px;
+  opacity: 0.9;
+}
+
+.category-annotation {
+    border-left: 4px solid;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background-color: #f8f9fa;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.category-annotation:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transform: translateX(2px);
+}
+
+/* Cores das discrepâncias */
+.different-label {
+  background-color: rgba(255, 152, 0, 0.6);
+  border-color: #ff9800;
+}
+
+.different-span {
+  background-color: rgba(244, 67, 54, 0.6);
+  border-color: #f44336;
+}
+
+.missing-annotation {
+  background-color: rgba(158, 158, 158, 0.6);
+  border-color: #9e9e9e;
+}
+
+.no-discrepancy {
+  background-color: rgba(76, 175, 80, 0.4);
+  border-color: #4caf50;
+}
+
+/* Legenda */
+.legend-color {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  margin-right: 8px;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+
+.legend-color.different-label {
+  background-color: rgba(255, 152, 0, 0.6);
+}
+
+.legend-color.different-span {
+  background-color: rgba(244, 67, 54, 0.6);
+}
+
+.legend-color.missing-annotation {
+  background-color: rgba(158, 158, 158, 0.6);
+}
+
+.legend-color.no-discrepancy {
+  background-color: rgba(76, 175, 80, 0.4);
+}
+
+/* Colunas dos anotadores */
+.discrepancy-column {
+  height: 100%;
+  border-top: 3px solid transparent;
+}
+
+.annotator-0 { border-top-color: #2196f3; }
+.annotator-1 { border-top-color: #4caf50; }
+.annotator-2 { border-top-color: #9c27b0; }
+.annotator-3 { border-top-color: #ff9800; }
+.annotator-4 { border-top-color: #f44336; }
+.annotator-5 { border-top-color: #009688; }
+.annotator-6 { border-top-color: #e91e63; }
+.annotator-7 { border-top-color: #3f51b5; }
+
+.annotated-text {
+  min-height: 200px;
+  line-height: 2.2;
+  font-size: 1.1em;
+}
+
+.discussion-panel {
+  z-index: 1000;
+}
+
+/* Responsivo */
+@media (max-width: 960px) {
+  .annotated-text {
+    font-size: 1em;
+    line-height: 2;
+  }
+  
+  .annotation {
+    padding: 2px 4px;
+  }
+  
+  .annotation-label {
+    font-size: 0.7em;
+  }
 }
 </style> 

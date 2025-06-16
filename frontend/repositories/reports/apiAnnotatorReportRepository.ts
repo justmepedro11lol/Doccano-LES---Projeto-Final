@@ -17,6 +17,7 @@ export interface AnnotatorReportFilters {
 export interface AnnotatorDetail {
   annotator_id: string
   nome_anotador: string
+  username: string
   total_anotacoes: number
   datasets_distintos: number
   tempo_total_min: number
