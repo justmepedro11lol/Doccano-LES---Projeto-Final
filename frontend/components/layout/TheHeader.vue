@@ -36,7 +36,7 @@
       class="text-capitalize"
       @click="$router.push(localePath('/users'))"
     >
-      {{ $t('Users') }}
+      {{ $t('generic.users') }}
     </v-btn>
 
     <!-- Novo botão adicionado aqui -->
@@ -46,7 +46,7 @@
       class="text-capitalize"
       @click="$router.push(localePath('/groups'))"
     >
-      {{ $t('Groups') }}
+      {{ $t('generic.groups') }}
     </v-btn>
 
     <v-btn
@@ -55,7 +55,7 @@
       class="text-capitalize"
       @click="$router.push(localePath('/perspectives'))"
     >
-      {{ $t('Perspectives') }}
+      {{ $t('generic.perspectives') }}
     </v-btn>
 
     <v-menu v-if="!isAuthenticated" open-on-hover offset-y>

@@ -1,12 +1,29 @@
 <template>
   <div class="form-answer-container">
+    <!-- Alerta de erro de base de dados -->
+    <v-slide-y-transition>
+      <v-alert
+        v-if="databaseError"
+        type="error"
+        dismissible
+        border="left"
+        colored-border
+        elevation="2"
+        class="mb-4"
+        @click="$emit('database-error', '')"
+      >
+        <v-icon slot="prepend" color="error">mdi-database-alert</v-icon>
+        {{ databaseError }}
+      </v-alert>
+    </v-slide-y-transition>
+
     <!-- Card de estado vazio -->
     <v-card v-if="questionsList.length == 0" class="empty-state-card" elevation="2">
-      <v-card-text class="text-center pa-8">
-        <v-icon size="80" color="grey lighten-1" class="mb-4">mdi-help-circle-outline</v-icon>
-        <h3 class="text-h5 grey--text text--darken-1 mb-2">Nenhuma Pergunta Encontrada</h3>
-        <p class="text-body-1 grey--text">Não foram encontradas questões na perspectiva para este projeto.</p>
-      </v-card-text>
+              <v-card-text class="text-center pa-8">
+          <v-icon size="80" color="grey lighten-1" class="mb-4">mdi-help-circle-outline</v-icon>
+          <h3 class="text-h5 grey--text text--darken-1 mb-2">No Questions Found</h3>
+          <p class="text-body-1 grey--text">No questions were found in the perspective for this project.</p>
+        </v-card-text>
     </v-card>
 
     <!-- Formulário principal -->
@@ -16,7 +33,7 @@
         <v-card class="progress-card mb-4" elevation="1">
           <v-card-text class="pa-4">
             <div class="d-flex align-center justify-space-between mb-2">
-              <span class="text-body-2 font-weight-medium">Progresso do Formulário</span>
+              <span class="text-body-2 font-weight-medium">Form Progress</span>
               <span class="text-caption">{{ answeredQuestions }}/{{ questionsList.length }}</span>
             </div>
             <v-progress-linear
@@ -70,7 +87,7 @@
               <div v-else-if="question.type === 1" class="text-input-container">
                 <v-text-field
                   v-model="answers[question.id]"
-                  label="Digite a sua resposta"
+                  label="Enter your answer"
                   outlined
                   dense
                   clearable
@@ -84,7 +101,7 @@
               <div v-else-if="question.type === 2" class="numeric-input-container">
                 <v-text-field
                   v-model.number="answers[question.id]"
-                  label="Digite um número"
+                  label="Enter a number"
                   outlined
                   dense
                   clearable
@@ -103,13 +120,13 @@
                   row
                 >
                   <v-radio
-                    label="Sim"
+                    label="Yes"
                     value="true"
                     class="custom-radio mr-6"
                     color="success"
                   />
                   <v-radio
-                    label="Não"
+                    label="No"
                     value="false"
                     class="custom-radio"
                     color="error"
@@ -121,7 +138,7 @@
               <div v-else class="text-input-container">
                 <v-text-field
                   v-model="answers[question.id]"
-                  label="Digite a sua resposta"
+                  label="Enter your answer"
                   outlined
                   dense
                   clearable
@@ -146,11 +163,11 @@
                  @click="clearAnswers"
                >
                 <v-icon left>mdi-refresh</v-icon>
-                Limpar Respostas
+                Clear Answers
               </v-btn>
 
                              <v-btn
-                 :disabled="!isFormValid"
+                 :disabled="!isFormValid || databaseError"
                  color="primary"
                  large
                  elevated
@@ -158,7 +175,7 @@
                  @click="openConfirmDialog"
                >
                 <v-icon left>mdi-check-circle</v-icon>
-                Submeter Respostas
+                Submit Answers
               </v-btn>
             </div>
           </v-card-text>
@@ -171,7 +188,7 @@
       <v-card class="confirmation-dialog" elevation="8">
         <v-card-title class="primary white--text">
           <v-icon left color="white">mdi-help-circle</v-icon>
-          Confirmar Submissão
+          Confirm Submission
         </v-card-title>
         
         <v-card-text class="pa-6">
@@ -184,12 +201,12 @@
 
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn text color="grey" @click="handleConfirmCancel">
-            Cancelar
+          <v-btn text @click="$emit('cancel')">
+            Cancel
           </v-btn>
           <v-btn color="primary" elevated @click="handleConfirmOk">
             <v-icon left>mdi-check</v-icon>
-            Confirmar
+            Confirm
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -215,6 +232,10 @@ export default Vue.extend({
       type: String,
       required: true,
     },
+    databaseError: {
+      type: String,
+      default: ''
+    }
   },
   data() {
     return {
@@ -283,12 +304,12 @@ export default Vue.extend({
       return (this.answeredQuestions / this.questionsList.length) * 100;
     },
     textValidationRules() {
-      return [(v: any) => !!v || 'Este campo é obrigatório'];
+      return [(v: any) => !!v || 'This field is required'];
     },
     numericValidationRules() {
       return [
-        (v: any) => v !== null && v !== undefined && v !== '' || 'Este campo é obrigatório',
-        (v: any) => !isNaN(Number(v)) || 'Deve ser um número válido'
+        (v: any) => v !== null && v !== undefined && v !== '' || 'This field is required',
+        (v: any) => !isNaN(Number(v)) || 'Must be a valid number'
       ];
     }
   },

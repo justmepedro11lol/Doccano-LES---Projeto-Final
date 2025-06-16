@@ -1,23 +1,23 @@
 <template>
   <v-card outlined class="mt-4">
     <v-card-title class="subtitle-1">
-      Criar Nova Regra
+      Create New Rule
     </v-card-title>
     
     <v-card-text>
       <v-form ref="form">
         <v-text-field
           v-model="ruleName"
-          label="Nome da Regra"
-          :rules="[v => !!v || 'Nome é obrigatório']"
+          label="Rule Name"
+          :rules="[v => !!v || 'Name is required']"
           required
           clearable
         />
 
         <v-textarea
           v-model="ruleDescription"
-          label="Descrição"
-          :rules="[v => !!v || 'Descrição é obrigatória']"
+          label="Description"
+          :rules="[v => !!v || 'Description is required']"
           rows="3"
           required
           clearable
@@ -31,7 +31,7 @@
             text
             @click="$emit('cancel')"
           >
-            Cancelar
+            Cancel
           </v-btn>
           <v-btn
             :loading="saving"
@@ -39,7 +39,7 @@
             :disabled="!isFormValid"
             @click="saveRule"
           >
-            Salvar
+            Save
           </v-btn>
         </v-card-actions>
       </v-form>

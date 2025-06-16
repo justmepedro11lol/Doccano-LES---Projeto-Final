@@ -12,7 +12,7 @@
         class="mb-4"
       >
         <v-icon slot="prepend" color="warning">mdi-database-alert</v-icon>
-        Base de dados indisponível. Por favor, tente novamente mais tarde.
+        Database unavailable. Please try again later.
       </v-alert>
     </v-slide-y-transition>
 
@@ -22,7 +22,7 @@
       <v-card class="form-section mb-4" elevation="2">
         <v-card-title class="section-header">
           <v-icon left color="primary">mdi-account-outline</v-icon>
-          <span class="text-h6">Informações Básicas</span>
+          <span class="text-h6">Basic Information</span>
         </v-card-title>
         <v-card-text class="pa-6">
           <v-row>
@@ -30,7 +30,7 @@
               <v-text-field 
                 :value="username" 
                 :counter="100" 
-                label="Nome de Utilizador"
+                label="Username"
                 :rules="[rules.required, rules.counter]" 
                 :error-messages="usernameErrors"
                 :loading="checkingUsername"
@@ -47,7 +47,7 @@
             <v-col cols="12" md="6">
               <v-text-field 
                 v-model="localFirstName" 
-                label="Primeiro Nome" 
+                label="First Name" 
                 outlined 
                 dense
                 prepend-inner-icon="mdi-account-circle"
@@ -59,7 +59,7 @@
             <v-col cols="12" md="6">
               <v-text-field 
                 v-model="localLastName" 
-                label="Último Nome" 
+                label="Last Name" 
                 outlined 
                 dense
                 prepend-inner-icon="mdi-account-circle-outline"
@@ -73,7 +73,7 @@
             <v-col cols="12">
               <v-text-field
                 v-model="localEmail"
-                label="Endereço de Email"
+                label="Email Address"
                 :rules="[rules.email, rules.required]"
                 :error-messages="emailErrors"
                 :loading="checkingEmail"
@@ -92,7 +92,7 @@
       <v-card class="form-section mb-4" elevation="2">
         <v-card-title class="section-header">
           <v-icon left color="primary">mdi-shield-key</v-icon>
-          <span class="text-h6">Segurança</span>
+          <span class="text-h6">Security</span>
         </v-card-title>
         <v-card-text class="pa-6">
           <v-row>
@@ -104,10 +104,10 @@
                 :counter="30"
                 name="password"
                 persistent-hint
-                :hint="isEditMode ? 'Deixe vazio para manter a palavra-passe atual' : 'Mínimo 8 caracteres, incluindo números e símbolos'"
+                :hint="isEditMode ? 'Leave empty to keep current password' : 'Minimum 8 characters, including numbers and symbols'"
                 :rules="isEditMode ? passwordEditRules : passwordCreateRules"
                 :type="show2 ? 'text' : 'password'"
-                label="Palavra-passe"
+                label="Password"
                 outlined
                 dense
                 prepend-inner-icon="mdi-lock"
@@ -124,10 +124,10 @@
                 :counter="30"
                 name="passwordConfirmation"
                 persistent-hint
-                :hint="isEditMode ? 'Confirme a nova palavra-passe (se alterar)' : 'Confirme a palavra-passe'"
+                :hint="isEditMode ? 'Confirm new password (if changing)' : 'Confirm password'"
                 :rules="isEditMode ? passwordConfirmationEditRules : passwordConfirmationCreateRules"
                 :type="show1 ? 'text' : 'password'"
-                label="Confirmar Palavra-passe"
+                label="Confirm Password"
                 outlined
                 dense
                 prepend-inner-icon="mdi-lock-check"
@@ -143,7 +143,7 @@
             <v-col cols="12">
               <div class="password-strength">
                 <div class="d-flex align-center mb-2">
-                  <span class="text-caption">Força da palavra-passe:</span>
+                  <span class="text-caption">Password strength:</span>
                   <v-chip
                     :color="passwordStrengthColor"
                     small
@@ -169,7 +169,7 @@
       <v-card class="form-section mb-4" elevation="2">
         <v-card-title class="section-header">
           <v-icon left color="primary">mdi-shield-account</v-icon>
-          <span class="text-h6">Permissões</span>
+          <span class="text-h6">Permissions</span>
         </v-card-title>
         <v-card-text class="pa-6">
           <v-row>
@@ -183,9 +183,9 @@
                 >
                   <template #label>
                     <div>
-                      <div class="font-weight-medium">Status de Staff</div>
+                      <div class="font-weight-medium">Administrator</div>
                       <div class="text-caption grey--text">
-                        Permite acesso à área de administração
+                        Full access to all system features
                       </div>
                     </div>
                   </template>
@@ -202,9 +202,9 @@
                 >
                   <template #label>
                     <div>
-                      <div class="font-weight-medium">Status de Superutilizador</div>
+                      <div class="font-weight-medium">Staff Member</div>
                       <div class="text-caption grey--text">
-                        Concede todas as permissões automaticamente
+                        Access to administrative interface
                       </div>
                     </div>
                   </template>
@@ -309,26 +309,26 @@ export default Vue.extend({
       rules: {
         passwordsMatch: (
           v: string // @ts-ignore
-        ) => this.isEqual(v) || 'As palavras-passe devem coincidir',
-        required: (v: string) => !!v || 'Campo obrigatório',
+        ) => this.isEqual(v) || 'Passwords must match',
+        required: (v: string) => !!v || 'Required field',
         counter: (
           v: string // @ts-ignore
-        ) => (v && v.length <= 100) || 'Máximo 100 caracteres',
+        ) => (v && v.length <= 100) || 'Maximum 100 characters',
         minLength: (v: string) =>
-          (v && v.length >= 8) || 'A palavra-passe deve ter pelo menos 8 caracteres.',
+          (v && v.length >= 8) || 'Password must be at least 8 characters long.',
         noCommonWords: (v: string) => {
           const commonWords = ['password', '123456', 'qwerty', 'letmein', 'admin']
           return (
             !commonWords.some((word) => v.toLowerCase().includes(word)) ||
-            'Evite usar palavras comuns ou sequências.'
+            'Avoid using common words or sequences.'
           )
         },
-        email: (v: string) => /.+@.+\..+/.test(v) || 'Email deve ser válido',
+        email: (v: string) => /.+@.+\..+/.test(v) || 'Email must be valid',
         hasNumberAndSpecialChar: (v: string) => {
           const hasNumber = /\d/.test(v)
           const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(v)
           return (
-            (hasNumber && hasSpecialChar) || 'Deve incluir números e caracteres especiais.'
+            (hasNumber && hasSpecialChar) || 'Must include numbers and special characters.'
           )
         },
         notSimilarToPersonalInfo: (v: string) => {
@@ -336,7 +336,7 @@ export default Vue.extend({
           const personalInfo = [this.username] // Add more fields if needed
           for (const info of personalInfo) {
             if (info && v.toLowerCase().includes(info.toLowerCase()))
-              return 'A palavra-passe não pode ser muito similar às suas informações pessoais.'
+              return 'Password cannot be too similar to your personal information.'
           }
           return true
         }
@@ -401,9 +401,9 @@ export default Vue.extend({
           // Se não há senha, confirmação também deve estar vazia
           if (!this.localPassword && !v) return true
           // Se há senha, deve ter confirmação
-          if (this.localPassword && !v) return 'Deve confirmar a palavra-passe'
+          if (this.localPassword && !v) return 'Passwords must match'
           // Se há confirmação, deve coincidir
-          return this.isEqual(v) || 'As palavras-passe devem coincidir'
+          return this.isEqual(v) || 'Passwords must match'
         },
         (v: string) => {
           if (!v) return true
@@ -434,10 +434,10 @@ export default Vue.extend({
     },
     
     passwordStrengthText(): string {
-      if (this.passwordStrengthValue < 30) return 'Fraca'
-      if (this.passwordStrengthValue < 60) return 'Média'
-      if (this.passwordStrengthValue < 80) return 'Boa'
-      return 'Forte'
+      if (this.passwordStrengthValue < 30) return 'Weak'
+      if (this.passwordStrengthValue < 60) return 'Medium'
+      if (this.passwordStrengthValue < 80) return 'Good'
+      return 'Strong'
     }
   },
   
@@ -530,7 +530,7 @@ export default Vue.extend({
       try {
         const response = await this.$repositories.user.checkUserExists(username, undefined, this.id)
         if (response.username_exists) {
-          this.usernameErrors = ['Este nome de utilizador já está em uso']
+          this.usernameErrors = ['This username is already in use']
         }
       } catch (error) {
         console.error('Erro ao verificar username:', error)
@@ -551,7 +551,7 @@ export default Vue.extend({
       try {
         const response = await this.$repositories.user.checkUserExists(undefined, email, this.id)
         if (response.email_exists) {
-          this.emailErrors = ['Este email já está em uso']
+          this.emailErrors = ['This email is already in use']
         }
       } catch (error) {
         console.error('Erro ao verificar email:', error)

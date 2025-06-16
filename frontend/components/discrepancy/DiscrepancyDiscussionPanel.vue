@@ -39,7 +39,7 @@
         <v-expansion-panel-header>
           <div class="d-flex align-center">
             <v-icon class="mr-2">mdi-vote</v-icon>
-            <span>Votação de Consenso</span>
+            <span>Consensus Voting</span>
             <v-spacer></v-spacer>
             <v-chip x-small :color="getVotingStatusColor()" outlined>
               {{ getVotingStatusText() }}
@@ -51,7 +51,7 @@
             <v-select
               v-model="selectedVote"
               :items="voteOptions"
-              label="Selecione sua opção"
+              label="Select your option"
               outlined
               dense
               hide-details
@@ -64,12 +64,12 @@
               @click="submitVote"
             >
               <v-icon left small>mdi-vote</v-icon>
-              Votar
+              Vote
             </v-btn>
           </div>
           
           <div v-if="votingResults.length > 0">
-            <div class="text-subtitle-2 mb-2">Resultados da Votação:</div>
+            <div class="text-subtitle-2 mb-2">Voting Results:</div>
             <div v-for="result in votingResults" :key="result.option" class="d-flex align-center mb-1">
               <v-chip x-small :color="result.color" class="mr-2">{{ result.votes }}</v-chip>
               <span class="text-body-2">{{ result.option }}</span>
@@ -92,14 +92,14 @@
         <v-expansion-panel-header>
           <div class="d-flex align-center">
             <v-icon class="mr-2">mdi-handshake</v-icon>
-            <span>Proposta de Consenso</span>
+            <span>Consensus Proposal</span>
           </div>
         </v-expansion-panel-header>
         <v-expansion-panel-content>
           <v-select
             v-model="selectedConsensusLabel"
             :items="consensusLabelOptions"
-            label="Rótulo Consensual Proposto"
+            label="Proposed Consensus Label"
             outlined
             dense
             hide-details
@@ -107,7 +107,7 @@
           />
           <v-textarea
             v-model="consensusJustification"
-            label="Justificação (opcional)"
+            label="Justification (optional)"
             outlined
             dense
             rows="2"
@@ -121,7 +121,7 @@
             @click="proposeConsensus"
           >
             <v-icon left small>mdi-handshake</v-icon>
-            Propor Consenso
+            Propose Consensus
           </v-btn>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -133,12 +133,12 @@
     <v-card-text class="flex-grow-1 overflow-y-auto pa-3" style="max-height: 300px;">
       <div v-if="isLoading" class="text-center pa-4">
         <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
-        <div class="text-caption mt-2">Carregando mensagens...</div>
+        <div class="text-caption mt-2">Loading messages...</div>
       </div>
       <div v-else-if="messages.length === 0" class="text-center pa-4">
         <v-icon color="grey lighten-1">mdi-chat-outline</v-icon>
-        <div class="text-body-2 mt-2">Nenhuma mensagem ainda.</div>
-        <div class="text-caption text--secondary">Inicie a discussão abaixo!</div>
+        <div class="text-body-2 mt-2">No messages yet.</div>
+        <div class="text-caption text--secondary">Start the discussion below!</div>
       </div>
       <div v-else>
         <div v-for="msg in messages" :key="msg.id" class="message-item mb-3">
@@ -159,13 +159,13 @@
               <div v-if="msg.type === 'vote'" class="mt-1">
                 <v-chip x-small color="primary" outlined>
                   <v-icon left x-small>mdi-vote</v-icon>
-                  Voto: {{ msg.voteOption }}
+                  Vote: {{ msg.voteOption }}
                 </v-chip>
               </div>
               <div v-if="msg.type === 'consensus'" class="mt-1">
                 <v-chip x-small color="success" outlined>
                   <v-icon left x-small>mdi-handshake</v-icon>
-                  Proposta de Consenso
+                  Consensus Proposal
                 </v-chip>
               </div>
             </div>
@@ -180,7 +180,7 @@
     <v-card-actions class="pa-3">
       <v-textarea
         v-model="newMessage"
-        label="Escreva sua mensagem..."
+        label="Write your message..."
         rows="2"
         outlined
         dense
@@ -214,7 +214,7 @@
               <v-icon small>mdi-emoticon</v-icon>
             </v-btn>
           </template>
-          <span>Adicionar emoji</span>
+          <span>Add emoji</span>
         </v-tooltip>
       </div>
     </v-card-actions>
@@ -476,7 +476,7 @@ export default Vue.extend({
         this.showEmojiPicker = false
         await this.fetchMessages()
       } catch (error) {
-        console.error('Erro ao enviar mensagem:', error)
+        console.error('Error sending message:', error)
       } finally {
         this.isSending = false
       }

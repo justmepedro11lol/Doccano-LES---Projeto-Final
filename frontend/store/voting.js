@@ -91,7 +91,7 @@ export const actions = {
       
       return { success: true }
     } catch (error) {
-      console.error('Erro ao inicializar estado de votação:', error)
+      console.error('Error initializing voting state:', error)
       return { success: false, error }
     }
   },
@@ -115,7 +115,7 @@ export const actions = {
       
       return { success: true, data: newRule }
     } catch (error) {
-      console.error('Erro ao criar regra de anotação:', error)
+      console.error('Error creating annotation rule:', error)
       return { success: false, error }
     }
   },
@@ -145,7 +145,7 @@ export const actions = {
       
       return { success: true, data: newVoting }
     } catch (error) {
-      console.error('Erro ao criar votação:', error)
+      console.error('Error creating voting:', error)
       return { success: false, error }
     }
   },
@@ -156,7 +156,7 @@ export const actions = {
       commit('SET_ANNOTATION_RULES', { projectId, rules: [] })
       return { success: true }
     } catch (error) {
-      console.error('Erro ao limpar regras de anotação:', error)
+      console.error('Error clearing annotation rules:', error)
       return { success: false, error }
     }
   },
@@ -167,7 +167,7 @@ export const actions = {
       const savedRules = getStateFromLocalStorage(projectId, 'annotationRules', [])
       return { success: true, data: savedRules }
     } catch (error) {
-      console.error('Erro ao obter regras antigas:', error)
+      console.error('Error getting old rules:', error)
       return { success: false, error, data: [] }
     }
   },
@@ -176,7 +176,7 @@ export const actions = {
   endVotingEarly({ commit, state }, { projectId }) {
     try {
       if (!state.activeVoting) {
-        throw new Error('Não há votação ativa para finalizar')
+        throw new Error('No active voting to end')
       }
       
       // Obter votação atual
@@ -194,7 +194,7 @@ export const actions = {
       
       return { success: true, data: currentVoting }
     } catch (error) {
-      console.error('Erro ao finalizar votação:', error)
+      console.error('Error ending voting:', error)
       return { success: false, error }
     }
   },
@@ -206,7 +206,7 @@ export const actions = {
       const userId = rootGetters['auth/getUserId']
       
       if (!userId) {
-        throw new Error('Usuário não autenticado')
+        throw new Error('User not authenticated')
       }
       
       // Obter o ID do projeto da votação ativa
@@ -217,7 +217,7 @@ export const actions = {
       
       return { success: true }
     } catch (error) {
-      console.error('Erro ao registrar voto:', error)
+      console.error('Error registering vote:', error)
       return { success: false, error }
     }
   }

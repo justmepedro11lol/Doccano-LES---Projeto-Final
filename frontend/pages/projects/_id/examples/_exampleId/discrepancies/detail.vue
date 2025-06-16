@@ -110,7 +110,7 @@
       outlined
       class="mt-4"
     >
-      A discussão foi encerrada. Agora é possível configurar uma votação na seção "Annotation Rules".
+      The discussion has been closed. It is now possible to configure a vote in the "Annotation Rules" section.
       
       <!-- Botão para reverter fechamento (visível apenas para admins) -->
       <div v-if="isProjectAdmin" class="text-center mt-3">
@@ -393,7 +393,7 @@ export default Vue.extend({
       console.log('endDiscussion - localDiscussionEnded definido para:', this.localDiscussionEnded)
       this.snackbar = {
         show: true,
-        text: 'A discussão foi encerrada com sucesso. Agora é possível configurar uma votação na seção "Annotation Rules".',
+        text: 'The discussion has been successfully closed. It is now possible to configure a vote in the "Annotation Rules" section.',
         color: 'success',
         timeout: 5000
       }

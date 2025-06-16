@@ -42,14 +42,14 @@
       <!-- Chip para Superuser -->
       <template #[`item.isSuperUser`]="props">
         <v-chip :color="props.item.isSuperUser ? 'blue' : 'grey'">
-          {{ props.item.isSuperUser ? 'Sim' : 'Não' }}
+          {{ props.item.isSuperUser ? 'Yes' : 'No' }}
         </v-chip>
       </template>
 
       <!-- Chip para Staff -->
       <template #[`item.isStaff`]="props">
         <v-chip :color="props.item.isStaff ? 'blue' : 'grey'">
-          {{ props.item.isStaff ? 'Sim' : 'Não' }}
+          {{ props.item.isStaff ? 'Yes' : 'No' }}
         </v-chip>
       </template>
 
@@ -66,7 +66,7 @@
               {{ mdiPencil }}
             </v-icon>
           </template>
-          <span>Editar Utilizador</span>
+          <span>Edit User</span>
         </v-tooltip>
       </template>
     </v-data-table>
@@ -115,12 +115,12 @@ export default Vue.extend({
   computed: {
     headers() {
       const headers = [
-        { text: this.$t('Username'), value: 'username', sortable: true },
-        { text: this.$t('First Name'), value: 'first_name', sortable: true },
-        { text: this.$t('Last Name'), value: 'last_name', sortable: true },
-        { text: this.$t('Email'), value: 'email', sortable: true },
-        { text: this.$t('Superuser'), value: 'isSuperUser', sortable: true },
-        { text: this.$t('Staff'), value: 'isStaff', sortable: true }
+        { text: this.$t('generic.username'), value: 'username', sortable: true },
+        { text: this.$t('generic.firstName'), value: 'first_name', sortable: true },
+        { text: this.$t('generic.lastName'), value: 'last_name', sortable: true },
+        { text: this.$t('generic.email'), value: 'email', sortable: true },
+        { text: this.$t('generic.superuser'), value: 'isSuperUser', sortable: true },
+        { text: this.$t('generic.staff'), value: 'isStaff', sortable: true }
       ]
       if (!this.disableEdit) {
         headers.push({ text: 'Actions', value: 'actions', sortable: false })

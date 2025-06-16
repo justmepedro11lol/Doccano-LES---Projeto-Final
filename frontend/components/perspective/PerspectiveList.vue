@@ -1,10 +1,27 @@
 <template>
   <div class="perspective-list-container">
+    <!-- Alerta de erro de base de dados -->
+    <v-slide-y-transition>
+      <v-alert
+        v-if="databaseError"
+        type="error"
+        dismissible
+        border="left"
+        colored-border
+        elevation="2"
+        class="mb-4"
+        @click="$emit('database-error', '')"
+      >
+        <v-icon slot="prepend" color="error">mdi-database-alert</v-icon>
+        {{ databaseError }}
+      </v-alert>
+    </v-slide-y-transition>
+
     <!-- Card de filtros com design melhorado -->
     <v-card class="filters-card mb-4" elevation="2">
       <v-card-title class="pb-2">
         <v-icon left color="primary">mdi-filter-variant</v-icon>
-        <span class="text-h6">Filtros</span>
+        <span class="text-h6">Filters</span>
         <v-spacer></v-spacer>
         <v-btn 
           :disabled="!hasActiveFilters"
@@ -15,7 +32,7 @@
           @click="clearAllFilters"
         >
           <v-icon left small>mdi-filter-remove</v-icon>
-          Limpar Filtros
+          Clear Filters
         </v-btn>
       </v-card-title>
       
@@ -25,7 +42,7 @@
             <v-select
               v-model="selectedQuestion"
               :items="availableQuestions"
-              label="Selecione a pergunta"
+              label="Select question"
               clearable
               outlined
               dense
@@ -37,7 +54,7 @@
             <v-select
               v-model="selectedUser"
               :items="availableUsers"
-              label="Selecione o utilizador"
+              label="Select user"
               clearable
               outlined
               dense
@@ -45,11 +62,12 @@
               class="filter-select"
             />
           </v-col>
-          <v-col cols="12" md="3">
+          <!-- Só mostra o filtro de projeto se não estivermos numa página específica de projeto -->
+          <v-col v-if="!isProjectSpecificPage" cols="12" md="3">
             <v-select
               v-model="selectedProject"
               :items="availableProjects"
-              label="Selecione o projeto"
+              label="Select project"
               clearable
               outlined
               dense
@@ -57,16 +75,35 @@
               class="filter-select"
             />
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" :md="isProjectSpecificPage ? 6 : 3">
             <v-select
               v-model="selectedAnswer"
               :items="availableAnswers"
-              label="Selecione a resposta"
+              label="Select answer"
               clearable
               outlined
               dense
               prepend-icon="mdi-comment-text-outline"
               class="filter-select"
+            />
+          </v-col>
+        </v-row>
+        
+        <!-- Campo de busca por texto melhorado -->
+        <v-row>
+          <v-col cols="12">
+            <v-text-field
+              v-model="search"
+              :prepend-inner-icon="mdiMagnify"
+              label="Search in all columns (question, answer, user...)"
+              single-line
+              hide-details
+              outlined
+              dense
+              clearable
+              class="search-field"
+              background-color="grey lighten-5"
+              placeholder="Type to search..."
             />
           </v-col>
         </v-row>
@@ -77,7 +114,7 @@
     <v-card class="data-table-card" elevation="2">
       <v-card-title class="pb-2">
         <v-icon left color="primary">mdi-table</v-icon>
-        <span class="text-h6">Respostas das Perspectivas</span>
+        <span class="text-h6">Perspective Responses</span>
         <v-spacer></v-spacer>
         <v-chip 
           v-if="processedItems.length > 0" 
@@ -85,31 +122,18 @@
           text-color="white" 
           small
         >
-          {{ processedItems.length }} {{ processedItems.length === 1 ? 'resultado' : 'resultados' }}
+          {{ processedItems.length }} {{ processedItems.length === 1 ? 'result' : 'results' }}
         </v-chip>
       </v-card-title>
 
       <v-card-text class="pt-0">
-        <!-- Campo de busca melhorado -->
-        <v-text-field
-          v-model="search"
-          :prepend-inner-icon="mdiMagnify"
-          :label="$t('generic.search')"
-          single-line
-          hide-details
-          filled
-          clearable
-          class="mb-4 search-field"
-          background-color="grey lighten-5"
-        />
-
         <!-- Tabela de dados melhorada -->
         <v-data-table
           :items="processedItems"
           :headers="headers"
           :loading="isLoading || loadingNames"
-          :loading-text="loadingNames ? 'Carregando nomes...' : $t('generic.loading')"
-          :no-data-text="$t('vuetify.noDataAvailable')"
+          :loading-text="loadingNames ? 'Loading names...' : $t('generic.loading')"
+          :no-data-text="databaseError ? 'Database unavailable' : $t('vuetify.noDataAvailable')"
           :footer-props="{
             showFirstLastPage: true,
             'items-per-page-text': $t('vuetify.itemsPerPageText'),
@@ -202,6 +226,10 @@ export default Vue.extend({
     members: {
       type: Array as PropType<any[]>,
       default: () => []
+    },
+    databaseError: {
+      type: String,
+      default: ''
     }
   },
 
@@ -226,15 +254,25 @@ export default Vue.extend({
   computed: {
     // Header com quatro colunas: Criador, Projeto, Pergunta e Resposta
     headers() {
-      return [
+      const baseHeaders = [
         { text: this.$t('Created by'), value: 'memberName', sortable: true, width: '200px' },
-        { text: 'Projeto', value: 'projectName', sortable: true, width: '200px' },
         { text: this.$t('Question'), value: 'question', sortable: true, width: '35%' },
         { text: this.$t('Answer'), value: 'answer', sortable: true, width: '200px' }
       ]
+      
+      // Só adiciona a coluna de projeto se não estivermos numa página específica de projeto
+      if (!this.isProjectSpecificPage) {
+        baseHeaders.splice(1, 0, { text: 'Project', value: 'projectName', sortable: true, width: '200px' })
+      }
+      
+      return baseHeaders
     },
     projectId(): string {
       return this.$route.params.id
+    },
+    // Verifica se estamos numa página específica de projeto
+    isProjectSpecificPage(): boolean {
+      return !!this.projectId && this.$route.path.includes('/projects/')
     },
     // Extrai as perguntas disponíveis e adiciona a opção "Todas as perguntas"
     availableQuestions() {
@@ -315,7 +353,7 @@ export default Vue.extend({
         this.items;
 
       itemsToProcess.forEach(item => {
-        const projectName = this.projectNames[item.project_id] || `Projeto ${item.project_id}`
+        const projectName = this.projectNames[item.project_id] || `Project ${item.project_id}`
         projectsSet.add(projectName)
       })
       return Array.from(projectsSet)
@@ -350,7 +388,7 @@ export default Vue.extend({
                   }
                 }
                 const answerText = a.answer_text || a.answer_option || ''
-                const projectName = this.projectNames[item.project_id] || `Projeto ${item.project_id}`
+                const projectName = this.projectNames[item.project_id] || `Project ${item.project_id}`
                 // Cria um registro para cada resposta
                 const row = {
                   id: counter++,
@@ -359,11 +397,16 @@ export default Vue.extend({
                   question: q.question,
                   answer: answerText
                 }
-                // Filtro de busca (buscando em todas as colunas)
+                // Filtro de busca (buscando em todas as colunas com melhor normalização)
                 if (this.search) {
-                  const searchLower = this.search.toLowerCase()
+                  const searchLower = this.search.toLowerCase().trim()
                   const combinedText = `${row.memberName} ${row.projectName} ${row.question} ${row.answer}`.toLowerCase()
-                  if (!combinedText.includes(searchLower)) {
+                  
+                  // Busca mais flexível - permite busca por palavras parciais
+                  const searchWords = searchLower.split(' ').filter(word => word.length > 0)
+                  const matchesSearch = searchWords.every(word => combinedText.includes(word))
+                  
+                  if (!matchesSearch) {
                     return
                   }
                 }
@@ -472,15 +515,22 @@ export default Vue.extend({
                   console.log(`Fetched member ${member.id}:`, member.username)
                 }
               })
-            } catch (error) {
+            } catch (error: any) {
               console.log(`Error fetching members for project ${projectId}:`, error)
+              
+              // Emit database error if it's a server error
+              if (error.response && error.response.status >= 500) {
+                this.$emit('database-error', 'Database is currently unavailable while loading member names.')
+              } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+                this.$emit('database-error', 'Database connection error while loading member names.')
+              }
             }
           }
           
           // Para membros que não foram encontrados, define um nome padrão
           Array.from(memberIds).forEach(memberId => {
             if (!this.memberNames[memberId]) {
-              this.$set(this.memberNames, memberId, `Usuário ${memberId}`)
+              this.$set(this.memberNames, memberId, `User ${memberId}`)
             }
           })
         }
@@ -499,9 +549,16 @@ export default Vue.extend({
           const project = await this.$services.project.findById(projectId.toString())
           this.$set(this.projectNames, projectId, project.name)
           console.log(`Fetched project ${projectId}:`, project.name)
-        } catch (error) {
+        } catch (error: any) {
           console.log(`Project not found for ID ${projectId}:`, error)
-          this.$set(this.projectNames, projectId, `Projeto ${projectId}`)
+          this.$set(this.projectNames, projectId, `Project ${projectId}`)
+          
+          // Emit database error if it's a server error
+          if (error.response && error.response.status >= 500) {
+            this.$emit('database-error', 'Database is currently unavailable while loading project names.')
+          } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+            this.$emit('database-error', 'Database connection error while loading project names.')
+          }
         }
       })
 

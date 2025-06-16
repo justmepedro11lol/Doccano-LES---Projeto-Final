@@ -17,5 +17,14 @@ export default {
   export: 'Export',
   description: 'Description',
   type: 'Type',
-  loading: 'Loading... Please wait'
+  loading: 'Loading... Please wait',
+  users: 'Users',
+  groups: 'Groups',
+  perspectives: 'Perspectives',
+  username: 'Username',
+  firstName: 'First Name',
+  lastName: 'Last Name',
+  email: 'Email',
+  superuser: 'Superuser',
+  staff: 'Staff'
 }

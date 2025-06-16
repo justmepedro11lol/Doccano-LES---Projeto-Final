@@ -44,7 +44,7 @@
         class="ma-4"
       >
         <v-icon slot="prepend" color="warning">mdi-database-alert</v-icon>
-        Base de dados indisponível. Por favor, tente novamente mais tarde.
+        Database unavailable. Please try again later.
       </v-alert>
     </v-slide-y-transition>
 
@@ -52,7 +52,7 @@
     <v-card class="main-card" elevation="3">
       <v-card-title class="primary white--text d-flex align-center">
         <v-icon left color="white" size="28">mdi-account-plus</v-icon>
-        <span class="text-h5">Criar Novo Utilizador</span>
+        <span class="text-h5">Create New User</span>
       </v-card-title>
 
       <v-card-text class="pa-6">
@@ -68,7 +68,7 @@
                 @click="$router.push('/users')"
               >
                 <v-icon left>mdi-close</v-icon>
-                Cancelar
+                Cancel
               </v-btn>
 
               <v-btn
@@ -80,7 +80,7 @@
                 @click="save"
               >
                 <v-icon left>mdi-content-save</v-icon>
-                Guardar
+                Save
               </v-btn>
 
               <v-btn
@@ -92,7 +92,7 @@
                 @click="saveAndAnother"
               >
                 <v-icon left>mdi-plus</v-icon>
-                Guardar e Criar Outro
+                Save and Create Another
               </v-btn>
             </div>
           </div>
@@ -209,7 +209,7 @@ export default Vue.extend({
         }
         
         await this.service.create(userPayload)
-        this.sucessMessage = 'O utilizador foi criado com sucesso!'
+        this.sucessMessage = 'User created successfully!'
         this.databaseError = false
         setTimeout(() => {
           this.$router.push(`/users`)
@@ -232,7 +232,7 @@ export default Vue.extend({
         }
         
         await this.service.create(userPayload)
-        this.sucessMessage = 'O utilizador foi criado com sucesso! Pode criar outro.'
+        this.sucessMessage = 'User created successfully! You can create another one.'
         this.databaseError = false
         this.editedItem = Object.assign({}, this.defaultItem)
         this.items = await this.service.list()
@@ -252,24 +252,24 @@ export default Vue.extend({
       if (error.response) {
         if (error.response.status === 503) {
           this.databaseError = true
-          this.errorMessage = 'Base de dados indisponível. Por favor, tente novamente mais tarde.'
+          this.errorMessage = 'Database unavailable. Please try again later.'
         } else if (error.response.status === 400) {
           const errors = error.response.data
           if (errors.username) {
-            this.errorMessage = `Nome de utilizador: ${errors.username[0]}`
+            this.errorMessage = `Username: ${errors.username[0]}`
           } else if (errors.email) {
             this.errorMessage = `Email: ${errors.email[0]}`
           } else if (errors.password) {
-            this.errorMessage = `Palavra-passe: ${errors.password[0]}`
+            this.errorMessage = `Password: ${errors.password[0]}`
           } else {
-            this.errorMessage = 'Dados inválidos. Verifique os campos e tente novamente.'
+            this.errorMessage = 'Invalid data. Please check the fields and try again.'
           }
         } else {
-          this.errorMessage = 'Erro ao criar utilizador. Por favor, tente novamente.'
+          this.errorMessage = 'Error creating user. Please try again.'
         }
       } else {
         this.databaseError = true
-        this.errorMessage = 'Base de dados indisponível. Por favor, tente novamente mais tarde.'
+        this.errorMessage = 'Database unavailable. Please try again later.'
       }
     },
     

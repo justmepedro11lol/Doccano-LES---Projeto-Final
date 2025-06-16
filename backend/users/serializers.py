@@ -13,12 +13,12 @@ class CustomRegisterSerializer(RegisterSerializer):
 
     def validate_username(self, username):
         if User.objects.filter(username=username).exists():
-            raise serializers.ValidationError("Um utilizador com este nome de utilizador já existe.")
+            raise serializers.ValidationError("A user with this username already exists.")
         return username
 
     def validate_email(self, email):
         if email and User.objects.filter(email=email).exists():
-            raise serializers.ValidationError("Um utilizador com este email já existe.")
+            raise serializers.ValidationError("A user with this email already exists.")
         return email
 
     def get_cleaned_data(self):

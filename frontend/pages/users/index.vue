@@ -45,7 +45,7 @@
         @click="databaseError = false"
       >
         <v-icon slot="prepend" color="warning">mdi-database-alert</v-icon>
-        Base de dados indisponível. Por favor, tente novamente mais tarde.
+        Database unavailable. Please try again later.
       </v-alert>
     </v-slide-y-transition>
 
@@ -123,8 +123,8 @@ export default Vue.extend({
       this.items = response
       this.databaseError = false
     } catch (error) {
-      console.error('Erro ao buscar utilizadores:', error)
-      this.handleError(error, 'Erro ao carregar utilizadores')
+      console.error('Error fetching users:', error)
+      this.handleError(error, 'Error loading users')
     } finally {
       this.isLoading = false
     }
@@ -153,27 +153,27 @@ export default Vue.extend({
 
         // Mostra mensagem de sucesso
         this.successMessage = deletedCount > 1 
-          ? `${deletedCount} utilizadores eliminados com sucesso!`
+          ? `${deletedCount} users deleted successfully!`
           : 'User deleted successfully!'
         
         this.hideMessageAfterDelay('successMessage')
         
       } catch (error: any) {
         this.dialogDelete = false
-        console.error('Erro ao eliminar utilizador:', error)
+        console.error('Error deleting user:', error)
         
         // Tratar mensagens de erro específicas
         if (error.response && error.response.status === 403) {
           const errorDetail = error.response.data?.detail || ''
           if (errorDetail.includes('cannot delete your own user')) {
-            this.errorMessage = 'You cannot delete your own user.'
+            this.errorMessage = 'No permission to delete this user.'
           } else if (errorDetail.includes('cannot delete an admin user')) {
             this.errorMessage = 'You cannot delete an admin.'
           } else {
-            this.errorMessage = 'Sem permissões para eliminar este utilizador.'
+            this.errorMessage = 'No permission to delete this user.'
           }
         } else {
-          this.errorMessage = 'Erro ao eliminar utilizador. Tente novamente.'
+          this.errorMessage = 'Error deleting user. Please try again.'
         }
         
         this.hideMessageAfterDelay('errorMessage', 5000)

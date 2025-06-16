@@ -223,7 +223,7 @@ export default Vue.extend({
         } else if (errorData && errorData.error) {
           this.errorMessage = errorData.error
         } else {
-          this.errorMessage = 'Já existe uma perspectiva com esse nome.'
+          this.errorMessage = 'A perspective with this name already exists.'
         }
         this.databaseError = false
       } else if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {

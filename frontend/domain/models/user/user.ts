@@ -42,18 +42,18 @@ export class UserItem {
 
   async delete(repository: UserRepository): Promise<void> {
     if (this.id === 0) {
-      throw new Error('Não é possível excluir um usuário sem ID válido.')
+      throw new Error('Cannot delete a user without a valid ID.')
     }
     await repository.delete(this.id)
   }
 
   async update(repository: UserRepository): Promise<void> {
     if (this.id === 0) {
-      throw new Error('Não é possível atualizar um usuário sem ID válido.')
+      throw new Error('Cannot update a user without a valid ID.')
     }
 
     if (this.password && this.password !== this.passwordConfirmation) {
-      throw new Error('A confirmação de senha não confere.')
+      throw new Error('Password confirmation does not match.')
     }
 
     const updatedFields: Record<string, any> = {

@@ -83,7 +83,7 @@
       outlined
       class="mt-4"
     >
-      A discussão foi encerrada. Agora é possível configurar uma votação na seção "Annotation Rules".
+      The discussion has been closed. It is now possible to configure a vote in the "Annotation Rules" section.
       
       <!-- Botão para reverter fechamento (visível apenas para admins) -->
       <div v-if="isProjectAdmin" class="text-center mt-3">
@@ -96,7 +96,7 @@
           <v-icon left small>
             {{ mdiRefresh }}
           </v-icon>
-          Reverter Fechamento
+          Revert Closure
         </v-btn>
       </div>
     </v-alert>
@@ -395,7 +395,7 @@ export default Vue.extend({
       console.log('endDiscussion - localDiscussionEnded definido para:', this.localDiscussionEnded)
       this.snackbar = {
         show: true,
-        text: 'A discussão foi encerrada com sucesso. Agora é possível configurar uma votação na seção "Annotation Rules".',
+        text: 'The discussion has been successfully closed. It is now possible to configure a vote in the "Annotation Rules" section.',
         color: 'success',
         timeout: 5000
       }
@@ -408,7 +408,7 @@ export default Vue.extend({
       console.log('reopenDiscussion - localDiscussionEnded definido para:', this.localDiscussionEnded)
       this.snackbar = {
         show: true,
-        text: 'A discussão foi reaberta com sucesso. Agora é possível continuar a discussão.',
+        text: 'The discussion has been successfully reopened. It is now possible to continue the discussion.',
         color: 'success',
         timeout: 5000
       }

@@ -7,7 +7,7 @@
   >
     <v-card>
       <v-card-title class="headline">
-        Configurar Nova Votação
+        Configure New Voting
       </v-card-title>
 
       <v-card-text>
@@ -26,7 +26,7 @@
                 <template #activator="{ on, attrs }">
                   <v-text-field
                     v-model="startDate"
-                    label="Data de Início"
+                    label="Start Date"
                     prepend-icon="mdi-calendar"
                     readonly
                     v-bind="attrs"
@@ -53,7 +53,7 @@
                 <template #activator="{ on, attrs }">
                   <v-text-field
                     v-model="endDate"
-                    label="Data de Fim"
+                    label="End Date"
                     prepend-icon="mdi-calendar"
                     readonly
                     v-bind="attrs"
@@ -73,8 +73,8 @@
           <!-- Nome da votação -->
           <v-text-field
             v-model="votingName"
-            label="Nome da Votação"
-            placeholder="Digite o nome da votação..."
+            label="Voting Name"
+            placeholder="Enter the voting name..."
             required
             :rules="votingNameRules"
             class="mt-4"
@@ -83,9 +83,9 @@
           <!-- Descrição da votação -->
           <v-textarea
             v-model="description"
-            label="Descrição da Votação"
+            label="Voting Description"
             rows="4"
-            placeholder="Digite a descrição da votação..."
+            placeholder="Enter the voting description..."
             required
             :rules="descriptionRules"
             class="mt-4"
@@ -94,7 +94,7 @@
           <!-- Seleção de regras de anotação -->
           <v-card outlined class="mt-4">
             <v-card-title class="subtitle-1">
-              Novas Regras de Anotação
+              New Annotation Rules
             </v-card-title>
             <v-card-text>
               <v-alert
@@ -106,10 +106,10 @@
                 <div class="d-flex align-center">
                   <v-icon left color="info">mdi-information</v-icon>
                   <div>
-                    <div class="font-weight-bold">Criar Novas Regras</div>
+                    <div class="font-weight-bold">Create New Rules</div>
                     <div class="text-body-2 mt-1">
-                      Para cada votação, deve criar regras de anotação específicas. 
-                      Estas regras serão votadas pelos membros do projeto.
+                      For each voting, you must create specific annotation rules. 
+                      These rules will be voted on by project members.
                     </div>
                   </div>
                 </div>
@@ -140,7 +140,7 @@
                 @click="showNewRuleForm = true"
               >
                 <v-icon left>mdi-plus</v-icon>
-                {{ availableRules.length === 0 ? 'Criar Primeira Regra' : 'Adicionar Outra Regra' }}
+                {{ availableRules.length === 0 ? 'Create First Rule' : 'Add Another Rule' }}
               </v-btn>
             </v-card-text>
           </v-card>
@@ -161,7 +161,7 @@
           text
           @click="resetForm(); $emit('input', false)"
         >
-          Cancelar
+          Cancel
         </v-btn>
         <v-btn
           :loading="saving"
@@ -169,7 +169,7 @@
           :disabled="!isFormValid"
           @click="saveConfig"
         >
-          Salvar
+          Save
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -179,22 +179,22 @@
       <v-card>
         <v-card-title class="text-h5 primary--text">
           <v-icon left color="primary">mdi-help-circle</v-icon>
-          Regras de Votações Anteriores Encontradas
+          Previous Voting Rules Found
         </v-card-title>
         
         <v-card-text class="pt-4">
           <p class="text-body-1 mb-4">
-            Foram encontradas {{ oldRules.length }} regra{{ oldRules.length > 1 ? 's' : '' }} de votações anteriores. 
-            O que deseja fazer?
+            {{ oldRules.length }} rule{{ oldRules.length > 1 ? 's' : '' }} from previous votings were found. 
+            What would you like to do?
           </p>
           
           <v-alert type="info" outlined dense class="mb-4">
-            <strong>Recomendação:</strong> Para cada nova votação, é recomendado criar regras específicas 
-            baseadas nas discussões e discrepâncias atuais do projeto.
+            <strong>Recommendation:</strong> For each new voting, it is recommended to create specific rules 
+            based on current project discussions and discrepancies.
           </v-alert>
           
           <div class="mb-4">
-            <h4 class="text-subtitle-1 font-weight-bold mb-2">Regras Existentes:</h4>
+            <h4 class="text-subtitle-1 font-weight-bold mb-2">Existing Rules:</h4>
             <v-list dense>
               <v-list-item v-for="rule in oldRules" :key="rule.id" class="px-0">
                 <v-list-item-content>
@@ -218,7 +218,7 @@
             @click="useOldRules"
           >
             <v-icon left>mdi-recycle</v-icon>
-            Reutilizar Regras Existentes
+            Reuse Existing Rules
           </v-btn>
           
           <v-spacer></v-spacer>
@@ -229,7 +229,7 @@
             @click="createNewRules"
           >
             <v-icon left>mdi-plus</v-icon>
-            Criar Novas Regras
+            Create New Rules
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -288,19 +288,19 @@ export default defineComponent({
       
       // Regras de validação
       startDateRules: [
-        (v: any) => !!v || 'Data de início é obrigatória'
+        (v: any) => !!v || 'Start date is required'
       ],
       
       endDateRules: [
-        (v: any) => !!v || 'Data de fim é obrigatória'
+        (v: any) => !!v || 'End date is required'
       ],
       
       descriptionRules: [
-        (v: any) => !!v || 'Descrição é obrigatória'
+        (v: any) => !!v || 'Description is required'
       ],
 
       votingNameRules: [
-        (v: any) => !!v || 'Nome da votação é obrigatório'
+        (v: any) => !!v || 'Voting name is required'
       ]
     }
   },
