@@ -43,7 +43,7 @@
                 @click="goToChat"
               >
                 <v-icon left>mdi-message-text</v-icon>
-                Discuss Discrepancies
+                Discuss annotation rules to resolve discrepancies
               </v-btn>
             </div>
           </v-card-text>

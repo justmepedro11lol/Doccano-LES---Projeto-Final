@@ -89,6 +89,20 @@
       </v-btn>
     </div>
     
+    <!-- Botão para cancelar e voltar às discrepâncias -->
+    <div class="text-center mt-4">
+      <v-btn
+        color="red"
+        dark
+        @click="goBackToDiscrepancies"
+      >
+        <v-icon left>
+          mdi-arrow-left
+        </v-icon>
+        Cancelar
+      </v-btn>
+    </div>
+    
     <!-- Aviso de discussão terminada -->
     <v-alert
       v-if="isDiscussionEnded"
@@ -396,6 +410,11 @@ export default Vue.extend({
         color: 'success',
         timeout: 5000
       }
+    },
+
+    goBackToDiscrepancies() {
+      // Navegar de volta para a página de discrepâncias do projeto
+      this.$router.push(`/projects/${this.projectId}/discrepancies`)
     }
   }
 })
