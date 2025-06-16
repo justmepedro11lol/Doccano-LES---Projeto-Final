@@ -36,15 +36,12 @@
     <v-slide-y-transition>
       <v-alert
         v-if="databaseError"
-        type="warning"
-        dismissible
-        border="left"
-        colored-border
-        elevation="2"
+        type="error"
+        persistent
         class="ma-4"
       >
-        <v-icon slot="prepend" color="warning">mdi-database-alert</v-icon>
-        Database unavailable. Please try again later.
+        <v-icon left>mdi-database-alert</v-icon>
+        Database is currently unavailable. Please try again later.
       </v-alert>
     </v-slide-y-transition>
 
@@ -52,7 +49,7 @@
     <v-card class="main-card" elevation="3">
       <v-card-title class="primary white--text d-flex align-center">
         <v-icon left color="white" size="28">mdi-account-edit</v-icon>
-        <span class="text-h5">Edit User</span>
+        <span class="text-h5">Editar Utilizador</span>
       </v-card-title>
 
       <v-card-text class="pa-6">
@@ -75,7 +72,7 @@
                   @click="$router.push('/users')"
                 >
                   <v-icon left>mdi-close</v-icon>
-                  Cancel
+                  Cancelar
                 </v-btn>
 
                 <v-btn
@@ -87,7 +84,7 @@
                   @click="save"
                 >
                   <v-icon left>mdi-content-save</v-icon>
-                  Save Changes
+                  Guardar Alterações
                 </v-btn>
               </div>
             </div>
@@ -129,7 +126,8 @@ export default Vue.extend({
       errorMessage: '',
       successMessage: '',
       isLoading: false,
-      databaseError: false
+      databaseError: false,
+      databaseCheckInterval: null as NodeJS.Timeout | null
     }
   },
 
@@ -159,7 +157,7 @@ export default Vue.extend({
       this.originalUser = this.items.find(user => user.id === this.userId) || null
       
       if (!this.originalUser) {
-        this.errorMessage = 'User not found.'
+        this.errorMessage = 'Utilizador não encontrado.'
         setTimeout(() => {
           this.$router.push('/users')
         }, 2000)
@@ -179,23 +177,29 @@ export default Vue.extend({
         passwordConfirmation: ''
       }
 
-      console.log('=== USER LOADED ===')
-      console.log('Original data:', this.originalUser)
-      console.log('Data for editing:', this.editedItem)
+      console.log('=== UTILIZADOR CARREGADO ===')
+      console.log('Dados originais:', this.originalUser)
+      console.log('Dados para edição:', this.editedItem)
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading user:', error)
-      this.errorMessage = `Error loading user: ${error.message || 'Unknown error'}`
+      this.errorMessage = `Erro ao carregar utilizador: ${error.message || 'Erro desconhecido'}`
     } finally {
       this.isLoading = false
     }
     
-    // Não inicia health check para melhorar performance
-    // this.startHealthCheck()
+  },
+
+  mounted() {
+    // Start database connection check
+    this.startDatabaseCheck()
   },
   
   beforeDestroy() {
-    // Não há mais health check para limpar
+    // Limpar o intervalo quando o componente for destruído
+    if (this.databaseCheckInterval) {
+      clearInterval(this.databaseCheckInterval)
+    }
   },
 
   methods: {
@@ -218,7 +222,7 @@ export default Vue.extend({
         }
         
         // Debug: Log para verificar os valores
-        console.log('=== SAVE USER ===')
+        console.log('=== GUARDAR UTILIZADOR ===')
         console.log('isSuperUser:', this.editedItem.isSuperUser)
         console.log('isStaff:', this.editedItem.isStaff)
         console.log('Payload:', userPayload)
@@ -235,29 +239,55 @@ export default Vue.extend({
         this.$router.push('/users')
         
       } catch (error: any) {
-        console.error('Error saving:', error)
-        this.errorMessage = 'Error saving user. Please try again.'
+        console.error('Erro ao guardar:', error)
+        this.errorMessage = 'Erro ao guardar utilizador. Tente novamente.'
       } finally {
         this.isLoading = false
       }
+    },
+
+    // Database connection check methods
+    startDatabaseCheck() {
+      this.databaseCheckInterval = setInterval(async () => {
+        try {
+          // Fazer uma chamada simples para verificar se a database está disponível
+          await this.$services.user.list()
+          
+          // Se chegou até aqui, a database está funcionando
+          if (this.databaseError) {
+            this.databaseError = false
+          }
+        } catch (error: any) {
+          console.error('Erro na verificação da database:', error)
+          
+          // Verificar diferentes tipos de erro que indicam problemas de base de dados
+          if (error.response && error.response.status >= 500) {
+            this.databaseError = true
+          } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+            this.databaseError = true
+          } else if (error.response && (error.response.status === 503 || error.response.status === 502 || error.response.status === 504)) {
+            this.databaseError = true
+          }
+        }
+      }, 2000) // Verificar a cada 2 segundos
     },
 
     handleError(error: any) {
       if (error.response) {
         if (error.response.status === 503) {
           this.databaseError = true
-          this.errorMessage = 'Database unavailable. Please try again later.'
+          this.errorMessage = 'Base de dados indisponível. Por favor, tente novamente mais tarde.'
         } else if (error.response.status === 400) {
           const errors = error.response.data
           if (errors.username) {
-            this.errorMessage = 'Username already exists.'
+            this.errorMessage = 'Nome de utilizador já existe.'
           } else if (errors.email) {
-            this.errorMessage = 'Email already exists.'
+            this.errorMessage = 'Email já existe.'
           } else {
-            this.errorMessage = 'Unknown validation error.'
+            this.errorMessage = 'Erro de validação desconhecido.'
           }
         } else {
-          this.errorMessage = `Error: ${error.message || 'Unknown error'}`
+          this.errorMessage = `Erro: ${error.message || 'Erro desconhecido'}`
         }
       }
     }
