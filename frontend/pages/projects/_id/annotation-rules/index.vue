@@ -1,5 +1,18 @@
 <template>
   <v-container fluid class="pa-8">
+    <!-- Database Error Alert -->
+    <v-slide-y-transition>
+      <v-alert
+        v-if="databaseError"
+        type="error"
+        persistent
+        class="ma-4"
+      >
+        <v-icon left>mdi-database-alert</v-icon>
+        Database is currently unavailable. Please try again later.
+      </v-alert>
+    </v-slide-y-transition>
+
     <!-- Header principal da página -->
     <div class="mb-8">
       <div class="d-flex align-center justify-space-between">
@@ -703,6 +716,9 @@ export default {
         timeout: 3000
       },
       isProjectAdmin: false,
+      // Database error state
+      databaseError: false,
+      databaseCheckInterval: null,
       // Novo: armazenar votos temporários antes do submit
       pendingVotes: {},
       isSubmittingVotes: false,
@@ -943,6 +959,16 @@ export default {
     
     // Check if user is project administrator
     this.checkAdminRole()
+    
+    // Start database connection check
+    this.startDatabaseCheck()
+  },
+
+  beforeDestroy() {
+    // Limpar o intervalo quando o componente for destruído
+    if (this.databaseCheckInterval) {
+      clearInterval(this.databaseCheckInterval)
+    }
   },
   
   methods: {
@@ -1189,6 +1215,32 @@ export default {
 
     goToHome() {
       this.$router.push(`/projects/${this.projectId}`)
+    },
+
+    // Database connection check methods
+    startDatabaseCheck() {
+      this.databaseCheckInterval = setInterval(async () => {
+        try {
+          // Fazer uma chamada simples para verificar se a database está disponível
+          await this.$repositories.member.fetchMyRole(this.projectId)
+          
+          // Se chegou até aqui, a database está funcionando
+          if (this.databaseError) {
+            this.databaseError = false
+          }
+        } catch (error) {
+          console.error('Erro na verificação da database:', error)
+          
+          // Verificar diferentes tipos de erro que indicam problemas de base de dados
+          if (error.response && error.response.status >= 500) {
+            this.databaseError = true
+          } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+            this.databaseError = true
+          } else if (error.response && (error.response.status === 503 || error.response.status === 502 || error.response.status === 504)) {
+            this.databaseError = true
+          }
+        }
+      }, 2000) // Verificar a cada 2 segundos
     }
   }
 }

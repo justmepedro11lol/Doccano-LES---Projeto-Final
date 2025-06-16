@@ -7,7 +7,7 @@
       dismissible
       class="mb-4"
     >
-      A conexão com a base de dados falhou. Por favor, tente novamente mais tarde.
+      Database is currently unavailable. Please try again later.
     </v-alert>
 
     <v-data-table
