@@ -12,22 +12,16 @@
     </v-alert>
 
         <!-- Main Title -->
-    <v-card class="mb-8 hero-card" elevation="8">
-      <div class="hero-gradient">
-        <v-card-title class="white--text text-center justify-center py-8">
-          <div class="hero-content">
-            <v-avatar class="hero-icon mb-4" size="80" color="rgba(255,255,255,0.2)">
-              <v-icon size="50" color="white">mdi-compare-horizontal</v-icon>
-            </v-avatar>
-            <div class="text-h3 font-weight-light mb-2 hero-title">
-              Side-by-Side Comparison
-            </div>
-            <div class="text-h6 font-weight-regular opacity-90">
-              Advanced Discrepancy Analysis Tool
-            </div>
-          </div>
-        </v-card-title>
-      </div>
+    <v-card class="mb-6" elevation="2">
+      <v-card-title class="primary white--text text-center justify-center py-6">
+        <div>
+          <v-icon class="mr-3" size="40">mdi-compare-horizontal</v-icon>
+          <span class="text-h4 font-weight-light">Side-by-Side Comparison</span>
+        </div>
+      </v-card-title>
+      <v-card-subtitle class="text-center py-3 text-h6">
+        Discrepancy Analysis Tool
+      </v-card-subtitle>
     </v-card>
 
     <!-- Statistical Summary Bar -->
@@ -164,14 +158,14 @@
               min-width="290px"
             >
               <template #activator="{ on, attrs }">
-                <v-text-field
+             <v-text-field
                   v-model="dateFrom"
                   label="Date From"
                   prepend-inner-icon="mdi-calendar"
                   readonly
-                  outlined
-                  dense
-                  clearable
+                outlined
+                dense
+                clearable
                   v-bind="attrs"
                   v-on="on"
                 />
@@ -239,8 +233,8 @@
         <v-divider class="mb-3" />
         <v-row>
           <v-col cols="12">
-            <v-btn
-              color="primary"
+                         <v-btn 
+               color="primary"
               class="mr-2"
               :disabled="selectedAnnotators.length === 0"
               :loading="loadingAnnotations"
@@ -250,12 +244,12 @@
               Compare Annotations
             </v-btn>
             
-            <v-btn
+                         <v-btn 
               color="secondary"
-              outlined
+               outlined
               :disabled="!hasActiveFilters"
               @click="clearAllFilters"
-            >
+             >
               <v-icon left>mdi-filter-remove</v-icon>
               Clear Filters
             </v-btn>
@@ -283,13 +277,13 @@
         <v-spacer />
         <v-chip color="white" text-color="primary" outlined>
           {{ filteredExamplesCount }} examples found
-        </v-chip>
+          </v-chip>
         <v-chip v-if="hasDiscrepancies" color="error" outlined class="ml-2">
           {{ discrepanciesCount }} with discrepancies
-        </v-chip>
+          </v-chip>
         <v-chip v-if="hasResolved" color="success" outlined class="ml-2">
           {{ resolvedCount }} resolved
-        </v-chip>
+          </v-chip>
       </v-card-title>
     </v-card>
 
@@ -310,7 +304,7 @@
           <v-card-title class="pb-2 primary white--text">
             <v-chip color="white" text-color="primary" class="mr-3">
               Example #{{ exampleData.example.id }}
-            </v-chip>
+          </v-chip>
             <span class="text-subtitle-1">{{ exampleIndex + 1 }} / {{ allExamplesData.length }}</span>
             <v-spacer />
             
@@ -357,7 +351,7 @@
                   </span>
                 </template>
               </span>
-            </div>
+        </div>
             
             <!-- Color Legend -->
             <v-row v-if="exampleData.hasDiscrepancy" class="mt-3">
@@ -375,15 +369,15 @@
                 </v-chip>
               </v-col>
             </v-row>
-          </v-card-text>
-        </v-card>
+      </v-card-text>
+    </v-card>
 
         <!-- Side-by-Side Comparison for this Example -->
-        <v-row>
-          <v-col
+      <v-row>
+        <v-col
             v-for="(annotatorData, annotatorIndex) in exampleData.annotators"
             :key="annotatorData.annotatorId"
-            :cols="12"
+          :cols="12"
             :md="Math.floor(12 / exampleData.annotators.length)"
           >
             <v-card :color="`${getAnnotatorColor(annotatorIndex)} lighten-5`" class="h-100" elevation="1">
@@ -392,14 +386,14 @@
                   <span class="white--text font-weight-bold">
                     {{ annotatorData.username[0].toUpperCase() }}
                   </span>
-                </v-avatar>
+              </v-avatar>
                 {{ annotatorData.username }}
-                <v-spacer></v-spacer>
+              <v-spacer></v-spacer>
                 <v-chip small color="white" :text-color="getAnnotatorColor(annotatorIndex)">
                   {{ annotatorData.annotations.length }} annotation{{ annotatorData.annotations.length !== 1 ? 's' : '' }}
-                </v-chip>
-              </v-card-title>
-              <v-divider />
+              </v-chip>
+            </v-card-title>
+            <v-divider />
               <v-card-text class="pa-4">
                 <!-- Annotator's Annotations -->
                 <div v-if="annotatorData.annotations.length > 0">
@@ -435,10 +429,10 @@
                   <v-icon size="40" color="grey lighten-1">mdi-file-outline</v-icon>
                   <p class="mt-2">No annotations found</p>
                 </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
         
         <!-- Divider entre exemplos -->
         <v-divider v-if="exampleIndex < allExamplesData.length - 1" class="my-6"></v-divider>
