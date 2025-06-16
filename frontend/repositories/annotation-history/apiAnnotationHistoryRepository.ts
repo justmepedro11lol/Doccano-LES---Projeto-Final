@@ -245,13 +245,13 @@ export class APIAnnotationHistoryRepository {
   }
 
   async export(projectId: string, format: 'csv' | 'pdf', filters?: HistoryFilters): Promise<Blob> {
-    // Simular exportação
+    // Carregar dados
     const data = await this.list(projectId, filters)
     
     if (format === 'csv') {
       return this.exportToCsv(data)
     } else {
-      return this.exportToPdf(data)
+      return await this.exportToPdf(data)
     }
   }
 
@@ -274,12 +274,76 @@ export class APIAnnotationHistoryRepository {
     return new Blob([csvContent], { type: 'text/csv' })
   }
 
-  private exportToPdf(data: AnnotationHistoryItem[]): Blob {
-    // Simular PDF (em um caso real, você usaria uma biblioteca como jsPDF)
-    const content = `Annotation History Report\n\n${data.map(item => 
-      `${item.annotator} - ${item.action} - ${item.timestamp} - ${item.label}`
-    ).join('\n')}`
-    
-    return new Blob([content], { type: 'text/plain' })
+  private async exportToPdf(data: AnnotationHistoryItem[]): Promise<Blob> {
+    try {
+      // Load jsPDF and autoTable dynamically
+      const { jsPDF } = await import('jspdf')
+      const { default: autoTable } = await import('jspdf-autotable')
+      
+      // eslint-disable-next-line new-cap
+      const doc = new jsPDF()
+      
+      // Title
+      doc.setFontSize(20)
+      doc.text('Annotation History Report', 14, 20)
+      
+      // Project information
+      doc.setFontSize(12)
+      doc.text(`Total records: ${data.length}`, 14, 30)
+      doc.text(`Report date: ${new Date().toLocaleDateString('en-US')}`, 14, 38)
+      
+      // Prepare data for table
+      const tableData = data.map(item => [
+        item.annotator,
+        item.action,
+        new Date(item.timestamp).toLocaleDateString('en-US'),
+        new Date(item.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        item.label || 'N/A',
+        (item.text || '').substring(0, 30) + ((item.text || '').length > 30 ? '...' : ''),
+        item.confidence ? (item.confidence * 100).toFixed(1) + '%' : 'N/A'
+      ])
+      
+      // Create table
+      autoTable(doc, {
+        startY: 50,
+        head: [[
+          'Annotator',
+          'Action',
+          'Date',
+          'Time',
+          'Label',
+          'Text',
+          'Confidence'
+        ]],
+        body: tableData,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2
+        },
+        columnStyles: {
+          0: { cellWidth: 25 }, // Annotator
+          1: { cellWidth: 20 }, // Action
+          2: { cellWidth: 25 }, // Date
+          3: { cellWidth: 20 }, // Time
+          4: { cellWidth: 25 }, // Label
+          5: { cellWidth: 50 }, // Text
+          6: { cellWidth: 20 }  // Confidence
+        },
+        margin: { top: 50, left: 14, right: 14 }
+      })
+      
+      // Generate PDF as blob
+      const pdfOutput = doc.output('blob')
+      return pdfOutput
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      // Fallback: create a simple text file
+      const content = `Annotation History Report\n\nGenerated: ${new Date().toLocaleString()}\nTotal records: ${data.length}\n\n${data.map(item => 
+        `${item.annotator} - ${item.action} - ${new Date(item.timestamp).toLocaleString()} - ${item.label || 'N/A'} - ${(item.text || '').substring(0, 50)}`
+      ).join('\n')}`
+      
+      return new Blob([content], { type: 'text/plain' })
+    }
   }
 } 

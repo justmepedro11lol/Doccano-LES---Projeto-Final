@@ -37,15 +37,11 @@
       <v-alert
         v-if="databaseError"
         type="error"
-        dismissible
-        border="left"
-        colored-border
-        elevation="2"
+        persistent
         class="ma-4"
-        @click="databaseError = false"
       >
-        <v-icon slot="prepend" color="error">mdi-database-alert</v-icon>
-        Base de dados indisponível. Por favor, tente novamente mais tarde.
+        <v-icon left>mdi-database-alert</v-icon>
+        Database is currently unavailable. Please try again later.
       </v-alert>
     </v-slide-y-transition>
 
@@ -206,6 +202,7 @@ export default {
       successMessage: '',
       errorMessage: '',
       databaseError: false,
+      databaseCheckInterval: null as NodeJS.Timeout | null,
       projectNames: {} as Record<number, string>,
       memberNames: {} as Record<number, string>
     }
@@ -216,6 +213,18 @@ export default {
     if (this.items.length > 0) {
       await this.loadProjectNames()
       await this.loadMemberNames()
+    }
+  },
+
+  mounted() {
+    // Start database connection check
+    this.startDatabaseCheck()
+  },
+
+  beforeDestroy() {
+    // Limpar o intervalo quando o componente for destruído
+    if (this.databaseCheckInterval) {
+      clearInterval(this.databaseCheckInterval)
     }
   },
 
@@ -454,6 +463,32 @@ export default {
         this.errorMessage = defaultMessage
         this.hideMessageAfterDelay('errorMessage', 5000)
       }
+    },
+
+    // Database connection check methods
+    startDatabaseCheck() {
+      this.databaseCheckInterval = setInterval(async () => {
+        try {
+          // Fazer uma chamada simples para verificar se a database está disponível
+          await this.$services.perspective.list()
+          
+          // Se chegou até aqui, a database está funcionando
+          if (this.databaseError) {
+            this.databaseError = false
+          }
+        } catch (error: any) {
+          console.error('Erro na verificação da database:', error)
+          
+          // Verificar diferentes tipos de erro que indicam problemas de base de dados
+          if (error.response && error.response.status >= 500) {
+            this.databaseError = true
+          } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+            this.databaseError = true
+          } else if (error.response && (error.response.status === 503 || error.response.status === 502 || error.response.status === 504)) {
+            this.databaseError = true
+          }
+        }
+      }, 2000) // Verificar a cada 2 segundos
     },
 
     clearMessages() {

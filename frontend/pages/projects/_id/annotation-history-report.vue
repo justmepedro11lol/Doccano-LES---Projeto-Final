@@ -17,6 +17,21 @@
       </v-container>
     </div>
 
+    <!-- Database Error Alert -->
+    <v-container>
+      <v-slide-y-transition>
+        <v-alert
+          v-if="databaseError"
+          type="error"
+          persistent
+          class="ma-4"
+        >
+          <v-icon left>mdi-database-alert</v-icon>
+          Database is currently unavailable. Please try again later.
+        </v-alert>
+      </v-slide-y-transition>
+    </v-container>
+
     <!-- Main Content -->
     <v-container class="py-8">
       <!-- Summary Cards -->
@@ -453,6 +468,9 @@ export default Vue.extend({
       availableLabels: [] as string[],
       detailsDialog: false,
       selectedItem: null as HistoryItem | null,
+      // Database error state
+      databaseError: false,
+      databaseCheckInterval: null as NodeJS.Timeout | null,
       
       filters: {
         annotator_ids: [] as number[],
@@ -558,6 +576,15 @@ export default Vue.extend({
 
   async mounted() {
     await this.loadData()
+    // Start database connection check
+    this.startDatabaseCheck()
+  },
+
+  beforeDestroy() {
+    // Limpar o intervalo quando o componente for destruído
+    if (this.databaseCheckInterval) {
+      clearInterval(this.databaseCheckInterval)
+    }
   },
 
   methods: {
@@ -749,6 +776,32 @@ export default Vue.extend({
 
     async refreshData() {
       await this.loadData()
+    },
+
+    // Database connection check methods
+    startDatabaseCheck() {
+      this.databaseCheckInterval = setInterval(async () => {
+        try {
+          // Fazer uma chamada simples para verificar se a database está disponível
+          await this.$repositories.member.fetchMyRole(this.projectId)
+          
+          // Se chegou até aqui, a database está funcionando
+          if (this.databaseError) {
+            this.databaseError = false
+          }
+        } catch (error: any) {
+          console.error('Erro na verificação da database:', error)
+          
+          // Verificar diferentes tipos de erro que indicam problemas de base de dados
+          if (error.response && error.response.status >= 500) {
+            this.databaseError = true
+          } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+            this.databaseError = true
+          } else if (error.response && (error.response.status === 503 || error.response.status === 502 || error.response.status === 504)) {
+            this.databaseError = true
+          }
+        }
+      }, 2000) // Verificar a cada 2 segundos
     }
   }
 })

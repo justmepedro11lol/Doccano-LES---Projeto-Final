@@ -36,15 +36,12 @@
     <v-slide-y-transition>
       <v-alert
         v-if="databaseError"
-        type="warning"
-        dismissible
-        border="left"
-        colored-border
-        elevation="2"
+        type="error"
+        persistent
         class="ma-4"
       >
-        <v-icon slot="prepend" color="warning">mdi-database-alert</v-icon>
-        Base de dados indisponível. Por favor, tente novamente mais tarde.
+        <v-icon left>mdi-database-alert</v-icon>
+        Database is currently unavailable. Please try again later.
       </v-alert>
     </v-slide-y-transition>
 
@@ -129,7 +126,8 @@ export default Vue.extend({
       errorMessage: '',
       successMessage: '',
       isLoading: false,
-      databaseError: false
+      databaseError: false,
+      databaseCheckInterval: null as NodeJS.Timeout | null
     }
   },
 
@@ -183,19 +181,25 @@ export default Vue.extend({
       console.log('Dados originais:', this.originalUser)
       console.log('Dados para edição:', this.editedItem)
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading user:', error)
       this.errorMessage = `Erro ao carregar utilizador: ${error.message || 'Erro desconhecido'}`
     } finally {
       this.isLoading = false
     }
     
-    // Não inicia health check para melhorar performance
-    // this.startHealthCheck()
+  },
+
+  mounted() {
+    // Start database connection check
+    this.startDatabaseCheck()
   },
   
   beforeDestroy() {
-    // Não há mais health check para limpar
+    // Limpar o intervalo quando o componente for destruído
+    if (this.databaseCheckInterval) {
+      clearInterval(this.databaseCheckInterval)
+    }
   },
 
   methods: {
@@ -240,6 +244,32 @@ export default Vue.extend({
       } finally {
         this.isLoading = false
       }
+    },
+
+    // Database connection check methods
+    startDatabaseCheck() {
+      this.databaseCheckInterval = setInterval(async () => {
+        try {
+          // Fazer uma chamada simples para verificar se a database está disponível
+          await this.$services.user.list()
+          
+          // Se chegou até aqui, a database está funcionando
+          if (this.databaseError) {
+            this.databaseError = false
+          }
+        } catch (error: any) {
+          console.error('Erro na verificação da database:', error)
+          
+          // Verificar diferentes tipos de erro que indicam problemas de base de dados
+          if (error.response && error.response.status >= 500) {
+            this.databaseError = true
+          } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+            this.databaseError = true
+          } else if (error.response && (error.response.status === 503 || error.response.status === 502 || error.response.status === 504)) {
+            this.databaseError = true
+          }
+        }
+      }, 2000) // Verificar a cada 2 segundos
     },
 
     handleError(error: any) {
