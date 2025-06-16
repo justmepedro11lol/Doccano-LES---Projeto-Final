@@ -36,7 +36,7 @@
                 @click="goToSideBySideComparison"
               >
                 <v-icon left>mdi-compare</v-icon>
-                Comparar Anotações Lado a Lado
+                compare Annotations Side by Side
               </v-btn>
               <v-btn
                 color="primary"

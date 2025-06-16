@@ -524,7 +524,7 @@ export default Vue.extend({
           justification: this.consensusJustification
         })
       } catch (error) {
-        console.error('Erro ao propor consenso:', error)
+        console.error('Error proposing consensus:', error)
       }
     },
 
@@ -539,13 +539,13 @@ export default Vue.extend({
         await this.$repositories.example.confirm(this.projectId, this.discrepancyContext.docId)
         
         // Post system message
-        const systemMessage = `[Doc: ${this.discrepancyContext.docId}] [SYSTEM] Marcado como resolvido.`
+        const systemMessage = `[Doc: ${this.discrepancyContext.docId}] [SYSTEM] Marked as resolved.`
         await this.$repositories.discrepancy.postMessage(this.projectId, systemMessage)
         
         this.showResolutionDialog = false
         this.$emit('resolved', this.discrepancyContext)
       } catch (error) {
-        console.error('Erro ao marcar como resolvido:', error)
+        console.error('Error marking as resolved:', error)
       }
     },
 
@@ -561,7 +561,7 @@ export default Vue.extend({
         const role = await this.$repositories.member.fetchMyRole(this.projectId)
         this.canResolve = role.isProjectAdmin || role.isProjectManager
       } catch (error) {
-        console.error('Erro ao verificar permissões:', error)
+        console.error('Error checking permissions:', error)
         this.canResolve = false
       }
     },
@@ -574,18 +574,18 @@ export default Vue.extend({
           value: cat.id
         }))
       } catch (error) {
-        console.error('Erro ao carregar opções de consenso:', error)
+        console.error('Error loading consensus options:', error)
       }
     },
 
     updateVoteOptions() {
       if (this.discrepancyContext.involvedAnnotators && this.discrepancyContext.involvedAnnotators.length >= 2) {
         this.voteOptions = this.discrepancyContext.involvedAnnotators.map((annotator, index) => ({
-          text: `Manter anotação de ${annotator.text}`,
+          text: `Keep annotation from ${annotator.text}`,
           value: `annotator_${index + 1}`
         })).concat([
-          { text: 'Criar nova anotação consensual', value: 'consensus' },
-          { text: 'Remover anotação completamente', value: 'remove' }
+          { text: 'Create new consensus annotation', value: 'consensus' },
+          { text: 'Remove annotation completely', value: 'remove' }
         ])
       }
     },
@@ -598,12 +598,12 @@ export default Vue.extend({
 
     getDiscrepancyTypeLabel(type: string): string {
       const labels = {
-        'etiqueta-diferente': 'Etiqueta Diferente',
-        'span-diferente': 'Span Diferente',
-        'etiqueta-ausente': 'Etiqueta Ausente',
-        'none': 'Sem Discrepância'
+        'etiqueta-diferente': 'Different Label',
+        'span-diferente': 'Different Span',
+        'etiqueta-ausente': 'Missing Label',
+        'none': 'No Discrepancy'
       }
-      return labels[type] || type || 'Desconhecido'
+      return labels[type] || type || 'Unknown'
     },
 
     getVoteOptionLabel(value: string): string {
@@ -620,8 +620,8 @@ export default Vue.extend({
 
     getVotingStatusText(): string {
       const total = Object.values(this.votes).reduce((sum: number, count: any) => sum + count, 0)
-      if (total === 0) return 'Sem votos'
-      return `${total} voto${total > 1 ? 's' : ''}`
+      if (total === 0) return 'No votes'
+      return `${total} vote${total > 1 ? 's' : ''}`
     },
 
     getUserColor(username: string): string {
