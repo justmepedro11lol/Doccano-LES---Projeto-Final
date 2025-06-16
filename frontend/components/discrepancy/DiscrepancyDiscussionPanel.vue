@@ -486,7 +486,7 @@ export default Vue.extend({
       if (!this.selectedVote || !this.discrepancyContext) return
       
       try {
-        const voteMessage = `[Doc: ${this.discrepancyContext.docId}] [VOTE:${this.selectedVote}] Votou em: ${this.getVoteOptionLabel(this.selectedVote)}`
+        const voteMessage = `[Doc: ${this.discrepancyContext.docId}] [VOTE:${this.selectedVote}] Voted for: ${this.getVoteOptionLabel(this.selectedVote)}`
         await this.$repositories.discrepancy.postMessage(this.projectId, voteMessage)
         
         this.hasUserVoted = true
@@ -499,7 +499,7 @@ export default Vue.extend({
           vote: this.selectedVote
         })
       } catch (error) {
-        console.error('Erro ao submeter voto:', error)
+        console.error('Error submitting vote:', error)
       }
     },
 
@@ -507,9 +507,9 @@ export default Vue.extend({
       if (!this.selectedConsensusLabel || !this.discrepancyContext) return
       
       try {
-        let consensusText = `[Doc: ${this.discrepancyContext.docId}] [CONSENSUS:${this.selectedConsensusLabel}] Proposta de consenso: ${this.selectedConsensusLabel}`
+        let consensusText = `[Doc: ${this.discrepancyContext.docId}] [CONSENSUS:${this.selectedConsensusLabel}] Consensus proposal: ${this.selectedConsensusLabel}`
         if (this.consensusJustification) {
-          consensusText += ` - Justificação: ${this.consensusJustification}`
+          consensusText += ` - Justification: ${this.consensusJustification}`
         }
         
         await this.$repositories.discrepancy.postMessage(this.projectId, consensusText)
