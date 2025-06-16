@@ -3,6 +3,7 @@
 from django.urls import path
 from .views import (
     DiscrepancyMessageListAPI,
+    ExampleDiscrepancyMessageListAPI,
     RelationList, RelationDetail,
     CategoryListAPI, CategoryDetailAPI,
     SpanListAPI, SpanDetailAPI,
@@ -29,6 +30,13 @@ urlpatterns = [
         "discrepancies/messages",
         DiscrepancyMessageListAPI.as_view(),
         name="discrepancy_messages",
+    ),
+
+    # Rota para chat de discrepância específica de um exemplo
+    path(
+        "examples/<int:example_id>/discrepancies/messages",
+        ExampleDiscrepancyMessageListAPI.as_view(),
+        name="example_discrepancy_messages",
     ),
 
     path(

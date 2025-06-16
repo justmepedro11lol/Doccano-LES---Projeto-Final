@@ -53,7 +53,11 @@ class BaseListAPI(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = self.label_class.objects.filter(example=self.kwargs["example_id"])
-        if not self.project.collaborative_annotation:
+        
+        # Se está numa página de discussão de discrepâncias, mostrar todas as anotações
+        show_all = self.request.query_params.get('show_all', '').lower() == 'true'
+        
+        if not self.project.collaborative_annotation and not show_all:
             queryset = queryset.filter(user=self.request.user)
         return queryset
 
@@ -112,6 +116,55 @@ class DiscrepancyMessageListAPI(generics.ListCreateAPIView):
             user=self.request.user
         )
         print("Mensagem criada com sucesso")
+
+
+class ExampleDiscrepancyMessageListAPI(generics.ListCreateAPIView):
+    """API para mensagens de discussão específicas de um exemplo"""
+    serializer_class = DiscrepancyMessageSerializer
+    permission_classes = [permissions.IsAuthenticated & IsProjectMember]
+    pagination_class = None
+
+    @property
+    def project(self):
+        return get_object_or_404(Project, pk=self.kwargs["project_id"])
+
+    def get_queryset(self):
+        project_id = self.kwargs["project_id"]
+        example_id = self.kwargs.get("example_id")
+        
+        print(f"Recuperando mensagens de discussão - Project ID: {project_id}, Example ID: {example_id}")
+        
+        # Verifica se o projeto e exemplo existem
+        project = get_object_or_404(Project, pk=project_id)
+        example = get_object_or_404(Example, pk=example_id, project=project)
+        
+        # Filtrar mensagens por projeto e exemplo específico
+        queryset = DiscrepancyMessage.objects.filter(
+            project_id=project_id,
+            example_id=example_id
+        ).order_by('created_at')
+        
+        print(f"Encontradas {queryset.count()} mensagens para o exemplo {example_id}")
+        return queryset
+
+    def perform_create(self, serializer):
+        project_id = self.kwargs["project_id"]
+        example_id = self.kwargs.get("example_id")
+        
+        print(f"Criando mensagem de discussão - Project ID: {project_id}, Example ID: {example_id}, User: {self.request.user}")
+        
+        # Verifica se o projeto e exemplo existem
+        project = get_object_or_404(Project, pk=project_id)
+        example = get_object_or_404(Example, pk=example_id, project=project)
+        
+        # Salvar mensagem diretamente com example_id
+        serializer.save(
+            project_id=project_id,
+            example_id=example_id,
+            user=self.request.user
+        )
+        print("Mensagem de discussão criada com sucesso")
+
 
 class BaseDetailAPI(generics.RetrieveUpdateDestroyAPIView):
     lookup_url_kwarg = "annotation_id"

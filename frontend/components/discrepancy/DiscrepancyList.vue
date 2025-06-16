@@ -93,61 +93,35 @@
           {{ item.discrepancyBool === 'Yes' ? 'Discrepant' : 'Consistent' }}
         </v-chip>
       </template>
+
+      <template #[`item.actions`]="{ item }">
+        <v-btn
+          color="primary"
+          outlined
+          small
+          @click="openDiscussion(item)"
+        >
+          <v-icon left small>mdi-forum</v-icon>
+          Discuss
+        </v-btn>
+      </template>
     </v-data-table>
   </div>
 </template>
 
-<script lang="ts">
-import Vue from 'vue'
+<script>
 import { mdiMagnify, mdiPencil } from '@mdi/js'
-import type { PropType } from 'vue'
-import { Percentage } from '~/domain/models/metrics/metrics'
 
-interface Row {
-  exampleId: string
-  exampleName: string
-  labelPercentages: { [label: string]: number }
-  discrepancyBool: string
-  maxPercentage: number
-}
-
-interface ComponentData {
-  search: string
-  mdiMagnify: string
-  mdiPencil: string
-  selectedExample: string | null
-  exampleNameMap: Record<string, string>
-}
-
-interface ComponentProps {
-  isLoading: boolean
-  items: Percentage
-  discrepancyThreshold: number
-}
-
-interface ComponentMethods {
-  resolveExampleName(id: string): Promise<string>
-  getPercentageColor(percentage: number): string
-}
-
-interface ComponentComputed {
-  headers: Array<{ text: string; value: string; sortable: boolean }>
-  flatItems: Row[]
-  exampleOptions: Array<{ text: string; value: string }>
-  filteredItems: Percentage
-  itemKey: string
-}
-
-export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, ComponentProps>({
+export default {
   name: 'DiscrepancyList',
 
   props: {
     isLoading: { type: Boolean, default: false, required: true },
-    items: { type: Object as PropType<Percentage>, required: true },
+    items: { type: Object, required: true },
     discrepancyThreshold: { type: Number, default: 0, required: true }
   },
 
-  data(): ComponentData {
+  data() {
     return {
       search: '',
       mdiMagnify,
@@ -163,13 +137,14 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
         { text: 'Example', value: 'exampleName', sortable: true },
         { text: 'Status', value: 'discrepancyBool', sortable: true },
         { text: 'Label Voting Percentages', value: 'labelPercentages', sortable: false },
-        { text: 'Max Agreement', value: 'maxPercentage', sortable: true }
+        { text: 'Max Agreement', value: 'maxPercentage', sortable: true },
+        { text: 'Actions', value: 'actions', sortable: false }
       ]
     },
 
-    flatItems (): Row[] {
-      const rows: Row[] = []
-      const source = this.filteredItems as Percentage
+    flatItems () {
+      const rows = []
+      const source = this.filteredItems
 
       for (const [id, labels] of Object.entries(source)) {
         // Aguarda o nome ser carregado
@@ -183,7 +158,7 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
           continue
         }
 
-        const entries = Object.entries(labels) as [string, number][]
+        const entries = Object.entries(labels)
         if (!entries.length) {
           console.warn('No labels found for example:', id)
           continue
@@ -220,7 +195,7 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
       ]
     },
 
-    filteredItems (): Percentage {
+    filteredItems () {
       if (!this.selectedExample || this.selectedExample === 'All annotations') {
         return this.items
       }
@@ -246,29 +221,69 @@ export default Vue.extend<ComponentData, ComponentMethods, ComponentComputed, Co
     }
   },
 
-  async mounted () {
-    // Removido pois agora está sendo tratado pelo watcher
-  },
-
   methods: {
-    async resolveExampleName (id: string) {
-      if (!this.exampleNameMap[id]) {
-        const example = await this.$repositories.example.findById(
-          this.$route.params.id, Number(id)
-        )
-        this.$set(this.exampleNameMap, id, example.text || 'Texto não disponível')
+    async resolveExampleName(id) {
+      if (this.exampleNameMap[id]) {
+        return this.exampleNameMap[id]
       }
-      return this.exampleNameMap[id]
+
+      try {
+        const projectId = this.$route.params.id
+        const example = await this.$repositories.example.findById(projectId, parseInt(id))
+        const name = example.text || `Example ${id}`
+        
+        this.$set(this.exampleNameMap, id, name)
+        return name
+      } catch (error) {
+        console.error(`Erro ao buscar exemplo ${id}:`, error)
+        const fallbackName = `Example ${id}`
+        this.$set(this.exampleNameMap, id, fallbackName)
+        return fallbackName
+      }
     },
 
-    getPercentageColor(percentage: number): string {
+    getPercentageColor(percentage) {
       if (percentage < this.discrepancyThreshold) return 'error'
       if (percentage < 70) return 'warning'
       return 'success'
+    },
+
+    openDiscussion(item) {
+      // Redirecionar para página dedicada de discussão
+      const projectId = this.$route.params.id
+      this.$router.push(`/projects/${projectId}/discrepancies/${item.exampleId}/discuss`)
     }
   }
-})
+}
 </script>
+
+<style scoped>
+.label-percentages {
+  min-width: 200px;
+}
+
+.label-percentage-item {
+  margin-bottom: 8px;
+}
+
+.label-percentage-item:last-child {
+  margin-bottom: 0;
+}
+
+.label-name {
+  max-width: 120px;
+  font-size: 0.875rem;
+}
+
+.percentage-value {
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+.max-agreement-container {
+  min-width: 120px;
+}
+</style>
 
 <style scoped>
 .container {

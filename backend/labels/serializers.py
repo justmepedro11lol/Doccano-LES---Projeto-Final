@@ -14,6 +14,7 @@ from .models import (
 class CategorySerializer(serializers.ModelSerializer):
     label = serializers.PrimaryKeyRelatedField(queryset=CategoryType.objects.all())
     example = serializers.PrimaryKeyRelatedField(queryset=Example.objects.all())
+    username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
         model = Category
@@ -21,17 +22,19 @@ class CategorySerializer(serializers.ModelSerializer):
             "id",
             "prob",
             "user",
+            "username",
             "example",
             "created_at",
             "updated_at",
             "label",
         )
-        read_only_fields = ("user",)
+        read_only_fields = ("user", "username")
 
 
 class SpanSerializer(serializers.ModelSerializer):
     label = serializers.PrimaryKeyRelatedField(queryset=SpanType.objects.all())
     example = serializers.PrimaryKeyRelatedField(queryset=Example.objects.all())
+    username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
         model = Span
@@ -39,6 +42,7 @@ class SpanSerializer(serializers.ModelSerializer):
             "id",
             "prob",
             "user",
+            "username",
             "example",
             "created_at",
             "updated_at",
@@ -46,14 +50,14 @@ class SpanSerializer(serializers.ModelSerializer):
             "start_offset",
             "end_offset",
         )
-        read_only_fields = ("user",)
+        read_only_fields = ("user", "username")
 
 class DiscrepancyMessageSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True)
+    user = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
         model = DiscrepancyMessage
-        fields = ["id", "user", "text", "created_at"]
+        fields = ["id", "user", "text", "created_at", "example"]
         read_only_fields = ["id", "user", "created_at"]
 
 
@@ -77,11 +81,12 @@ class TextLabelSerializer(serializers.ModelSerializer):
 class RelationSerializer(serializers.ModelSerializer):
     example = serializers.PrimaryKeyRelatedField(queryset=Example.objects.all())
     type = serializers.PrimaryKeyRelatedField(queryset=RelationType.objects.all())
+    username = serializers.CharField(source='user.username', read_only=True)
 
     class Meta:
         model = Relation
-        fields = ("id", "prob", "user", "example", "created_at", "updated_at", "from_id", "to_id", "type")
-        read_only_fields = ("user",)
+        fields = ("id", "prob", "user", "username", "example", "created_at", "updated_at", "from_id", "to_id", "type")
+        read_only_fields = ("user", "username")
 
 
 class BoundingBoxSerializer(serializers.ModelSerializer):

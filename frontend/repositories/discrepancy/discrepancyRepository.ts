@@ -155,10 +155,14 @@ export class APIDiscrepancyRepository {
   }
 
   // Métodos legados para compatibilidade com chat
-  async fetchMessages(projectId: string): Promise<DiscrepancyMessage[]> {
-    console.log('📨 Buscando mensagens do chat para projectId:', projectId)
+  async fetchMessages(projectId: string, exampleId?: string): Promise<DiscrepancyMessage[]> {
+    console.log('📨 Buscando mensagens do chat para projectId:', projectId, 'exampleId:', exampleId)
     try {
-      const response = await this.request.get(`/projects/${projectId}/discrepancies/messages`)
+      const url = exampleId 
+        ? `/projects/${projectId}/examples/${exampleId}/discrepancies/messages`
+        : `/projects/${projectId}/discrepancies/messages`
+      
+      const response = await this.request.get(url)
       console.log('Resposta da API (tipo):', typeof response.data)
       console.log('Resposta da API (valor):', response.data)
       
@@ -178,7 +182,22 @@ export class APIDiscrepancyRepository {
       console.log('Nenhuma mensagem encontrada')
       return []
     } catch (error) {
-      console.error('❌ Erro ao buscar mensagens:', error)
+      console.error('Erro ao buscar mensagens:', error)
+      throw error
+    }
+  }
+
+  async sendMessage(projectId: string, exampleId: string, text: string): Promise<DiscrepancyMessage> {
+    console.log('Enviando mensagem para o chat do projectId:', projectId, 'exampleId:', exampleId, 'text:', text)
+    try {
+      const response = await this.request.post(
+        `/projects/${projectId}/examples/${exampleId}/discrepancies/messages`, 
+        { text }
+      )
+      console.log('Resposta da API (sendMessage):', response.data)
+      return response.data
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error)
       throw error
     }
   }

@@ -47,6 +47,7 @@ class DiscrepancyMessage(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    example = models.ForeignKey(Example, on_delete=models.CASCADE, null=True, blank=True, related_name="discrepancy_messages")
 
     class Meta:
         ordering = ["created_at"]
